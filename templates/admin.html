@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-blue': '#00d4ff',
+                        'neon-purple': '#8b5cf6',
+                        'dark-bg': '#0f172a',
+                        'dark-card': '#1e293b',
+                        'dark-sidebar': '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-bg transition-all duration-300">
+    <!-- Top Navigation -->
+       <nav class="bg-white dark:bg-dark-card shadow-md fixed w-full top-0 z-50">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <button id="sidebarToggle" class="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="flex-shrink-0 flex items-center ml-4 lg:ml-0">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-file-alt text-white"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-gray-900 dark:text-white">ATS Resume Admin</h1>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    
+                    <div class="hidden md:block relative">
+                        <input type="text" id="searchInput" placeholder="Search menu..." class="w-64 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    
+                    <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                    
+                   <div class="relative">
+    
+                        <button id="profileDropdown" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Admin" class="w-8 h-8 rounded-full">
+                            <span class="hidden md:block text-gray-700 dark:text-gray-300">Admin</span>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                         </button>
+                
+                        <div id="profileMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg py-1 border border-gray-100 dark:border-gray-700 z-50">
+                            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                                <p class="text-sm text-gray-900 dark:text-white font-semibold">Admin User</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Super Admin</p>
+                            </div>
+                            <a href="#settings" onclick="switchTab('#settings')" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                             <i class="fas fa-cog mr-2"></i> Settings
+                            </a>
+                            <div class="border-t border-gray-100 dark:border-gray-700"></div>
+                            <a href="/admin/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                               <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                           </a>
+                        </div>
+                    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden transition-opacity"></div>
+
+    <aside id="sidebar" class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-dark-sidebar shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 overflow-y-auto">
+        <nav class="mt-6 px-4">
+            <div class="space-y-1" id="navLinks">
+                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-2">Menu</p>
+                
+                <a href="#dashboard" class="nav-item active flex items-center px-4 py-3 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-gray-800 rounded-xl transition-all">
+                    <i class="fas fa-chart-pie w-5 h-5 mr-3"></i>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                
+                <a href="#users" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all">
+                    <i class="fas fa-users w-5 h-5 mr-3"></i>
+                    <span class="font-medium">User Management</span>
+                </a>
+                
+                <a href="#templates" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all">
+                    <i class="fas fa-file-alt w-5 h-5 mr-3"></i>
+                    <span class="font-medium">Templates</span>
+                </a>
+                
+                <a href="#analytics" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all">
+                    <i class="fas fa-chart-bar w-5 h-5 mr-3"></i>
+                    <span class="font-medium">Analytics</span>
+                </a>
+
+                <a href="#blogs" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300">
+    <i class="fas fa-newspaper w-5 h-5 mr-3"></i>
+    <span>Blog Management</span>
+</a>
+
+<a href="#gallery" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300">
+    <i class="fas fa-images w-5 h-5 mr-3"></i>
+    <span>Gallery Cleaner</span>
+</a>
+
+                <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">System</p>
+
+                <a href="#settings" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all">
+                    <i class="fas fa-cog w-5 h-5 mr-3"></i>
+                    <span class="font-medium">Settings</span>
+                </a>
+                
+                <a href="#security" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all">
+                    <i class="fas fa-shield-alt w-5 h-5 mr-3"></i>
+                    <span class="font-medium">Security</span>
+                </a>
+                
+                <a href="#support" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all">
+                    <i class="fas fa-headset w-5 h-5 mr-3"></i>
+                    <span class="font-medium">Support</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="absolute bottom-0 w-full p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-dark-sidebar">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <img class="h-10 w-10 rounded-full border-2 border-green-400" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Admin profile">
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">Admin User</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Super Admin</p>
+                </div>
+                <button class="ml-auto text-gray-400 hover:text-red-500 transition-colors">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="lg:ml-64 pt-16 min-h-screen">
+        <div class="p-4 sm:p-6 lg:p-8">
+            
+            <!-- Dashboard Overview -->
+            <section id="dashboard-section" class="content-section">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard Overview</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Welcome back! Here's what's happening with your platform today.</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                           <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Users</p>
+                                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_users }}</p>
+                                <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-arrow-up"></i> Live Count
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-xl">
+                                <i class="fas fa-users text-blue-600 dark:text-blue-400 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                           <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Resumes Created</p>
+                                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_resumes }}</p>
+                                <p class="text-green-500 text-sm mt-1">
+                                    <i class="fas fa-arrow-up"></i> Total Actions
+                                </p>
+                            </div>
+                            <div class="bg-green-100 dark:bg-green-900 p-3 rounded-xl">
+                                <i class="fas fa-file-alt text-green-600 dark:text-green-400 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Active Templates</p>
+                                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ active_templates }}</p>
+                                <p class="text-blue-500 text-sm mt-1">
+                                    <i class="fas fa-check"></i> Available
+                                </p>
+                            </div>
+                            <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-xl">
+                                <i class="fas fa-layer-group text-purple-600 dark:text-purple-400 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Today's Signups</p>
+                                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ today_signups }}</p>
+                                <p class="text-orange-500 text-sm mt-1">
+                                    <i class="fas fa-clock"></i> Since Midnight
+                                </p>
+                            </div>
+                            <div class="bg-orange-100 dark:bg-orange-900 p-3 rounded-xl">
+                                <i class="fas fa-user-plus text-orange-600 dark:text-orange-400 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">User Growth</h3>
+                        <div class="chart-container">
+                            <canvas id="userGrowthChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Template Usage</h3>
+                        <div class="chart-container">
+                            <canvas id="templateUsageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+     <section id="users-section" class="content-section hidden">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">User Management</h2>
+            <p class="text-gray-600 dark:text-gray-400">Manage, monitor, and reset passwords.</p>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg mb-6 border border-gray-100 dark:border-gray-700">
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="relative w-full md:w-96">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <input type="text" id="userSearch" onkeyup="searchUsers()" 
+                       placeholder="Search by Name or Email..." 
+                       class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 w-full">
+            </div>
+            
+            <button onclick="openAddUserModal()" class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 neon-glow flex items-center gap-2">
+                <i class="fas fa-user-plus"></i> Add New User
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full" id="usersTable">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User Info</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Plan</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Password</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for user in all_users %}
+                   <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 group user-row">
+    
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-lg">
+                {{ user.full_name[0] | upper }}
+            </div>
+            <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900 dark:text-white user-name">{{ user.full_name }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400 user-email">{{ user.email }}</div>
+            </div>
+        </div>
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="px-3 py-1 text-xs font-bold rounded-full 
+            {% if user.plan_type == 'Premium' %} bg-purple-100 text-purple-800 {% else %} bg-gray-100 text-gray-800 {% endif %}">
+            {{ user.plan_type }}
+        </span>
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="px-3 py-1 text-xs font-bold rounded-full 
+            {% if user.status == 'Active' %} bg-green-100 text-green-800 {% else %} bg-red-100 text-red-800 {% endif %}">
+            {{ user.status }}
+        </span>
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap">
+        <button onclick="openResetModal('{{ user.id }}', '{{ user.full_name }}')" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-blue-500 hover:bg-blue-100 hover:text-blue-600 text-xs font-bold transition-all">
+            <i class="fas fa-key mr-1"></i> Reset
+        </button>
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        <div class="flex space-x-3">
+            
+            <button onclick="openUserDetail('{{ user.id }}')" 
+                    class="text-blue-500 hover:text-blue-600 transition-transform hover:scale-110" 
+                    title="View Dashboard">
+                <i class="fas fa-eye text-lg"></i>
+            </button>
+
+            <button onclick="openEditUserModal('{{ user.id }}', '{{ user.full_name }}', '{{ user.email }}', '{{ user.plan_type }}')" 
+                    class="text-yellow-500 hover:text-yellow-600 transition-transform hover:scale-110" title="Edit User">
+                ✏️
+            </button>
+            
+            <button onclick="toggleUserStatus('{{ user.id }}')" 
+                    class="transition-transform hover:scale-110" title="Toggle Status">
+                {% if user.status == 'Active' %} 
+                    <span class="text-red-500 hover:text-red-600">🚫</span> 
+                {% else %} 
+                    <span class="text-green-500 hover:text-green-600">✅</span> 
+                {% endif %}
+            </button>
+            
+            <button onclick="deleteUser('{{ user.id }}')" 
+                    class="text-red-500 hover:text-red-600 transition-transform hover:scale-110" title="Delete User">
+                🗑️
+            </button>
+        </div>
+    </td>
+</tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div id="noUsersFound" class="hidden p-8 text-center text-gray-500 dark:text-gray-400">
+                <i class="fas fa-search mb-2 text-2xl"></i>
+                <p>No users found matching your search.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="addUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-700">
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Add New User</h3>
+        <form onsubmit="handleAddUser(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+                <input type="text" id="newUserName" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                <input type="email" id="newUserEmail" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                <input type="password" id="newUserPass" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('addUserModal').classList.add('hidden')" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editUserModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-700">
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit User Details</h3>
+        <form onsubmit="handleEditUser(event)" class="space-y-4">
+            <input type="hidden" id="editUserId">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+                <input type="text" id="editUserName" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                <input type="email" id="editUserEmail" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Plan Type</label>
+                <select id="editUserPlan" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+                    <option value="Free">Free</option>
+                    <option value="Premium">Premium</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('editUserModal').classList.add('hidden')" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg font-bold">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="resetPassModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-sm shadow-2xl border border-gray-700 text-center">
+        <div class="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-key text-yellow-500 text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">Reset Password</h3>
+        <p class="text-gray-400 text-sm mb-6">Set a new password for <span id="resetUserName" class="text-blue-400 font-bold"></span>.</p>
+        <input type="hidden" id="resetUserId">
+        <input type="text" id="newResetPass" placeholder="Enter New Password" class="w-full bg-gray-900 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('resetPassModal').classList.add('hidden')" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white">Cancel</button>
+            <button onclick="confirmResetPass()" class="flex-1 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-lg text-white font-bold">Update</button>
+        </div>
+    </div>
+</div>
+
+<section id="user-detail-view" class="content-section hidden">
+    
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-4">
+            <button onclick="closeUserDetailView()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 transition-colors">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white" id="detailUserName">User Name</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="detailUserEmail">user@example.com</p>
+            </div>
+        </div>
+        <span id="detailUserStatus" class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600">Active</span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-6">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
+                    <div class="opacity-80 text-xs font-bold uppercase mb-1">Total Resumes</div>
+                    <div class="text-3xl font-bold" id="detailResumeCount">0</div>
+                    <div class="text-xs mt-2 opacity-75"><i class="fas fa-file-alt mr-1"></i> Created so far</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg">
+                    <div class="opacity-80 text-xs font-bold uppercase mb-1">Current Plan</div>
+                    <div class="text-3xl font-bold" id="detailPlanBadge">Free</div>
+                    <div class="text-xs mt-2 opacity-75"><i class="fas fa-crown mr-1"></i> Subscription</div>
+                </div>
+
+                <div class="bg-gradient-to-br from-orange-500 to-pink-600 rounded-2xl p-5 text-white shadow-lg">
+                    <div class="opacity-80 text-xs font-bold uppercase mb-1">AI Credits</div>
+                    <div class="text-3xl font-bold" id="detailCreditsBadge">0</div>
+                    <div class="text-xs mt-2 opacity-75"><i class="fas fa-bolt mr-1"></i> Available</div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-4">User Activity Insights</h3>
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 rounded-xl">
+                    <span class="text-gray-500 text-sm">Joined Platform</span>
+                    <span class="font-mono text-sm font-bold dark:text-white" id="detailJoinedAt">Jan 01, 2026</span>
+                </div>
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 rounded-xl mt-3">
+                    <span class="text-gray-500 text-sm">Last Active</span>
+                    <span class="font-mono text-sm font-bold dark:text-white" id="detailLastActive">Today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl border border-blue-100 dark:border-slate-600 h-fit">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-cogs text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Manage Resources</h3>
+                    <p class="text-xs text-gray-500">Update plan & credits instantly.</p>
+                </div>
+            </div>
+
+            <form onsubmit="saveUserResources(event)" class="space-y-5">
+                <input type="hidden" id="manageUserId">
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Subscription Plan</label>
+                    <select id="managePlan" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="Free">Free Plan</option>
+                        <option value="Premium">Premium Plan (Pro)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">AI Credits Balance</label>
+                    <div class="flex items-center">
+                        <button type="button" onclick="adjustCredits(-5)" class="p-3 bg-red-100 text-red-600 rounded-l-xl hover:bg-red-200"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="manageCredits" class="w-full text-center py-3 bg-gray-50 dark:bg-slate-900 border-y border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-bold" value="0">
+                        <button type="button" onclick="adjustCredits(5)" class="p-3 bg-green-100 text-green-600 rounded-r-xl hover:bg-green-200"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 text-center">Click +/- to add or remove 5 credits.</p>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transform transition hover:scale-105">
+                    Update User Profile
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 mt-6">
+    <h3 class="font-bold text-gray-900 dark:text-white mb-4">User's Saved Documents</h3>
+    <div id="detailUserDocs" class="space-y-3">
+        <p class="text-sm text-gray-500">Loading documents...</p>
+    </div>
+</div>
+
+    </div>
+</section>
+
+            <!-- Template Management -->
+         <section id="templates-section" class="content-section hidden">
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Template Management</h2>
+        <p class="text-gray-600 dark:text-gray-400">Manage resume templates, badges, and premium status.</p>
+    </div>
+
+    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg mb-6 border border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center">
+            <button onclick="openAddTemplateModal()" class="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 neon-glow">
+                <i class="fas fa-plus mr-2"></i>Add Template
+            </button>
+            <div class="text-gray-500 text-sm">
+                Total Templates: <span class="font-bold text-blue-500">{{ total_templates_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="adminTemplatesGrid">
+        {% for t in all_templates %}
+        <div class="bg-white dark:bg-dark-card rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden group relative">
+            
+            {% if t.is_premium %}
+            <div class="absolute top-0 right-0 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl z-10 shadow-md">
+                PREMIUM
+            </div>
+            {% endif %}
+
+            <div class="h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden">
+                <img src="{{ url_for('static', filename='images/template-previews/' + t.image_file) }}" 
+                     alt="{{ t.display_name }}" 
+                     class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                     onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+            </div>
+
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white truncate">{{ t.display_name }}</h3>
+                    <span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded uppercase">
+                        {{ t.category }}
+                    </span>
+                </div>
+                <p class="text-gray-500 text-sm mb-4 truncate">{{ t.description }}</p>
+                
+                <div class="flex justify-between text-xs text-gray-400 mb-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+                    <span><i class="fas fa-download mr-1"></i> {{ t.downloads }}</span>
+                    <span>ID: {{ t.name }}</span>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="openEditTemplateModal('{{ t.id }}', '{{ t.display_name }}', '{{ t.category }}', '{{ t.is_premium }}', '{{ t.badge }}')" 
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                        Edit
+                    </button>
+                    <button onclick="deleteTemplate('{{ t.id }}')" 
+                            class="px-3 py-2 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-lg hover:bg-red-200 transition-colors">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div id="addTemplateModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] hidden flex items-center justify-center overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-4xl shadow-2xl border border-gray-700 my-10">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Add New Template (Code & Design)</h3>
+            <button onclick="document.getElementById('addTemplateModal').classList.add('hidden')" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form onsubmit="handleAddTemplate(event)" class="space-y-6" enctype="multipart/form-data">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">System ID (Unique)</label>
+                    <input type="text" id="newTempId" name="name" placeholder="e.g. creative-v2" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+                    <p class="text-xs text-gray-500 mt-1">This will be the filename.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Display Name</label>
+                    <input type="text" id="newTempName" name="display_name" placeholder="e.g. Creative Pro" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
+                    <select id="newTempCat" name="category" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+                        <option value="modern">Modern</option>
+                        <option value="professional">Professional</option>
+                        <option value="creative">Creative</option>
+                        <option value="minimal">Minimal</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Template Preview Image</label>
+                    <input type="file" id="newTempImageFile" name="image_file" accept="image/*" required class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600">
+                </div>
+                
+                <div class="flex gap-4 items-center">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Position</label>
+                        <select id="newTempPosition" name="position" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+                            <option value="start">Show First (Top)</option>
+                            <option value="end" selected>Show Last (Bottom)</option>
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Badge</label>
+                        <select id="newTempBadge" name="badge" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+                            <option value="">None</option>
+                            <option value="New">✨ New</option>
+                            <option value="Premium">👑 Premium</option>
+                            <option value="Popular">🔥 Popular</option>
+                            <option value="ATS Friendly">✅ ATS Friendly</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                <input type="text" id="newTempDesc" name="description" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600" placeholder="Short description for the card...">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-blue-400 mb-1">HTML Code (Paste Here)</label>
+                <textarea id="newTempHtml" name="html_content" rows="6" class="w-full bg-gray-900 text-green-400 font-mono text-xs rounded-lg p-4 border border-gray-600 focus:border-blue-500" placeholder='<div class="resume-template...'></div>'></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-yellow-400 mb-1">CSS Code (Paste Here)</label>
+                <textarea id="newTempCss" name="css_content" rows="6" class="w-full bg-gray-900 text-yellow-200 font-mono text-xs rounded-lg p-4 border border-gray-600 focus:border-yellow-500" placeholder=".resume-template { ... }"></textarea>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="newTempPremium" name="is_premium" class="w-5 h-5 rounded bg-gray-700 border-gray-600 text-blue-600">
+                    <span class="text-white">Is Premium Template?</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-700">
+                <button type="button" onclick="document.getElementById('addTemplateModal').classList.add('hidden')" class="px-6 py-2 text-gray-400 hover:text-white">Cancel</button>
+                <button type="submit" id="submitBtn" class="px-8 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-bold shadow-lg transform transition hover:scale-105">
+                    🚀 Create & Publish
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editTemplateModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl border border-gray-700">
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Template</h3>
+        <form onsubmit="handleEditTemplate(event)" class="space-y-4">
+            <input type="hidden" id="editTempDbId">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Display Name</label>
+                <input type="text" id="editTempName" required class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Badge Text (Optional)</label>
+                <input type="text" id="editTempBadge" placeholder="e.g. Popular" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600">
+            </div>
+
+            <div class="flex items-center gap-4 mt-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="editTempPremium" class="w-5 h-5 rounded bg-gray-700 border-gray-600 text-blue-600">
+                    <span class="text-white">Mark as Premium?</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('editTemplateModal').classList.add('hidden')" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+            <!-- Analytics Section -->
+            <section id="analytics-section" class="content-section hidden">
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics & Reports</h2>
+        <p class="text-gray-600 dark:text-gray-400">Detailed insights and exportable reports.</p>
+    </div>
+
+    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg mb-6 border border-gray-100 dark:border-gray-700">
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Export Data</h3>
+            <div class="flex gap-3">
+                <a href="/api/admin/export/csv" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                    <i class="fas fa-file-csv mr-2"></i>Export CSV (Excel)
+                </a>
+                <a href="/api/admin/export/pdf" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                    <i class="fas fa-file-pdf mr-2"></i>Export Report PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Daily User Growth</h3>
+            <div class="chart-container relative h-64">
+                <canvas id="analyticsUserChart"></canvas>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resume Downloads Trend</h3>
+            <div class="chart-container relative h-64">
+                <canvas id="analyticsDownloadChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-dark-card rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Most Used Templates (Top 3)</h3>
+        <div class="space-y-4">
+            
+            {% for t in top_templates %}
+                {% set colors = ['blue', 'green', 'purple'] %}
+                {% set color = colors[loop.index0 % 3] %}
+                
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-{{ color }}-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900 dark:text-white">{{ t.display_name }}</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.downloads }} downloads</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ t.percent }}%</div>
+                        <div class="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div class="bg-{{ color }}-500 h-2 rounded-full" style="width: {{ t.percent }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-center">No download data available yet.</p>
+            {% endfor %}
+
+        </div>
+    </div>
+</section>
+
+<div id="blogs-section" class="content-section hidden space-y-6">
+
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Published Articles</h2>
+        <button onclick="openAddBlogModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-lg font-medium text-sm">
+            <i class="fas fa-plus mr-2"></i> Create New
+        </button>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        
+        <div class="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <div class="col-span-1">Image</div>
+            <div class="col-span-5">Title</div>
+            <div class="col-span-2 text-center">Views</div>
+            <div class="col-span-2">Date</div>
+            <div class="col-span-2 text-right">Action</div>
+        </div>
+
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for post in all_blogs %}
+            <div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors group">
+                
+                <div class="col-span-1">
+                    <div class="h-12 w-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                        <img src="{{ url_for('static', filename='images/blog/' + post.image_file) }}" 
+                             class="w-full h-full object-cover"
+                             onerror="this.src='https://placehold.co/100x100/1e293b/FFF?text=IMG'">
+                    </div>
+                </div>
+
+                <div class="col-span-5 pr-4">
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:text-blue-500 transition-colors">
+                        {{ post.title }}
+                    </h4>
+                    <a href="{{ url_for('blog_post', id=post.id) }}" target="_blank" class="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-400 truncate block font-mono">
+                        /blog/post-{{ post.id }} 
+                        <i class="fas fa-external-link-alt ml-1 text-[10px] opacity-50"></i>
+                    </a>
+                </div>
+
+                <div class="col-span-2 text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">
+                        <i class="far fa-eye mr-1.5"></i> {{ post.views if post.views else 0 }}
+                    </span>
+                </div>
+
+                <div class="col-span-2 text-sm text-gray-500 dark:text-gray-400 font-mono">
+                    {{ post.created_at }}
+                </div>
+
+                <div class="col-span-2 flex justify-end items-center gap-3">
+                    <a href="{{ url_for('blog_post', id=post.id) }}" target="_blank" class="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors" title="View Article">
+                        <i class="fas fa-external-link-alt text-sm"></i>
+                    </a>
+                    
+                    <button onclick="deleteBlog({{ post.id }})" class="flex items-center px-3 py-1.5 rounded-lg bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors text-xs font-semibold border border-red-100 dark:border-red-500/10">
+                        Delete
+                    </button>
+                </div>
+
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                    <i class="far fa-file-alt text-2xl text-gray-400 dark:text-gray-500"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">No articles published</h3>
+                <p class="text-gray-500 dark:text-gray-400 max-w-sm mt-1 mb-6">Start writing your first blog post to share insights with your users.</p>
+                <button onclick="openAddBlogModal()" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+                    Create your first post &rarr;
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="addBlogModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl p-8 shadow-2xl transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Write New Article</h3>
+            <button onclick="document.getElementById('addBlogModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="addBlogForm" onsubmit="handleAddBlog(event)" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blog Title</label>
+                <input type="text" name="title" required class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Short Summary</label>
+                <textarea name="summary" rows="2" required class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Full Content (HTML Supported <i class="fab fa-html5 text-orange-500"></i>)
+                </label>
+                <p class="text-xs text-gray-500 mb-2">You can paste raw HTML here (e.g., &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;)</p>
+                <textarea name="content" rows="8" required class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500" placeholder="<p>Write your article content here...</p>"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cover Image</label>
+                <input type="file" name="image_file" accept="image/*" class="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white">
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4">
+                <button type="button" onclick="document.getElementById('addBlogModal').classList.add('hidden')" class="px-6 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Cancel</button>
+                <button type="submit" class="px-6 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg">Publish Post</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div id="gallery-section" class="content-section hidden space-y-6">
+    
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Gallery Manager</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Identify and clean unused blog images to save space.</p>
+        </div>
+        <button onclick="loadGalleryImages()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg flex items-center transition-all shadow-lg text-sm">
+            <i class="fas fa-sync-alt mr-2"></i> Refresh Scan
+        </button>
+    </div>
+
+    <div class="flex space-x-2 mb-4">
+        <button onclick="filterGallery('all')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white transition-colors">All</button>
+        <button onclick="filterGallery('garbage')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-600 hover:bg-red-500 hover:text-white transition-colors">Garbage (Unused)</button>
+        <button onclick="filterGallery('used')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-600 hover:bg-green-500 hover:text-white transition-colors">Active (In Use)</button>
+    </div>
+
+    <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        </div>
+
+</div>
+        <section id="settings-section" class="content-section hidden space-y-8">
+    
+    <div class="flex justify-between items-end mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Platform Configuration</h2>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Manage AI models, user limits, and system controls.</p>
+        </div>
+        <button onclick="saveSettings()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center transition-transform hover:scale-105">
+            <i class="fas fa-save mr-2"></i> Save Changes
+        </button>
+    </div>
+
+    <form id="settingsForm" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-robot text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">AI Configuration</h3>
+            </div>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Google Gemini API Key</label>
+                    <div class="relative">
+                        <input type="password" name="gemini_api_key" id="gemini_api_key" class="w-full pl-4 pr-10 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all">
+                        <i class="fas fa-key absolute right-4 top-3.5 text-gray-400"></i>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Required for resume generation and analysis.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">AI Model</label>
+                    <select name="ai_model" id="ai_model" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fastest & Cheapest)</option>
+                        <option value="gemini-pro">Gemini Pro (Better Quality)</option>
+                        <option value="gemini-ultra">Gemini Ultra (Best Logic)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-gem text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Plans & Limits</h3>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Free Plan: Max Resumes</label>
+                    <input type="number" name="free_resume_limit" id="free_resume_limit" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500">
+                </div>
+                
+                <div class="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-gray-800 dark:text-white block">Allow New Signups</span>
+                            <span class="text-xs text-gray-500">Turn off to stop new user registrations.</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="enable_signups" id="enable_signups" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="flex items-center mb-6">
+        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center mr-3">
+            <i class="fas fa-credit-card text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Payment Gateway (Stripe)</h3>
+    </div>
+
+    <div class="space-y-5">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stripe Publishable Key</label>
+            <input type="text" id="stripe_public_key" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 font-mono text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stripe Secret Key</label>
+            <input type="password" id="stripe_secret_key" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 font-mono text-sm">
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="flex items-center mb-6">
+        <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center mr-3">
+            <i class="fas fa-plug text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Integrations</h3>
+    </div>
+
+    <div class="space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Google Client ID</label>
+                <input type="text" id="google_client_id" placeholder="For Google Login" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">LinkedIn Client ID</label>
+                <input type="text" id="linkedin_client_id" placeholder="For Resume Import" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Google Analytics ID (G-XXXXX)</label>
+            <input type="text" id="google_analytics_id" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500">
+        </div>
+    </div>
+</div>
+        <div class="col-span-1 lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-shield-alt text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">System Controls</h3>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site Title</label>
+                    <input type="text" name="site_title" id="site_title" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500">
+                </div>
+
+                <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700">
+                    <div>
+                        <span class="font-bold text-gray-800 dark:text-white block">Maintenance Mode</span>
+                        <span class="text-xs text-gray-500">Show "Under Maintenance" page to all users.</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="maintenance_mode" id="maintenance_mode" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </form>
+</section>
+<div id="addAdminModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-700">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Add New Admin</h3>
+            <button onclick="document.getElementById('addAdminModal').classList.add('hidden')" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form onsubmit="handleAddAdmin(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+                <input type="text" name="full_name" required placeholder="Enter full name" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                <input type="email" name="email" required placeholder="admin@example.com" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Role</label>
+                <select name="role" class="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 outline-none">
+                    <option value="Admin">Admin (Manager)</option>
+                    <option value="Super Admin">Super Admin (Full Access)</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-700">
+                <button type="button" onclick="document.getElementById('addAdminModal').classList.add('hidden')" class="px-4 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-bold shadow-lg transform transition hover:scale-105">
+                    Create Admin
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<section id="security-section" class="content-section hidden space-y-8">
+    
+    <div class="mb-2">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Security & Access</h2>
+        <p class="text-gray-600 dark:text-gray-400">Manage team access, roles, and secure your account.</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Admin Team</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Manage who has access to the dashboard.</p>
+            </div>
+            
+            {% if session['admin_role'] == 'Super Admin' %}
+            <button onclick="document.getElementById('addAdminModal').classList.remove('hidden')" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm flex items-center shadow-lg shadow-blue-500/30">
+                <i class="fas fa-plus mr-2"></i> Add New Admin
+            </button>
+            {% endif %}
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {% for admin in all_admins %}
+            <div class="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-gray-700 group transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 flex flex-col justify-between">
+                
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                            {{ admin.full_name[0] | upper }}
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-900 dark:text-white text-base">
+                                {{ admin.full_name }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{{ admin.email }}</div>
+                        </div>
+                    </div>
+                    
+                    <span class="px-2.5 py-1 text-xs font-bold rounded-lg border {{ 'bg-purple-100 text-purple-700 border-purple-200' if admin.role == 'Super Admin' else 'bg-blue-100 text-blue-700 border-blue-200' }}">
+                        {{ admin.role }}
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                    
+                    <div>
+                        {% if admin.status == 'suspended' %}
+                            <span class="flex items-center text-[10px] font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600 mr-1.5"></span> SUSPENDED
+                            </span>
+                        {% else %}
+                            <span class="flex items-center text-[10px] font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-600 mr-1.5"></span> ACTIVE
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex space-x-2">
+                        {% if session['admin_role'] == 'Super Admin' and session['admin_id'] != admin.id %}
+                            
+                            <button onclick="toggleAdminStatus('{{ admin.id }}', '{{ admin.status }}')" 
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors {{ 'bg-green-100 text-green-600 hover:bg-green-200' if admin.status == 'suspended' else 'bg-orange-100 text-orange-600 hover:bg-orange-200' }}"
+                                    title="{{ 'Activate' if admin.status == 'suspended' else 'Suspend Access' }}">
+                                <i class="fas {{ 'fa-check' if admin.status == 'suspended' else 'fa-ban' }}"></i>
+                            </button>
+
+                            <button onclick="deleteAdmin('{{ admin.id }}')" 
+                                    class="w-8 h-8 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition-colors"
+                                    title="Delete Admin">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        {% elif session['admin_id'] == admin.id %}
+                            <span class="text-xs text-gray-400 italic">It's You</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full text-center py-8 text-gray-500">
+                <i class="fas fa-users text-4xl mb-3 text-gray-300"></i>
+                <p>No other admins found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-key text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Password</h3>
+                    <p class="text-xs text-gray-500">Update your credentials.</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <input type="password" id="new_admin_password" placeholder="New Password" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 outline-none transition-all">
+                </div>
+                <button onclick="changePassword()" id="changePassBtn" class="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">
+                    Update Password
+                </button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-shield-alt text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">Security Policies</h3>
+                    <p class="text-xs text-gray-500">System-wide security settings.</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <div>
+                        <span class="font-bold text-gray-800 dark:text-white block">Two-Factor Auth</span>
+                        <span class="text-xs text-gray-500">Force admins to use OTP</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer opacity-60 cursor-not-allowed">
+                        <input type="checkbox" class="sr-only peer" disabled>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-indigo-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <div>
+                        <span class="font-bold text-gray-800 dark:text-white block">Session Timeout</span>
+                        <span class="text-xs text-gray-500">Auto-logout after 30 mins</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer opacity-60 cursor-not-allowed">
+                        <input type="checkbox" class="sr-only peer" checked disabled>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-indigo-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+    <section id="support-section" class="content-section hidden">
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Feedback & Support</h2>
+        <p class="text-gray-600 dark:text-gray-400">Manage user inquiries and support tickets.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex justify-between items-center">
+                <span>Recent Support Tickets</span>
+                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">{{ support_tickets|length }} New</span>
+            </h3>
+            
+            <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                {% if support_tickets %}
+                    {% for ticket in support_tickets %}
+                    <div class="group bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 p-5">
+                        
+                        <div class="flex items-start justify-between mb-4 border-b border-gray-100 dark:border-gray-800 pb-3">
+                            <div>
+                                <span class="text-xs font-mono text-gray-400">Ticket #{{ ticket.id }}</span>
+                                <h4 class="font-bold text-gray-900 dark:text-white text-base leading-tight mt-1">{{ ticket.subject }}</h4>
+                            </div>
+                            
+                            {% if ticket.status == 'Open' %}
+                                <span class="px-3 py-1 text-[10px] font-bold bg-red-100 text-red-600 rounded-full uppercase tracking-wide">Open</span>
+                            {% elif ticket.status == 'Resolved' %}
+                                <span class="px-3 py-1 text-[10px] font-bold bg-green-100 text-green-600 rounded-full uppercase tracking-wide">Resolved</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-[10px] font-bold bg-yellow-100 text-yellow-600 rounded-full uppercase tracking-wide">Pending</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-4 text-sm mb-4">
+                            
+                            <div class="flex items-center text-gray-700 dark:text-gray-300">
+                                <div class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 mr-3 shrink-0">
+                                    <i class="fas fa-user text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Name</p>
+                                    <p class="font-semibold">{{ ticket.name }}</p>
+                                </div>
+                            </div>
+
+                            {% if ticket.phone %}
+                            <div class="flex items-center text-gray-700 dark:text-gray-300">
+                                <div class="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 mr-3 shrink-0">
+                                    <i class="fas fa-phone text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Phone</p>
+                                    <p class="font-medium">{{ ticket.phone }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="flex items-center text-gray-700 dark:text-gray-300">
+                                <div class="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 mr-3 shrink-0">
+                                    <i class="fas fa-envelope text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Email</p>
+                                    <p class="font-medium break-all">{{ ticket.email }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center text-gray-700 dark:text-gray-300">
+                                <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 mr-3 shrink-0">
+                                    <i class="far fa-clock text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Received</p>
+                                    <p class="font-medium">{{ ticket.created_at }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-black/20 p-4 rounded-lg border border-gray-100 dark:border-gray-800 mb-4">
+                            <p class="text-[10px] text-gray-400 uppercase font-bold mb-2">Message Content:</p>
+                            <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{{ ticket.message }}</p>
+                        </div>
+                        
+                        <div class="flex gap-3 pt-2">
+                            <a href="mailto:{{ ticket.email }}?subject=Re: {{ ticket.subject }}" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i class="fas fa-reply mr-2"></i> Reply Email
+                            </a>
+                            {% if ticket.phone %}
+                            <a href="tel:{{ ticket.phone }}" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors">
+                                <i class="fas fa-phone mr-2"></i> Call User
+                            </a>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400">No support tickets found yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 opacity-75">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">User Feedback</h3>
+                <span class="text-xs text-gray-400 border border-gray-600 px-2 py-1 rounded">Coming Soon</span>
+            </div>
+            
+            <div class="flex flex-col items-center justify-center h-[300px] text-gray-500">
+                <i class="fas fa-tools text-5xl mb-4 text-gray-600"></i>
+                <p>Feedback module is under construction.</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+        </div>
+    </main>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden hidden"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script>
+  
+// 1. Toggle User
+async function toggleUserStatus(userId) {
+    if(!confirm("Are you sure you want to change user status?")) return;
+    try {
+        const res = await fetch(`/api/admin/toggle-user-status/${userId}`, { method: 'POST' });
+        const data = await res.json();
+        if(data.success) location.reload();
+        else alert("❌ Error: " + data.message);
+    } catch(e) { console.error(e); }
+}
+
+// 2. Toggle Admin
+async function toggleAdminStatus(id) {
+    if(!confirm("Are you sure you want to change admin status?")) return;
+    try {
+        const res = await fetch(`/api/admin/toggle-admin-status/${id}`, { method: 'POST' });
+        const data = await res.json();
+        if(data.success) location.reload();
+        else alert("❌ Error: " + data.message);
+    } catch(e) { console.error(e); }
+}
+
+// ==========================================
+// 👤 USER DETAIL & DOCUMENTS LOGIC (YE MISSING THA)
+// ==========================================
+async function openUserDetail(userId) {
+    // UI: List chupao, Detail dikhao
+    const usersSection = document.getElementById('users-section');
+    const detailSection = document.getElementById('user-detail-view');
+    if(usersSection) usersSection.classList.add('hidden');
+    if(detailSection) detailSection.classList.remove('hidden');
+
+    try {
+        // API Call
+        const res = await fetch(`/api/admin/user-details/${userId}`);
+        const data = await res.json();
+
+        if(data.success) {
+            const user = data.user;
+
+            // 1. Basic Info Fill karo
+            document.getElementById('detailUserName').innerText = user.full_name || 'No Name';
+            document.getElementById('detailUserEmail').innerText = user.email || 'No Email';
+            document.getElementById('detailResumeCount').innerText = user.resume_count || 0;
+            document.getElementById('detailPlanBadge').innerText = user.plan_type || 'Free';
+            document.getElementById('detailCreditsBadge').innerText = user.ai_credits || 0;
+            document.getElementById('detailJoinedAt').innerText = new Date(user.joined_at).toDateString();
+            document.getElementById('detailLastActive').innerText = new Date(user.last_active).toDateString();
+
+            // 2. Hidden Inputs for Edit
+            document.getElementById('manageUserId').value = user.id;
+            
+            // 3. Status Badge Color
+            const statusBadge = document.getElementById('detailUserStatus');
+            statusBadge.innerText = user.status;
+            statusBadge.className = user.status === 'Active' 
+                ? "px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600" 
+                : "px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600";
+
+            // 4. 👇 DOCUMENTS LIST LOGIC (Ye apke code me nahi tha)
+            const docContainer = document.getElementById('detailUserDocs');
+            docContainer.innerHTML = ''; // Clear old data
+
+            if (user.saved_docs && user.saved_docs.length > 0) {
+                user.saved_docs.forEach(doc => {
+                    const date = new Date(doc.updated_at).toLocaleDateString();
+                    const html = `
+                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-bold text-gray-900 dark:text-white">${doc.title || 'Resume'}</div>
+                                    <div class="text-xs text-gray-500">${doc.template_name} • ${date}</div>
+                                </div>
+                            </div>
+                            <a href="/builder?id=${doc.id}" target="_blank" class="text-blue-500 hover:text-blue-700 text-sm font-medium">
+                                Open <i class="fas fa-external-link-alt ml-1"></i>
+                            </a>
+                        </div>
+                    `;
+                    docContainer.innerHTML += html;
+                });
+            } else {
+                docContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4 border border-dashed rounded-lg">No saved documents found.</p>';
+            }
+        }
+    } catch(error) {
+        console.error("Error:", error);
+        alert("Failed to load user details.");
+    }
+}
+
+function closeUserDetailView() {
+    document.getElementById('user-detail-view').classList.add('hidden');
+    document.getElementById('users-section').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cover Letter Builder | ATS Resume Builder Pro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- HTML2PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/cover_letter.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/builder.css')}}" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+</head>
+<body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen transition-colors duration-500">
+
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+   <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20 w-full">
+            
+            <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Builder</a>
+                <a href="{{ url_for('templates_section') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Templates</a>
+                <a href="{{ url_for('interview_prep') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Interview Prep</a>
+                
+                <a href="/cover-letter" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-bold hover:bg-indigo-100 transition-all border border-indigo-200 text-sm">
+                    <i class="fas fa-pen-nib"></i> Cover Letter
+                    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                </a>
+                
+                <a href="{{ url_for('pricing') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Pricing</a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-300 hover:text-white transition-all duration-300">
+                    <i class="fas fa-sun"></i>
+                </button>
+
+                {% if current_user %}
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div class="text-left">
+                                <p class="text-xs text-gray-400">Welcome,</p>
+                                <p class="text-sm font-bold text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-colors"></i>
+                        </button>
+
+                        <div class="absolute right-0 mt-2 w-64 bg-slate-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                            <div class="p-4 border-b border-gray-700">
+                                <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                                <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider">
+                                    {{ current_user.plan_type }} Plan
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <a href="{{ url_for('user_dashboard') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-tachometer-alt w-5 text-blue-400"></i> Dashboard
+                                </a>
+                                <a href="{{ url_for('builder') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-file-alt w-5 text-purple-400"></i> My Resumes
+                                </a>
+                                <a href="{{ url_for('pricing') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-crown w-5 text-yellow-400"></i> Upgrade Plan
+                                </a>
+                            </div>
+                            <div class="p-2 border-t border-gray-700">
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-white text-sm font-semibold hover:bg-white/10 transition-all duration-300">Login</a>
+                    <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl btn-primary-glow font-semibold text-sm hover:scale-105 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> Sign Up
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden flex items-center">
+                <button id="mobileMenuBtn" class="text-white text-2xl p-2 focus:outline-none hover:text-blue-400 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-slate-900/95 backdrop-blur-xl h-screen overflow-y-auto">
+        
+        <div class="flex justify-end p-6">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col px-8 space-y-6 pb-20">
+            {% if current_user %}
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl">
+                        {{ current_user.full_name[0] | upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
+                        <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-home w-8 text-center text-blue-500"></i><span>Home</span>
+            </a>
+            <a href="{{ url_for('builder') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-magic w-8 text-center text-purple-500"></i><span>Resume Builder</span>
+            </a>
+            <a href="{{ url_for('templates_section') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-layer-group w-8 text-center text-green-500"></i><span>Templates</span>
+            </a>
+            <a href="/cover-letter" class="flex items-center space-x-4 text-lg font-medium text-white bg-white/10 p-2 rounded-lg transition-colors">
+                <i class="fas fa-pen-nib w-8 text-center text-pink-500"></i><span>Cover Letter AI</span>
+            </a>
+            <a href="{{ url_for('interview_prep') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-user-tie w-8 text-center text-orange-500"></i><span>Interview Prep</span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-tag w-8 text-center text-yellow-500"></i><span>Upgrade Plan</span>
+            </a>
+
+            <div class="h-px bg-gray-700 my-2"></div>
+
+            {% if current_user %}
+                <a href="{{ url_for('user_dashboard') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <i class="fas fa-tachometer-alt w-8 text-center text-blue-400"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="flex items-center space-x-4 text-lg font-bold text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors">
+                    <i class="fas fa-sign-out-alt w-8 text-center"></i><span>Log Out</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}" class="w-full text-center py-3 rounded-xl border border-gray-600 text-white font-semibold hover:bg-gray-800 transition-all">
+                    Login
+                </a>
+                <a href="{{ url_for('login_page', tab='signup') }}" class="w-full text-center py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg">
+                    Sign Up Free
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="text-center mb-12 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full glass-panel mb-6">
+                <span class="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                <span class="text-sm text-blue-300 font-semibold">✉️ AI-Powered Cover Letter Builder</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">Craft Your Perfect <span class="gradient-text">Cover Letter</span></h1>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto">Create professional, ATS-optimized cover letters that impress recruiters. AI-powered suggestions included.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel - Input Form -->
+            <div class="lg:col-span-5">
+                <div class="glass-panel rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 100ms">
+                    <div class="flex items-start mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-cyan-600/20 flex items-center justify-center mr-4">
+                            <i class="fas fa-robot text-2xl text-blue-400"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white mb-2">AI Letter Generator</h2>
+                            <p class="text-gray-400">Let AI write a professional cover letter for you</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 mb-6">
+                        <div class="form-group">
+                            <input type="text" id="ai-job-role" placeholder=" " class="form-input">
+                            <label for="ai-job-role" class="form-label">
+                                <i class="fas fa-user-tie mr-2 text-blue-400"></i>Target Job Role (e.g., Senior UX Designer)
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <input type="text" id="ai-company" placeholder=" " class="form-input">
+                            <label for="ai-company" class="form-label">
+                                <i class="fas fa-building mr-2 text-blue-400"></i>Company Name
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <textarea id="ai-skills" rows="3" placeholder=" " class="form-input"></textarea>
+                            <label for="ai-skills" class="form-label">
+                                <i class="fas fa-cogs mr-2 text-blue-400"></i>Your Key Skills (Comma separated)
+                            </label>
+                        </div>
+                    </div>
+
+                  <button onclick="generateWithAI()" id="generateCoverLetterBtn" class="w-full px-6 py-3.5 rounded-xl btn-primary-glow font-semibold hover:scale-105 transition-transform duration-300 group">
+                        <i class="fas fa-magic mr-2 group-hover:rotate-12 transition-transform"></i>Generate Cover Letter with AI
+                  </button>
+                </div>
+
+                <!-- Your Details Form -->
+                <div class="glass-panel rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 150ms">
+                    <div class="flex items-center mb-6">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-600/20 flex items-center justify-center mr-3">
+                            <i class="fas fa-user text-green-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">Your Details</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <input type="text" id="inp-name" placeholder=" " value="Alex Johnson" oninput="updatePreview()" class="form-input">
+                                <label for="inp-name" class="form-label">Full Name</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="inp-title" placeholder=" " value="Senior UX Designer" oninput="updatePreview()" class="form-input">
+                                <label for="inp-title" class="form-label">Current Job Title</label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <input type="email" id="inp-email" placeholder=" " value="alex@example.com" oninput="updatePreview()" class="form-input">
+                                <label for="inp-email" class="form-label">Email Address</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="tel" id="inp-phone" placeholder=" " value="+1 234 567 890" oninput="updatePreview()" class="form-input">
+                                <label for="inp-phone" class="form-label">Phone Number</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="inp-address" placeholder=" " value="New York, NY 10001" oninput="updatePreview()" class="form-input">
+                            <label for="inp-address" class="form-label">Address</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recipient Details -->
+                <div class="glass-panel rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 200ms">
+                    <div class="flex items-center mb-6">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-600/20 flex items-center justify-center mr-3">
+                            <i class="fas fa-building text-purple-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">Recipient Details</h3>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <input type="text" id="inp-manager" placeholder=" " value="Mr. David Smith" oninput="updatePreview()" class="form-input">
+                            <label for="inp-manager" class="form-label">Hiring Manager Name</label>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="text" id="inp-company" placeholder=" " value="Tech Solutions Inc." oninput="updatePreview()" class="form-input">
+                            <label for="inp-company" class="form-label">Company Name</label>
+                        </div>
+
+                        <div class="form-group">
+                            <textarea id="inp-comp-address" rows="2" placeholder=" " oninput="updatePreview()" class="form-input">123 Tech Avenue, Silicon Valley, CA 94025</textarea>
+                            <label for="inp-comp-address" class="form-label">Company Address</label>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="date" id="inp-date" value="2026-01-16" oninput="updatePreview()" class="form-input">
+                            <label for="inp-date" class="form-label">Date</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Preview & Content Editor -->
+            <div class="lg:col-span-7">
+                <div class="glass-panel rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 250ms">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-r from-yellow-500/20 to-orange-600/20 flex items-center justify-center mr-3">
+                                <i class="fas fa-eye text-yellow-400"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">Letter Content Editor</h3>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button
+    onclick="handlePdfClick(event)"
+    id="downloadPdfBtn"
+    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:scale-105 transition-transform duration-300 flex items-center">
+    <i class="fas fa-download mr-2"></i>
+    <span>Download PDF</span>
+</button>
+
+                            <button onclick="copyToClipboard()" class="px-5 py-2.5 rounded-xl glass-panel text-white font-semibold hover:bg-white/10 transition-all duration-300 flex items-center">
+                                <i class="fas fa-copy mr-2"></i>Copy Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <input type="text" id="inp-subject" placeholder=" " value="Application for Senior UX Designer Position" oninput="updatePreview()" class="form-input text-lg font-semibold">
+                            <label for="inp-subject" class="form-label">Subject Line</label>
+                        </div>
+
+                        <div class="form-group">
+                            <textarea id="inp-body-1" rows="4" placeholder=" " oninput="updatePreview()" class="form-input">I am writing to express my strong interest in the Senior UX Designer position at Tech Solutions Inc. With over 5 years of experience in creating user-centered digital products and a proven track record of delivering innovative design solutions, I am confident in my ability to contribute effectively to your design team and help drive product success.</textarea>
+                            <label for="inp-body-1" class="form-label">Opening Paragraph</label>
+                        </div>
+
+                        <div class="form-group">
+                            <textarea id="inp-body-2" rows="6" placeholder=" " oninput="updatePreview()" class="form-input">In my current role at Design Innovations, I led a comprehensive redesign project for our flagship mobile application, which resulted in a 25% increase in user retention and a 40% improvement in user satisfaction scores. I specialize in Figma prototyping, user research methodologies, and design system implementation. I have been following Tech Solutions Inc.'s impressive work, particularly your recent contributions to sustainable tech through the Eco-App initiative. I would be thrilled to bring my expertise in sustainable design and user-centric approaches to your upcoming projects.</textarea>
+                            <label for="inp-body-2" class="form-label">Main Body (Experience & Achievements)</label>
+                        </div>
+
+                        <div class="form-group">
+                            <textarea id="inp-body-3" rows="3" placeholder=" " oninput="updatePreview()" class="form-input">Thank you for considering my application. I have attached my resume for your review and would welcome the opportunity to discuss how my skills and experiences align with the goals of your design team. I am available for an interview at your convenience and look forward to the possibility of contributing to Tech Solutions Inc.'s continued success.</textarea>
+                            <label for="inp-body-3" class="form-label">Closing Paragraph</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Preview -->
+                <!-- Live Preview -->
+<div class="glass-panel rounded-2xl p-6 fade-in-up" style="animation-delay: 300ms">
+    <div class="flex items-center mb-6">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-600/20 flex items-center justify-center mr-3">
+            <i class="fas fa-file-alt text-cyan-400"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white">Live Preview</h3>
+    </div>
+
+    <!-- BUILDER STYLE PREVIEW WRAPPER -->
+    <div class="resume-preview rounded-xl p-4 overflow-auto">
+        <div class="a4-wrapper">
+            <div id="cover-letter-preview" class="a4-page bg-white">
+
+                <div class="border-b-2 border-gray-800 pb-6 mb-8 flex justify-between items-start">
+                    <div>
+                        <h1 id="prev-name" class="text-3xl font-bold text-gray-900 uppercase tracking-tight mb-2">
+                            Alex Johnson
+                        </h1>
+                        <p id="prev-title" class="text-lg text-blue-600 font-medium tracking-wide uppercase">
+                            Senior UX Designer
+                        </p>
+                    </div>
+                    <div class="text-right text-sm text-gray-600 leading-relaxed">
+                        <div id="prev-email">alex@example.com</div>
+                        <div id="prev-phone">+1 234 567 890</div>
+                        <div id="prev-address">New York, NY 10001</div>
+                    </div>
+                </div>
+
+                <div class="mb-8 text-sm text-gray-700 flex justify-between items-start">
+                    <div>
+                        <div class="font-bold mb-1 text-gray-900">To:</div>
+                        <div id="prev-manager" class="font-bold text-gray-900">Mr. David Smith</div>
+                        <div id="prev-company" class="text-gray-800">Tech Solutions Inc.</div>
+                        <div id="prev-comp-address" class="whitespace-pre-line text-gray-600 mt-1">
+                            123 Tech Avenue, Silicon Valley, CA 94025
+                        </div>
+                    </div>
+                    <div id="prev-date" class="font-medium text-gray-600">
+                        January 16, 2026
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <span class="font-bold text-gray-900 uppercase text-sm border-b border-gray-300 pb-1">
+                        Subject:
+                    </span>
+                    <span id="prev-subject" class="font-bold text-gray-800 ml-2">
+                        Application for Senior UX Designer Position
+                    </span>
+                </div>
+
+                <div class="text-base text-gray-800 leading-relaxed space-y-4 text-justify font-serif">
+                    <p>
+                        Dear <span id="prev-salutation-name" class="font-semibold">David</span>,
+                    </p>
+
+                    <p id="prev-body-1"></p>
+                    <p id="prev-body-2"></p>
+                    <p id="prev-body-3"></p>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-gray-300">
+                    <p class="mb-1 text-gray-800">Sincerely,</p>
+                    <p id="prev-sign-name" class="text-2xl font-bold text-gray-900 tracking-wide">
+                        Alex Johnson
+                    </p>
+                    <p id="prev-title-2" class="text-gray-600 mt-1">
+                        Senior UX Designer
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+
+        <!-- Tips Section -->
+        <div class="grid md:grid-cols-3 gap-6 mt-12 fade-in-up" style="animation-delay: 350ms">
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-bullseye text-blue-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Target Your Audience</h3>
+                <p class="text-gray-400 text-sm">Customize each cover letter for the specific company and role. Mention the hiring manager's name when possible.</p>
+            </div>
+            
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-chart-line text-green-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Highlight Achievements</h3>
+                <p class="text-gray-400 text-sm">Use specific metrics and examples to demonstrate your impact. Numbers speak louder than general statements.</p>
+            </div>
+            
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-lightbulb text-purple-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Show Enthusiasm</h3>
+                <p class="text-gray-400 text-sm">Express genuine interest in the company and explain why you're excited about the specific opportunity.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER SECTION ========== -->
+    <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+                 <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Help Center</a></li>
+                    <li><a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us</a></li>
+                    <li><a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy</a></li>
+                    <li><a href="{{ url_for('terms') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== MODALS & LOADERS ========== -->
+    <!-- Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="text-white text-lg font-medium">AI is working...</div>
+            <div class="text-gray-400 text-sm mt-2">Generating your cover letter</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-xl mr-3"></i>
+            <div>
+                <div class="font-semibold">Success!</div>
+                <div id="toastMessage" class="text-sm">Cover letter generated successfully</div>
+            </div>
+        </div>
+    </div>
+
+<div id="bottomNav" class="fixed bottom-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 md:hidden pb-safe transition-all duration-300">
+    <div class="flex justify-around items-center h-16 px-2">
+        
+        <a href="{{ url_for('index') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <a href="{{ url_for('builder') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-file-alt text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Resume</span>
+        </a>
+
+        <a href="/cover-letter" class="relative -top-5">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/50 border-4 border-slate-900 transform scale-110 transition-transform">
+                <i class="fas fa-pen-nib text-white text-xl animate-pulse"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('templates_section') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-layer-group text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Templates</span>
+        </a>
+
+         <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+            <i class="fas fa-sun text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Theme</span>
+        </button>
+    </div>
+</div>
+
+<div id="upgradeModal" class="fixed inset-0 z-[200] hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeUpgradeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6">
+        <div class="glass-card rounded-2xl p-8 border border-yellow-500/30 shadow-2xl bg-slate-900 relative overflow-hidden text-center">
+            
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/20 blur-[50px] rounded-full pointer-events-none"></div>
+
+            <div class="w-16 h-16 mx-auto bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-yellow-500/20 animate-pulse">
+                <i class="fas fa-crown text-white text-3xl"></i>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-white mb-2">Out of AI Credits!</h2>
+            <p class="text-gray-400 mb-6">You've used all your free AI generations. Upgrade to PRO to get unlimited access.</p>
+
+            <div class="space-y-3">
+                <a href="{{ url_for('pricing') }}" class="block w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold text-lg hover:scale-105 transition-transform shadow-xl">
+                    Upgrade Now - $9/mo
+                </a>
+                <button onclick="closeUpgradeModal()" class="block w-full py-3 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                    Maybe Later
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUpgradeModal() {
+    document.getElementById('upgradeModal').classList.remove('hidden');
+}
+function closeUpgradeModal() {
+    document.getElementById('upgradeModal').classList.add('hidden');
+}
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cover_letter.js') }}"></script>
+<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggleBtn = document.getElementById('themeToggle');       // Top Nav Button
+    const bottomThemeBtn = document.getElementById('bottomThemeToggle'); // Bottom Nav Button
+    const body = document.body;
+
+    // 1. Check Saved Theme on Load
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        body.classList.add('light-mode');
+        updateIcons(true);
+    }
+
+    // 2. Function to Update Icons (Sun/Moon)
+    function updateIcons(isLight) {
+        const iconClass = isLight ? 'fas fa-moon' : 'fas fa-sun';
+        
+        // Update Top Nav Button
+        if (themeToggleBtn) {
+            themeToggleBtn.innerHTML = `<i class="${iconClass}"></i>`;
+        }
+        
+        // Update Bottom Nav Button (With Colors)
+        if (bottomThemeBtn) {
+            const icon = bottomThemeBtn.querySelector('i');
+            if (icon) {
+                // Light Mode -> Moon (Blue), Dark Mode -> Sun (Yellow)
+                icon.className = isLight ? 'fas fa-moon text-lg mb-1' : 'fas fa-sun text-lg mb-1';
+                bottomThemeBtn.classList.toggle('text-yellow-400', !isLight);
+                bottomThemeBtn.classList.toggle('text-blue-500', isLight);
+            }
+        }
+    }
+
+    // 3. Toggle Function
+    function toggleTheme() {
+        const isLight = body.classList.toggle('light-mode');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        updateIcons(isLight);
+    }
+
+    // 4. Attach Listeners
+    if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
+    if (bottomThemeBtn) bottomThemeBtn.addEventListener('click', toggleTheme);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Check Login Status from Jinja2
+    const isLoggedIn = {{ 'true' if current_user else 'false' }};
+
+    // 2. Global Click Listener (Capture Phase)
+    document.body.addEventListener('click', function(e) {
+        
+        // Check karo agar click kiya gaya element (ya uska parent) Protected hai
+        const targetBtn = e.target.closest('.auth-lock, #downloadPdfBtn, #downloadWordBtn, #saveResumeBtn, #saveResumeFinalBtn, #generateCoverLetterBtn');
+        
+        if (targetBtn && !isLoggedIn) {
+            // STOP EVERYTHING 🛑
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            // Show Notification
+            showLoginToast();
+
+            // Redirect to Signup Page after 2 seconds
+            setTimeout(() => {
+                // 👇 FIX: Seedha Signup Tab par bhejo
+                window.location.href = "/login?tab=signup"; 
+            }, 2000);
+        }
+    }, true); 
+
+    // Custom Toast Function (Theme Aware)
+    function showLoginToast() {
+        const existing = document.querySelector('.auth-toast');
+        if(existing) existing.remove();
+
+        const toast = document.createElement('div');
+        
+        // Check Current Theme
+        const isLight = document.body.classList.contains('light-mode');
+
+        // Colors based on Theme
+        const bgClass = isLight ? "bg-white border-red-200 text-slate-900" : "bg-slate-900 border-red-500/50 text-white";
+        const textClass = isLight ? "text-slate-600" : "text-gray-400";
+        const iconBg = isLight ? "bg-red-100 text-red-600" : "bg-red-500/20 text-red-500";
+
+        toast.className = `auth-toast fixed top-24 right-5 z-[9999] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-bounce border ${bgClass}`;
+        
+        toast.innerHTML = `
+            <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center">
+                <i class="fas fa-lock text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-lg">Access Restricted</h4>
+                <p class="text-sm ${textClass}">Please Sign Up to use this feature.</p>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            if(toast) toast.remove();
+        }, 3000);
+    }
+});
+</script>
+</body>
+</html>

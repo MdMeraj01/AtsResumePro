@@ -1,0 +1,56 @@
+#template-render-area.pdf-mode {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+    position: relative !important;
+    transform: none !important;
+}
+
+body.generating-pdf {
+    overflow: hidden !important;
+}
+
+.pdf-mode * {
+    box-sizing: border-box !important;
+}
+
+.pdf-mode .template-section {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 8mm !important;
+}
+
+.pdf-mode .page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+    height: 0 !important;
+}
+
+/* 1 — Never break text in the middle */
+.pdf-mode p,
+.pdf-mode li,
+.pdf-mode div {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
+/* 2 — Sections should NOT break in the middle */
+.pdf-mode .template-section,
+.pdf-mode .section-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 8mm !important;
+}
+
+/* 3 — Manual page-break class (only if you want to force new page) */
+.pdf-mode .page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}

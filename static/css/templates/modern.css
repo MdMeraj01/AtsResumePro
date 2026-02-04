@@ -1,0 +1,159 @@
+/* static/css/templates/modern.css */
+
+.resume-template {
+    --primary-color: #76abae; /* Aapka Teal Color */
+    --text-dark: #333;
+    --text-light: #fff;
+    --shadow: none; /* Shadow hatayi taaki PDF clean aaye */
+    
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: white;
+    color: #333;
+    line-height: 1.6;
+    width: 100%;
+    /* Flexbox Layout for Split Screen */
+    display: flex; 
+    flex-direction: row; 
+}
+
+/* --- LEFT SIDEBAR (30%) --- */
+.resume-template .template-left {
+    width: 32%; /* Thoda adjust kiya */
+    background: #fff;
+    padding: 25px;
+    border-right: 2px solid #ddd;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+/* Photo */
+#preview-image {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    display: block;
+    margin: 0 auto 20px;
+    object-fit: cover;
+    border: 4px solid var(--primary-color);
+}
+
+/* Sidebar Headings */
+.resume-template .template-left h2 {
+    font-size: 16px;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+/* Sidebar Text */
+.resume-template .template-left p {
+    margin: 5px 0;
+    font-size: 13px;
+    color: #444;
+}
+
+.resume-template .template-left ul {
+    padding-left: 0;
+    list-style: none;
+}
+.resume-template .template-left li {
+    font-size: 13px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 2px;
+}
+
+/* --- RIGHT CONTENT (70%) --- */
+.resume-template .template-right {
+    width: 68%;
+    background: var(--primary-color);
+    color: var(--text-light);
+    padding: 35px;
+}
+
+/* Name & Title */
+.resume-template .template-name {
+    font-size: 38px;
+    font-weight: 900;
+    margin: 0;
+    color: #fff;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.resume-template .template-title {
+    font-size: 18px;
+    margin-bottom: 30px;
+    opacity: 0.9;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+/* Right Section Headings */
+.resume-template .template-right h2 {
+    font-size: 20px;
+    border-bottom: 2px solid rgba(255,255,255,0.4);
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+    margin-top: 25px;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.resume-template .template-section p {
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* Dynamic Entries (Experience/Projects) Styling */
+.template-experience-item, 
+.template-project-item, 
+.template-education-item,
+.certification-item {
+    margin-bottom: 20px;
+    background: rgba(0,0,0,0.1); /* Slight dark box */
+    padding: 12px;
+    border-radius: 6px;
+}
+
+/* Item Titles */
+.template-experience-item h3, 
+.template-project-item h3, 
+.template-education-item h3,
+.certification-item h3 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Dates */
+.template-experience-item span, 
+.template-education-item span,
+.certification-item span {
+    font-size: 13px;
+    font-weight: normal;
+    background: rgba(255,255,255,0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Lists inside sections */
+.resume-template .template-right ul {
+    margin: 5px 0 0 18px;
+    padding: 0;
+    list-style-type: disc;
+}
+
+.resume-template .template-right li {
+    font-size: 13px;
+    margin-bottom: 4px;
+    opacity: 0.9;
+}

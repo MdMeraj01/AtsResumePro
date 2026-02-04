@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Professional Resume Templates | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link href="{{ url_for('static', filename='css/template-section.css') }}" rel="stylesheet">
+</head>
+<body class="antialiased font-sans min-h-screen">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+        <div class="absolute top-3/4 left-3/4 w-64 h-64 bg-cyan-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 2s"></div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20 w-full">
+            
+            <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Builder</a>
+                
+                <a href="{{ url_for('templates_section') }}" class="nav-link text-sm font-medium text-blue-400 font-semibold border-b-2 border-blue-400">Templates</a>
+                
+                <a href="{{ url_for('interview_prep') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Interview Prep</a>
+                
+                <a href="/cover-letter" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-bold hover:bg-indigo-100 transition-all border border-indigo-200 text-sm">
+                    <i class="fas fa-pen-nib"></i> Cover Letter
+                    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                </a>
+                
+                <a href="{{ url_for('pricing') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Pricing</a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-300 hover:text-white transition-all duration-300">
+                    <i class="fas fa-sun"></i>
+                </button>
+
+                {% if current_user %}
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div class="text-left">
+                                <p class="text-xs text-gray-400">Welcome,</p>
+                                <p class="text-sm font-bold text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-colors"></i>
+                        </button>
+
+                        <div class="absolute right-0 mt-2 w-64 bg-slate-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                            <div class="p-4 border-b border-gray-700">
+                                <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                                <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider">
+                                    {{ current_user.plan_type }} Plan
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <a href="{{ url_for('user_dashboard') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-tachometer-alt w-5 text-blue-400"></i> Dashboard
+                                </a>
+                                <a href="{{ url_for('builder') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-file-alt w-5 text-purple-400"></i> My Resumes
+                                </a>
+                                <a href="{{ url_for('pricing') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-crown w-5 text-yellow-400"></i> Upgrade Plan
+                                </a>
+                            </div>
+                            <div class="p-2 border-t border-gray-700">
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-white text-sm font-semibold hover:bg-white/10 transition-all duration-300">Login</a>
+                    <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl btn-primary-glow font-semibold text-sm hover:scale-105 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> Sign Up
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden flex items-center">
+                <button id="mobileMenuBtn" class="text-white text-2xl p-2 focus:outline-none hover:text-blue-400 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-slate-900/95 backdrop-blur-xl h-screen overflow-y-auto">
+        
+        <div class="flex justify-end p-6">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col px-8 space-y-6 pb-20">
+            {% if current_user %}
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl">
+                        {{ current_user.full_name[0] | upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
+                        <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-home w-8 text-center text-blue-500"></i><span>Home</span>
+            </a>
+            <a href="{{ url_for('builder') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-magic w-8 text-center text-purple-500"></i><span>Resume Builder</span>
+            </a>
+            <a href="{{ url_for('templates_section') }}" class="flex items-center space-x-4 text-lg font-medium text-white bg-white/10 p-2 rounded-lg transition-colors">
+                <i class="fas fa-layer-group w-8 text-center text-green-500"></i><span>Templates</span>
+            </a>
+            <a href="/cover-letter" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-pen-nib w-8 text-center text-pink-500"></i><span>Cover Letter AI</span>
+            </a>
+            <a href="{{ url_for('interview_prep') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-user-tie w-8 text-center text-orange-500"></i><span>Interview Prep</span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-tag w-8 text-center text-yellow-500"></i><span>Upgrade Plan</span>
+            </a>
+
+            <div class="h-px bg-gray-700 my-2"></div>
+
+            {% if current_user %}
+                <a href="{{ url_for('user_dashboard') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <i class="fas fa-tachometer-alt w-8 text-center text-blue-400"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="flex items-center space-x-4 text-lg font-bold text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors">
+                    <i class="fas fa-sign-out-alt w-8 text-center"></i><span>Log Out</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}" class="w-full text-center py-3 rounded-xl border border-gray-600 text-white font-semibold hover:bg-gray-800 transition-all">
+                    Login
+                </a>
+                <a href="{{ url_for('login_page', tab='signup') }}" class="w-full text-center py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg">
+                    Sign Up Free
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Hero Header -->
+        <div class="text-center mb-16 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full glass-panel mb-6">
+                <span class="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                <span class="text-sm text-blue-300 font-semibold">✨ 20+ Professional Templates</span>
+            </div>
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                Design Your <span class="gradient-text">Perfect Resume</span>
+            </h1>
+            <p class="text-xl text-gray-400 max-w-3xl mx-auto mb-10">
+                Choose from our collection of ATS-optimized resume templates. Each template is designed to pass through applicant tracking systems while impressing recruiters.
+            </p>
+            
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto mb-12">
+                <div class="stats-card p-5 rounded-xl text-center">
+                    <div class="text-3xl font-bold text-blue-400 mb-2">98%</div>
+                    <div class="text-sm text-gray-400">ATS Success Rate</div>
+                </div>
+                <div class="stats-card p-5 rounded-xl text-center">
+                    <div class="text-3xl font-bold text-green-400 mb-2">20+</div>
+                    <div class="text-sm text-gray-400">Templates</div>
+                </div>
+                <div class="stats-card p-5 rounded-xl text-center">
+                    <div class="text-3xl font-bold text-purple-400 mb-2">4.9</div>
+                    <div class="text-sm text-gray-400">User Rating</div>
+                </div>
+                <div class="stats-card p-5 rounded-xl text-center">
+                    <div class="text-3xl font-bold text-yellow-400 mb-2">10K+</div>
+                    <div class="text-sm text-gray-400">Resumes Created</div>
+                </div>
+            </div>
+            <div class="relative max-w-2xl mx-auto mb-12 fade-in-up" style="animation-delay: 50ms">
+    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <i class="fas fa-search text-gray-400 text-lg"></i>
+    </div>
+    <input type="text" 
+           id="templateSearch" 
+           placeholder="Search templates (e.g. 'Engineer', 'Creative', 'Minimal')..." 
+           class="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-700 bg-gray-800/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-lg backdrop-blur-md">
+    <div class="absolute inset-y-0 right-0 pr-2 flex items-center">
+        <span class="text-xs text-gray-500 bg-gray-700/50 px-2 py-1 rounded hidden sm:block">CMD + K</span>
+    </div>
+</div>
+            <!-- Category Filter -->
+            
+        </div>
+
+        <!-- Templates Grid -->
+        <section id="templates" class="py-8 fade-in-up" style="animation-delay: 150ms">
+
+               <div class="flex flex-wrap gap-3 justify-center fade-in-up" style="animation-delay: 100ms">
+                <button class="category-btn active px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold" data-category="all">
+                    <i class="fas fa-layer-group mr-2"></i>All Templates
+                </button>
+                <button class="category-btn px-6 py-3 rounded-xl glass-panel text-gray-300 font-semibold hover:text-white" data-category="modern">
+                    <i class="fas fa-star mr-2"></i>Modern
+                </button>
+                <button class="category-btn px-6 py-3 rounded-xl glass-panel text-gray-300 font-semibold hover:text-white" data-category="professional">
+                    <i class="fas fa-user-tie mr-2"></i>Professional
+                </button>
+                <button class="category-btn px-6 py-3 rounded-xl glass-panel text-gray-300 font-semibold hover:text-white" data-category="creative">
+                    <i class="fas fa-palette mr-2"></i>Creative
+                </button>
+                <button class="category-btn px-6 py-3 rounded-xl glass-panel text-gray-300 font-semibold hover:text-white" data-category="minimal">
+                    <i class="fas fa-minimize mr-2"></i>Minimal
+                </button>
+            </div>
+                <div id="skeletonLoader" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+                    <div class="rounded-2xl overflow-hidden bg-gray-800/50 border border-gray-700 h-[400px] animate-pulse">
+                        <div class="h-56 bg-gray-700/50 w-full"></div>
+                        <div class="p-5 space-y-3">
+                           <div class="h-6 bg-gray-700/50 rounded w-3/4"></div>
+                           <div class="h-4 bg-gray-700/50 rounded w-1/2"></div>
+                           <div class="flex gap-2 mt-4">
+                           <div class="h-8 w-8 rounded-full bg-gray-700/50"></div>
+                           <div class="h-8 w-8 rounded-full bg-gray-700/50"></div>
+                        </div>
+                        <div class="flex justify-between mt-4">
+                            <div class="h-10 w-24 bg-gray-700/50 rounded-lg"></div>
+                            <div class="h-10 w-10 bg-gray-700/50 rounded-lg"></div>
+                           </div>
+                     </div>
+                    </div>
+              </div>
+                  
+            <div id="templatesGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div id="noResults" class="hidden col-span-full text-center py-20">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-800 mb-6 relative">
+                <i class="fas fa-search text-4xl text-gray-600"></i>
+                <div class="absolute top-0 right-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-bounce">?</div>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">No Templates Found</h3>
+            <p class="text-gray-400 max-w-md mx-auto mb-8">Try searching for "Modern", "Creative" or "ATS".</p>
+            <button onclick="resetFilters()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-semibold">
+                Clear Filters
+            </button>
+        </div>  
+               
+                
+                <!-- Template 1: Modern Professional -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="modern">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-blue-500/10 to-purple-600/10">
+                        <div class="badge">Most Popular</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/modern.png') }}" 
+                                 alt="Modern Professional Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Modern Professional</h3>
+                        <p class="text-sm text-gray-400 mb-4">Clean and Modern Design</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-blue-500/20 text-blue-300 rounded-full font-semibold">Modern</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="modern" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='modern') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 2: Creative Edge -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="creative">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-purple-500/10 to-pink-600/10">
+                        <div class="badge">Creative</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/classic.png') }}" 
+                                 alt="Creative Edge Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Creative Edge</h3>
+                        <p class="text-sm text-gray-400 mb-4">Stand out Design</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-full font-semibold">Creative</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="creative" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='creative') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 3: Classic ATS -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="professional">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-gray-700/20 to-gray-900/20">
+                        <div class="badge">ATS Optimized</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/minimal.png') }}" 
+                                 alt="Classic ATS Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Classic ATS</h3>
+                        <p class="text-sm text-gray-400 mb-4">Traditional ATS-friendly</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-gray-700/20 text-gray-300 rounded-full font-semibold">Professional</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="classic" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='classic') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 4: Minimal Clean -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="minimal">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-emerald-500/10 to-teal-600/10">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/creative.png') }}" 
+                                 alt="Minimal Clean Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Minimal Clean</h3>
+                        <p class="text-sm text-gray-400 mb-4">Simple and elegant</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-full font-semibold">Minimal</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="minimal" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                               <a href="{{ url_for('builder', template='minimal') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 5: Modern Professional Bold -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="modern">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-indigo-500/10 to-blue-600/10">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/professional.png') }}" 
+                                 alt="Modern Professional Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Modern Bold</h3>
+                        <p class="text-sm text-gray-400 mb-4">Bold and stylish design</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-indigo-500/20 text-indigo-300 rounded-full font-semibold">Modern</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="bold" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='bold') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 6: Minimal Clean Alternative -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="minimal">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-teal-500/10 to-cyan-600/10">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/bold.png') }}" 
+                                 alt="Minimal Clean Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Minimalist</h3>
+                        <p class="text-sm text-gray-400 mb-4">Clean and minimal design</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-teal-500/20 text-teal-300 rounded-full font-semibold">Minimal</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="clean" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='clean') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 7: Elegant -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="professional">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-violet-500/10 to-purple-600/10">
+                        <div class="badge">Elegant</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/elegant.png') }}" 
+                                 alt="Elegant Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Elegant Dark</h3>
+                        <p class="text-sm text-gray-400 mb-4">Sophisticated design</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-violet-500/20 text-violet-300 rounded-full font-semibold">Professional</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="elegant" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='elegant') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 8: Stylish -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="creative">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-pink-500/10 to-rose-600/10">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/stylish.png') }}" 
+                                 alt="Stylish Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Stylish</h3>
+                        <p class="text-sm text-gray-400 mb-4">Trendy and fashionable</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-pink-500/20 text-pink-300 rounded-full font-semibold">Creative</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="stylish" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                               <a href="{{ url_for('builder', template='stylish') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-span-1 md:col-span-2 relative rounded-2xl overflow-hidden group h-[400px] flex items-center justify-center fade-in-up">
+                    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80')] bg-cover bg-center"></div>
+                    <div class="absolute inset-0 bg-blue-900/80 backdrop-blur-sm group-hover:bg-blue-900/90 transition-all"></div>
+    
+                        <div class="relative z-10 text-center p-8 border-2 border-white/20 rounded-xl m-4 bg-white/5 backdrop-blur-md">
+                        <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg animate-bounce">
+                            <i class="fas fa-crown text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mb-2">Unlock Premium</h3>
+                        <p class="text-blue-100 mb-6 max-w-sm mx-auto">Get access to 50+ exclusive templates, AI writing assistant, and cover letter builder.</p>
+                        <button class="px-8 py-3 bg-white text-blue-900 font-bold rounded-xl hover:scale-105 transition-transform shadow-xl">
+                            Upgrade Now - $9/mo
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Template 9: Professional -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="professional">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-sky-500/10 to-blue-600/10">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/compact.png') }}" 
+                                 alt="Professional Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Professional</h3>
+                        <p class="text-sm text-gray-400 mb-4">Clean business layout</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-sky-500/20 text-sky-300 rounded-full font-semibold">Professional</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="professional" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                               <a href="{{ url_for('builder', template='professional') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 10: Luxury -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="creative">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-amber-500/10 to-yellow-600/10">
+                        <div class="badge premium-badge">Premium</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/luxury.png') }}" 
+                                 alt="Luxury template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Luxury Gold</h3>
+                        <p class="text-sm text-gray-400 mb-4">Premium And Elegant Look</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-amber-500/20 text-amber-300 rounded-full font-semibold">Creative</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="luxury" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a href="{{ url_for('builder', template='luxury') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template 11: Infographic -->
+                <div class="template-card rounded-2xl overflow-hidden group" data-category="creative">
+                    <div class="relative overflow-hidden h-56 bg-gradient-to-br from-orange-500/10 to-red-600/10">
+                        <div class="badge">Visual</div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='images/template-previews/infographic.png') }}" 
+                                 alt="Infographic Template" 
+                                 class="template-image w-full h-full object-contain p-6">
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg text-white mb-2">Infographic</h3>
+                        <p class="text-sm text-gray-400 mb-4">Visual and engaging</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs px-3 py-1.5 bg-orange-500/20 text-orange-300 rounded-full font-semibold">Creative</span>
+                            <div class="flex space-x-2">
+                                <button class="preview-template p-2.5 rounded-lg glass-panel text-gray-300 hover:text-blue-400 hover:bg-white/10 transition-all duration-300" data-template="infographic" data-title="Quick Preview">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                               <a href="{{ url_for('builder', template='infographic') }}" class="p-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:scale-105 transition-transform duration-300" title="Use Template">
+                                    <i class="fas fa-play"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                                
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="py-16 fade-in-up" style="animation-delay: 200ms">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Why Choose Our Templates?</h2>
+                <p class="text-xl text-gray-400 max-w-2xl mx-auto">Designed for success in today's competitive job market</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="feature-card glass-panel p-8 rounded-2xl">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-600/20 flex items-center justify-center mb-6">
+                        <i class="fas fa-robot text-2xl text-blue-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">ATS Optimized</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        All templates are designed to pass through Applicant Tracking Systems without formatting issues. Clean structure and proper headings ensure your resume gets seen.
+                    </p>
+                </div>
+                
+                <div class="feature-card glass-panel p-8 rounded-2xl">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center mb-6">
+                        <i class="fas fa-user-tie text-2xl text-green-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Recruiter Approved</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Templates are tested and approved by professional recruiters and hiring managers. Industry-standard formats that make the right impression.
+                    </p>
+                </div>
+                
+                <div class="feature-card glass-panel p-8 rounded-2xl">
+                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-600/20 flex items-center justify-center mb-6">
+                        <i class="fas fa-mobile-alt text-2xl text-purple-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4">Fully Responsive</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Looks perfect on all devices - desktop, tablet, and mobile. Your resume will always display correctly, no matter how it's viewed.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="py-16 fade-in-up" style="animation-delay: 250ms">
+            <div class="gradient-bg rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                
+                <div class="relative z-10">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Ready to Create Your Resume?</h2>
+                    <p class="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
+                        Choose a template and start building your ATS-optimized resume in minutes
+                    </p>
+                    <a href="{{ url_for('builder') }}" class="inline-flex items-center px-8 py-4 bg-white text-gray-900 font-bold rounded-xl text-lg hover:scale-105 transition-transform duration-300 shadow-2xl group">
+                        <i class="fas fa-bolt mr-3 group-hover:rotate-12 transition-transform"></i>
+                        Start Building Now
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                 <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== MODALS & LOADERS ========== -->
+    <!-- Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="text-white text-lg font-medium">Loading template...</div>
+            <div class="text-gray-400 text-sm mt-2">Please wait a moment</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-xl mr-3"></i>
+            <div>
+                <div class="font-semibold">Success!</div>
+                <div id="toastMessage" class="text-sm">Template preview loaded</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Preview Modal -->
+    <div id="templatePreviewModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+        <div class="glass-panel rounded-2xl p-8 max-w-5xl w-full max-h-[90vh] flex flex-col border border-gray-700 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-white" id="previewModalTitle">Template Preview</h3>
+                <button id="closePreviewBtn" class="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-auto">
+                <div id="templatePreviewContent" class="mx-auto">
+                    <!-- Template preview will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+            class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform duration-300 z-40">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
+    <!-- Hidden element for template base URL -->
+    <div id="templateBaseUrl" data-url="{{ url_for('static', filename='images/template-previews/') }}" style="display: none;"></div>
+
+   <div id="bottomNav" class="fixed bottom-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 md:hidden pb-safe transition-all duration-300">
+    <div class="flex justify-around items-center h-16 px-2">
+        
+        <a href="{{ url_for('index') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <a href="{{ url_for('templates_section') }}" class="bottom-nav-item active flex flex-col items-center justify-center w-full h-full text-blue-400 transition-colors">
+            <i class="fas fa-layer-group text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Templates</span>
+        </a>
+
+        <a href="{{ url_for('builder') }}" class="relative -top-5">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border-4 border-slate-900 transform transition-transform active:scale-95">
+                <i class="fas fa-magic text-white text-xl"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('interview_prep') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-user-tie text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Interview</span>
+        </a>
+
+        <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+            <i class="fas fa-sun text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Theme</span>
+        </button>
+    </div>
+</div>
+
+<div id="toast" class="fixed bottom-24 md:bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-[110]">
+    <div class="flex items-center">
+        <i class="fas fa-check-circle text-xl mr-3"></i>
+        <div>
+            <div class="font-semibold">Notification</div>
+            <div id="toastMessage" class="text-sm">Action successful</div>
+        </div>
+    </div>
+</div>
+    <script src="{{ url_for('static', filename='js/template-section.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+    <script>
+        window.currentUserPlan = "{{ current_user.plan_type if current_user else 'Free' }}";
+    </script>
+</body>
+</html>

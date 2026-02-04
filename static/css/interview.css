@@ -1,0 +1,1234 @@
+/* interview.css */
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --primary-light: #6366f1;
+    --secondary: #7c3aed;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    
+    --bg-main: #0a0f1c;
+    --bg-secondary: #111827;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-light: #cbd5e1;
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --nav-bg: rgba(15, 23, 42, 0.95);
+    --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 30px 60px rgba(79, 70, 229, 0.15);
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 100vh;
+    
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(124, 58, 237, 0.08) 0%, transparent 40%),
+        linear-gradient(to bottom right, var(--bg-main) 0%, #111827 100%);
+}
+
+/* Light Mode */
+body.light-mode {
+    --bg-main: #f8fafc;
+    --bg-secondary: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(203, 213, 225, 0.8);
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+        linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+
+/* Text fixes for light mode */
+body.light-mode .text-white:not(.btn-primary-glow *):not(.glass-panel.text-white) { 
+    color: #0f172a !important; 
+}
+body.light-mode .text-gray-400 { 
+    color: #64748b !important; 
+}
+body.light-mode .text-gray-300 { 
+    color: #475569 !important; 
+}
+
+/* Navbar */
+.nav-glass {
+    background: var(--nav-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link {
+    position: relative;
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.5rem 0;
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 2px;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Glass Panels */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-panel:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* Buttons */
+.btn-primary-glow {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+    background-size: 200% 200%;
+    border: none;
+}
+
+.btn-primary-glow:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.4);
+    background-position: 100% 50%;
+    animation: gradient-shift 1.5s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Form Elements */
+.form-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    color: var(--text-main);
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+body.light-mode .form-input {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(203, 213, 225, 0.8);
+    color: #0f172a;
+}
+
+.form-label {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    font-size: 0.875rem;
+    background: transparent;
+    padding: 0 0.25rem;
+}
+
+.form-input:focus + .form-label,
+.form-input:not(:placeholder-shown) + .form-label {
+    top: -0.5rem;
+    left: 0.75rem;
+    font-size: 0.75rem;
+    background: var(--bg-main);
+    padding: 0 0.5rem;
+    color: var(--primary);
+}
+
+body.light-mode .form-input:focus + .form-label,
+body.light-mode .form-input:not(:placeholder-shown) + .form-label {
+    background: #f8fafc;
+}
+
+/* Question Cards */
+.question-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.question-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+}
+
+.question-card.technical {
+    border-left: 4px solid var(--primary);
+}
+
+.question-card.behavioral {
+    border-left: 4px solid var(--success);
+}
+
+.question-card.situational {
+    border-left: 4px solid var(--warning);
+}
+
+.question-card.hr {
+    border-left: 4px solid var(--secondary);
+}
+
+.question-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.question-tag.technical {
+    background: rgba(79, 70, 229, 0.1);
+    color: #818cf8;
+}
+
+.question-tag.behavioral {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+.question-tag.situational {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+}
+
+.question-tag.hr {
+    background: rgba(124, 58, 237, 0.1);
+    color: #a78bfa;
+}
+
+body.light-mode .question-tag.technical {
+    background: rgba(79, 70, 229, 0.15);
+    color: #4338ca;
+}
+
+body.light-mode .question-tag.behavioral {
+    background: rgba(16, 185, 129, 0.15);
+    color: #047857;
+}
+
+/* Difficulty Badges */
+.difficulty-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.difficulty-badge.easy {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.difficulty-badge.medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.difficulty-badge.hard {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Category Buttons */
+.category-btn {
+    transition: all 0.3s ease;
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+/* Answer Content */
+#answerContent {
+    line-height: 1.8;
+    font-size: 0.95rem;
+}
+
+#answerContent ul {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#answerContent li {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+#answerContent li:before {
+    content: "•";
+    color: var(--primary);
+    font-weight: bold;
+    display: inline-block;
+    width: 1em;
+    margin-left: -1em;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, var(--primary-dark), var(--secondary));
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .glass-panel {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-input {
+        padding: 0.875rem;
+    }
+    
+    .question-card {
+        padding: 1.25rem;
+    }
+}
+
+/* Modal Backdrop */
+.fixed.inset-0 {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Star Rating */
+.star-rating {
+    color: #fbbf24;
+    font-size: 1.1rem;
+}
+
+/* Progress Circle */
+.progress-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(var(--primary) 0% 75%, #374151 75% 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-circle::before {
+    content: '';
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+}
+
+.progress-circle span {
+    position: relative;
+    z-index: 1;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+/* ========== DYNAMIC FOOTER FIX (LIGHT & DARK MODE) ========== */
+
+/* Dark Mode (Default) Footer Styles */
+footer {
+    background: #020617 !important; /* Deep slate black */
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: background-color 0.3s ease;
+}
+
+footer h4 {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+footer p, footer ul li a {
+    color: #94a3b8 !important; /* Slate 400 */
+    transition: all 0.3s ease;
+}
+
+footer ul li a:hover {
+    color: #60a5fa !important; /* Blue 400 */
+    padding-left: 5px;
+}
+
+/* Social Icons Dark Mode */
+footer .social-icon, 
+footer a.w-10 {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Light Mode Footer Styles */
+body.light-mode footer {
+    background: #f8fafc !important; /* Very light slate */
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode footer h4 {
+    color: #0f172a !important; /* Slate 900 */
+}
+
+body.light-mode footer p, 
+body.light-mode footer ul li a {
+    color: #475569 !important; /* Slate 600 */
+}
+
+body.light-mode footer ul li a:hover {
+    color: #2563eb !important; /* Blue 600 */
+}
+
+/* Social Icons Light Mode Fix */
+body.light-mode footer .social-icon,
+body.light-mode footer a.w-10 {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+body.light-mode footer a.w-10:hover {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #2563eb !important;
+}
+
+/* Bottom Bar Fix */
+footer .border-t {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body.light-mode footer .border-t {
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode footer .text-gray-600 {
+    color: #64748b !important;
+}
+
+/* Meraj.Dev Link Highlight */
+footer a[href*="meraj8329"] {
+    color: #3b82f6 !important;
+    font-weight: 600;
+}
+
+body.light-mode footer a[href*="meraj8329"] {
+    color: #1d4ed8 !important;
+}
+
+/* ========== TEMPLATE BADGES COLOR & VISIBILITY FIX ========== */
+
+/* Base Badge Style - Making it Bold and Solid */
+.badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    padding: 6px 14px !important;
+    border-radius: 30px !important;
+    text-transform: uppercase;
+    color: #ffffff !important; /* Hamesha white text readability ke liye */
+    z-index: 30;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s ease;
+}
+
+/* 1. Most Popular - Blue to Purple Gradient */
+.template-card[data-category="modern"] .badge,
+.badge:contains('Most Popular') {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+}
+
+/* 2. Creative - Pink to Indigo Gradient */
+.template-card[data-category="creative"] .badge,
+.badge:contains('Creative') {
+    background: linear-gradient(135deg, #ec4899 0%, #6366f1 100%) !important;
+}
+
+/* 3. ATS Optimized - Emerald to Teal Gradient */
+.template-card[data-category="professional"] .badge,
+.badge:contains('ATS Optimized') {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+/* 4. Elegant / Visual - Violet Gradient */
+.badge:contains('Elegant'), 
+.badge:contains('Visual') {
+    background: linear-gradient(135deg, #8b5cf6 0%, #4c1d95 100%) !important;
+}
+
+/* 5. Premium - Amber to Orange Gradient */
+.premium-badge, 
+.badge:contains('Premium') {
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+}
+
+/* Light Mode specific shadow adjustment */
+body.light-mode .badge {
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Badge Hover Effect */
+.template-card:hover .badge {
+    transform: scale(1.1) rotate(-2deg);
+    box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ========== ULTIMATE MOBILE MENU FIX ========== */
+
+/* 1. Menu Container: Isko 100% solid white (Light) ya solid dark banayenge */
+#mobileMenu {
+    background-color: #ffffff !important; /* Pure Solid White */
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 99999 !important; /* Sabse upar */
+    transition: transform 0.4s ease-in-out !important;
+}
+
+/* Dark Mode ke liye solid background */
+body:not(.light-mode) #mobileMenu {
+    background-color: #0f172a !important; /* Pure Solid Dark Slate */
+}
+
+/* 2. Menu khulne par piche ka content hide karne ka logic */
+body.menu-open main, 
+body.menu-open .max-w-7xl:not(#mobileMenu *) {
+    display: none !important; /* Piche ka sab kuch temporary gayab kar dega */
+}
+
+/* 3. Light Mode Text visibility */
+body.light-mode .mobile-nav-link {
+    color: #1e293b !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+/* 4. Close Button visibility */
+#mobileCloseBtn {
+    color: #64748b !important;
+    z-index: 100000 !important;
+}
+
+/* template-section.css */
+
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --secondary: #7c3aed;
+    --accent: #06b6d4;
+}
+
+/* Dark Mode Base Styles */
+body {
+    background: #0f172a;
+    color: #f8fafc;
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Light Mode */
+body.light-mode {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+body.light-mode .text-white {
+    color: #0f172a !important;
+}
+
+body.light-mode .text-gray-400 {
+    color: #64748b !important;
+}
+
+body.light-mode .text-gray-300 {
+    color: #475569 !important;
+}
+
+/* Glass Panels */
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+}
+
+/* Template Cards */
+.template-card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+body.light-mode .template-card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+}
+
+.template-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary);
+}
+
+/* Category Buttons */
+.category-btn {
+    transition: all 0.3s ease;
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+body.light-mode .category-btn:not(.active) {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Modal */
+.modal-overlay {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+/* Badges */
+.badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+/* Mobile Menu */
+.mobile-menu {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+}
+
+body.light-mode .mobile-menu {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Toast */
+.toast {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .glass-panel {
+        backdrop-filter: blur(10px);
+    }
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+    0% { transform: translateX(-150%) skewX(-12deg); }
+    100% { transform: translateX(150%) skewX(-12deg); }
+}
+.animate-shimmer {
+    animation: shimmer 1.5s infinite;
+}
+
+/* Update Form Input Styles */
+.form-input {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input:focus {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15), 0 0 15px rgba(79, 70, 229, 0.2);
+    transform: translateY(-2px);
+}
+
+.form-label {
+    transition: all 0.3s ease;
+}
+
+/* Floating Label Animation Fix */
+.form-input:focus + .form-label,
+.form-input:not(:placeholder-shown) + .form-label {
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+    font-weight: 600;
+}
+
+/* =========================================
+   FIX FOR BOTTOM TAGS (CSS, HTML5, Layout)
+   ========================================= */
+
+/* 1. Light Mode mein Bottom Tags ko Dark & Visible banana */
+body.light-mode .question-card span.text-gray-400.bg-gray-800\/50 {
+    background-color: #e2e8f0 !important; /* Light Grey Background */
+    color: #334155 !important;           /* Dark Slate Text (Readable) */
+    border: 1px solid #cbd5e1;           /* Halka Border taaki pop kare */
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* 2. Optional: Dark Mode mein bhi thoda sa improve karna (zyada safai ke liye) */
+.question-card span.text-gray-400.bg-gray-800\/50 {
+    background-color: rgba(255, 255, 255, 0.05); /* Thoda lighter dark */
+    color: #e2e8f0; /* Brighter white-grey */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 3. Question ID (#1, #2) ko bhi light mode mein fix karna */
+body.light-mode .question-card div.text-gray-500 {
+    color: #64748b !important; /* Readable Gray */
+    font-weight: 500;
+}
+
+/* =========================================
+   SCROLL REVEAL ANIMATION (Smooth Scroll)
+   ========================================= */
+
+/* 1. Initial State (Chupa hua aur niche) */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(40px); /* 40px niche */
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smooth easing */
+    will-change: opacity, transform;
+}
+
+/* 2. Active State (Jab screen par aaye) */
+.reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Staggered Delays (Ek ke baad ek aane ke liye) */
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+
+
+/* Valid Input State */
+.form-input.valid {
+    border-color: var(--success);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2rem;
+}
+
+/* =========================================
+   LIGHT MODE VISIBILITY FIXES (Final Polish)
+   ========================================= */
+
+/* 1. Answer Box Fix (AI Answer) */
+body.light-mode #answerContent {
+    background: #f8fafc !important; /* Pure White/Light Grey */
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;       /* Deep Dark Blue Text */
+}
+
+/* AI Answer ke andar ke bullet points aur headings */
+body.light-mode #answerContent strong {
+    color: #2563eb !important; /* Bright Blue for highlights */
+}
+body.light-mode #answerContent li:before {
+    color: #2563eb !important; /* Blue Bullet points */
+}
+
+/* 2. Question Card Background Fix */
+body.light-mode .question-card {
+    background: #ffffff !important;  /* Solid White Card */
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 3. "AI Generated Answer" Label Fix */
+body.light-mode #aiAnswer h4 {
+    color: #0f172a !important; /* Black Title */
+}
+body.light-mode .fa-star.text-yellow-400 {
+    color: #d97706 !important; /* Darker Gold for visibility */
+}
+
+/* 4. Input/Context Box Fix */
+body.light-mode textarea#answerContext {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+body.light-mode textarea#answerContext::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* =========================================
+   PRACTICE MODE MODAL FIX (Light Mode)
+   Paste at the end of interview.css
+   ========================================= */
+
+/* 1. Main Modal Container - Make it White */
+/* Jo abhi dark gradient hai, usse hata kar white kar rahe hain */
+body.light-mode #practiceModal > div {
+    background: #ffffff !important; 
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 2. Headings & Timer - Make them Dark */
+body.light-mode #practiceModal h3,
+body.light-mode #practiceModal #timer {
+    color: #0f172a !important; /* Dark Black/Blue text */
+}
+
+/* 3. Inner Question Box - Make it Light Grey */
+/* Jo question likhne wala box hai */
+body.light-mode #practiceModal .bg-gray-800\/50 {
+    background-color: #f1f5f9 !important; /* Slate 100 (Very light grey) */
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* 4. Question Text - Make it Dark */
+body.light-mode #practiceModal #practiceQuestion {
+    color: #1e293b !important; /* Dark Slate text */
+    font-weight: 700 !important;
+}
+
+/* 5. Textarea (Input Box) - Clean White Look */
+body.light-mode #practiceModal textarea {
+    background-color: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-mode #practiceModal textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* 6. Close Button (X) */
+body.light-mode #closePracticeModal {
+    color: #64748b !important;
+}
+body.light-mode #closePracticeModal:hover {
+    color: #ef4444 !important; /* Red on hover */
+    background: rgba(0,0,0,0.05);
+}
+
+/* =========================================
+   MOBILE SCROLL FIX FOR PRACTICE MODAL (FIXED)
+   Paste at the end of interview.css
+   ========================================= */
+
+/* 1. Only show Flex when NOT hidden */
+#practiceModal:not(.hidden) {
+    display: flex !important;
+    overflow-y: auto !important;
+    align-items: center;
+    padding: 1rem;
+}
+
+/* 2. Mobile Specific Adjustments */
+@media (max-width: 768px) {
+    #practiceModal:not(.hidden) {
+        align-items: flex-start !important; /* Start from top on mobile */
+        padding-top: 3rem !important;
+        padding-bottom: 3rem !important;
+    }
+
+    /* Inner Card Size Fix */
+    #practiceModal > div {
+        margin: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        padding: 1.5rem !important;
+    }
+
+    /* Timer Text Size */
+    #practiceModal #timer {
+        font-size: 2.5rem !important;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Buttons Stack */
+    #practiceModal .flex.gap-4 {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+
+    #practiceModal .flex.gap-4 button {
+        width: 100% !important;
+        padding: 0.75rem !important;
+    }
+
+    /* Textarea Height */
+    #practiceAnswer {
+        height: 120px !important;
+    }
+}
+
+/* =========================================
+   MOBILE CLICK FIX (CRITICAL)
+   Paste at the end of interview.css
+   ========================================= */
+
+/* 1. Force Buttons to be on Top */
+/* Mobile par buttons background ke piche na dabein */
+button, 
+.btn-primary-glow, 
+.glass-panel button {
+    position: relative !important;
+    z-index: 50 !important; /* Ensure buttons are clickable */
+    cursor: pointer !important;
+    touch-action: manipulation; /* Improves touch response */
+}
+
+/* 2. Fix Job Details Card Z-Index */
+/* Input fields aur generate buttons iske andar hain */
+.glass-panel {
+    position: relative !important;
+    z-index: 20 !important;
+}
+
+/* 3. Fix Background Blob Overlap */
+/* Animated background kabhi kabhi buttons ke upar aa jata hai mobile par */
+.fixed.inset-0.overflow-hidden {
+    z-index: -1 !important; /* Force background to stay back */
+    pointer-events: none !important; /* Clicks pass through background */
+}
+
+/* 4. Increase Tap Area for Mobile Buttons */
+/* Mobile par ungli se click karna aasaan ho */
+@media (max-width: 768px) {
+    #generateQuestionsBtn,
+    #generateAnswersBtn,
+    #generateAnswerBtn {
+        min-height: 50px !important; /* Bada button area */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
+
+/* =========================================
+   MOBILE BOTTOM NAVIGATION STYLES
+   ========================================= */
+
+/* 1. Body Padding (Taaki content nav bar ke piche na chupe) */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 80px !important; /* Space for bottom bar */
+    }
+}
+
+/* 2. Dark Mode Styles (Default) */
+#bottomNav {
+    background: rgba(15, 23, 42, 0.95); /* Slate 900 */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Center Button Border color matching bg */
+#bottomNav .rounded-full {
+    border-color: #0f172a; 
+}
+
+/* Active Link Color (Blue) */
+.bottom-nav-item.active {
+    color: #60a5fa; /* Blue 400 */
+}
+.bottom-nav-item.active i {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));
+}
+
+/* 3. Light Mode Overrides */
+body.light-mode #bottomNav {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+
+body.light-mode #bottomNav .text-gray-400 {
+    color: #64748b !important; /* Slate 500 */
+}
+
+body.light-mode #bottomNav .rounded-full {
+    border-color: #ffffff !important; /* White border for center button */
+}
+
+body.light-mode .bottom-nav-item.active {
+    color: #2563eb !important; /* Darker Blue */
+}
+
+/* 4. iPhone Safe Area Support */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* =========================================
+   TOAST NOTIFICATION MOBILE FIX
+   Paste at the end of home.css
+   ========================================= */
+
+.toast-notification {
+    /* Desktop Default */
+    bottom: 24px !important;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        /* Mobile: Lift it above Bottom Nav */
+        bottom: 90px !important; 
+        left: 20px !important;
+        right: 20px !important;
+        width: auto !important;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* =========================================
+   USER DROPDOWN LIGHT MODE FIX
+   ========================================= */
+
+/* 1. Dropdown Container Background */
+body.light-mode .group:hover .absolute {
+    background-color: #ffffff !important;   /* Pure White Background */
+    border-color: #e2e8f0 !important;       /* Light Grey Border */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important; /* Soft Shadow */
+}
+
+/* 2. Header Section (User Name & Email) */
+body.light-mode .group .absolute .border-b {
+    border-bottom-color: #f1f5f9 !important; /* Light separator line */
+}
+
+body.light-mode .group .absolute p.font-bold {
+    color: #1e293b !important; /* Dark Text for Name */
+}
+
+body.light-mode .group .absolute p.text-gray-400 {
+    color: #64748b !important; /* Medium Grey for Email */
+}
+
+/* 3. Dropdown Links (Dashboard, Logout) */
+body.light-mode .group .absolute a {
+    color: #334155 !important; /* Dark Grey Text */
+}
+
+/* 4. Hover State for Links */
+body.light-mode .group .absolute a:hover {
+    background-color: #f8fafc !important; /* Very Light Grey on Hover */
+    color: #2563eb !important; /* Blue Text on Hover */
+}
+
+/* 5. Logout Link Specific */
+body.light-mode .group .absolute a.text-red-400 {
+    color: #ef4444 !important; /* Red Text */
+}
+body.light-mode .group .absolute a.text-red-400:hover {
+    background-color: #fef2f2 !important; /* Light Red Background */
+    color: #dc2626 !important; /* Darker Red on Hover */
+}
+
+/* 6. Main Button (User Icon + Name) in Navbar */
+body.light-mode .group > button {
+    background-color: rgba(0, 0, 0, 0.05) !important; /* Light transparent bg */
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .group > button .text-white {
+    color: #1e293b !important; /* Dark Name Text */
+}
+
+body.light-mode .group > button .text-gray-400 {
+    color: #64748b !important; /* Dark "Welcome" Text */
+}
+
+body.light-mode .group > button:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+    border-color: rgba(59, 130, 246, 0.5) !important; /* Blue border on hover */
+}
+
+/* =========================================
+   NAVBAR LIGHT MODE FIX
+   (Templates, Pricing, Interview Prep)
+========================================= */
+
+/* 1. Navbar Background White karna */
+body.light-mode nav.nav-glass,
+body.light-mode nav {
+    background-color: rgba(255, 255, 255, 0.95) !important; /* White Background */
+    border-bottom: 1px solid #e2e8f0 !important; /* Light Border */
+    backdrop-filter: blur(12px);
+}
+
+/* 2. Links aur Text ko Black karna */
+body.light-mode nav .text-gray-300,
+body.light-mode nav .nav-link {
+    color: #4b5563 !important; /* Dark Gray Text */
+}
+
+/* 3. Hover Effect on Links */
+body.light-mode nav .nav-link:hover {
+    color: #2563eb !important; /* Blue Hover */
+}
+
+/* 4. Logo Text (ATS Pro) ko Black karna */
+body.light-mode nav .text-white {
+    color: #111827 !important; /* Black Text */
+}
+
+/* 5. Mobile Hamburger Menu Button */
+body.light-mode #mobileMenuBtn {
+    color: #111827 !important; /* Black Icon */
+}
+
+/* 6. Mobile Menu Overlay Background */
+body.light-mode #mobileMenu {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    color: #000 !important;
+}
+
+/* 7. Mobile Menu Links */
+body.light-mode #mobileMenu a {
+    color: #374151 !important;
+}
+body.light-mode #mobileMenu a:hover {
+    background-color: #f3f4f6 !important; /* Light Gray Hover */
+}
+
+/* 8. User Dropdown / Glass Panels */
+body.light-mode nav .glass-panel {
+    background-color: #fff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #000 !important;
+}

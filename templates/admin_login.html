@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 900: '#0f172a', 800: '#1e293b' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md p-8 bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 relative overflow-hidden">
+        
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-blue-500/20 blur-[50px] rounded-full pointer-events-none"></div>
+
+        <div class="text-center mb-8 relative z-10">
+            <div class="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mb-4">
+                <i class="fas fa-shield-alt text-white text-3xl"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-white">Admin Portal</h2>
+            <p class="text-gray-400 mt-2 text-sm">Authorized Personnel Only</p>
+        </div>
+
+        <form id="adminLoginForm" onsubmit="handleAdminLogin(event)" class="space-y-6 relative z-10">
+            
+            <div>
+                <label class="block text-gray-400 text-sm font-medium mb-2">Admin Email</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-gray-500"></i>
+                    </div>
+                    <input type="email" id="email" required 
+                        class="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-600 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none placeholder-gray-600"
+                        placeholder="admin@company.com">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-gray-400 text-sm font-medium mb-2">Password</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-500"></i>
+                    </div>
+                    <input type="password" id="password" required 
+                        class="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-600 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none placeholder-gray-600"
+                        placeholder="••••••••">
+                </div>
+            </div>
+
+            <button type="submit" id="loginBtn"
+                class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                <span>Secure Login</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+
+            <p id="errorMsg" class="text-red-400 text-sm text-center hidden flex items-center justify-center gap-2 bg-red-500/10 py-2 rounded-lg border border-red-500/20">
+                <i class="fas fa-exclamation-circle"></i> <span>Invalid Credentials</span>
+            </p>
+        </form>
+        
+        <div class="mt-6 text-center">
+            <a href="/" class="text-gray-500 hover:text-white text-sm transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-arrow-left"></i> Back to Website
+            </a>
+        </div>
+    </div>
+ <script>
+    async function handleAdminLogin(e) {
+        e.preventDefault(); // Page refresh roko
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // 1. Loading State (Button ghumega)
+        const originalBtnContent = btn.innerHTML; // Purana text save kar lo
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Verifying...';
+        btn.disabled = true;
+        
+        // Error message chupa do agar pehle se dikh raha hai
+        if(errorMsg) errorMsg.classList.add('hidden');
+
+        try {
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // 🎉 SUCCESS: Access Granted Animation
+                btn.innerHTML = '<i class="fas fa-check"></i> Access Granted';
+                btn.classList.remove('from-blue-600', 'to-purple-600'); // Purana gradient hatao
+                btn.classList.add('bg-green-600'); // Green color lagao
+                
+                // Thoda wait karke redirect karo
+                setTimeout(() => {
+                    // 👇 YAHAN CHANGE KIYA HAI: 'data.redirect' use karo (kyunki backend yahi bhej raha hai)
+                    window.location.href = data.redirect; 
+                }, 800);
+            } else {
+                // ❌ FAIL: Galat Password/Email
+                throw new Error(data.message || "Invalid Credentials");
+            }
+        } catch (error) {
+            // ⚠️ Error Aaya to wapas normal state
+            console.error("Login Failed:", error);
+            
+            // Button wapas normal karo
+            btn.innerHTML = originalBtnContent; // 'Secure Login' wapas laye
+            btn.disabled = false;
+            btn.classList.add('from-blue-600', 'to-purple-600'); // Gradient wapas laye
+            btn.classList.remove('bg-green-600');
+
+            // Error Message Show karo (Tumhara Notification style)
+            if(errorMsg) {
+                const msgSpan = errorMsg.querySelector('span');
+                if(msgSpan) msgSpan.innerText = error.message;
+                errorMsg.classList.remove('hidden');
+            } else {
+                alert(error.message); // Fallback agar div nahi mila
+            }
+        }
+    }
+
+    // Form Submit Listener (Agar form tag use kar rahe ho)
+    const loginForm = document.querySelector('form');
+    if(loginForm) {
+        loginForm.addEventListener('submit', handleAdminLogin);
+    }
+</script>
+</body>
+</html>

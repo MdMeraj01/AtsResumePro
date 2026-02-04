@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Interview Prep | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link href="{{ url_for('static', filename='css/interview.css') }}" rel="stylesheet">
+    <style>
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+        }
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+    </style>
+</head>
+<body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen transition-colors duration-500">
+
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+     <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20 w-full">
+            
+            <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Builder</a>
+                <a href="{{ url_for('templates_section') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Templates</a>
+                
+                <a href="{{ url_for('interview_prep') }}" class="nav-link text-sm font-medium text-blue-400 font-semibold border-b-2 border-blue-400">Interview Prep</a>
+                
+                <a href="/cover-letter" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-bold hover:bg-indigo-100 transition-all border border-indigo-200 text-sm">
+                    <i class="fas fa-pen-nib"></i> Cover Letter
+                    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                </a>
+                <a href="{{ url_for('pricing') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Pricing</a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-300 hover:text-white transition-all duration-300">
+                    <i class="fas fa-sun"></i>
+                </button>
+
+                {% if current_user %}
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div class="text-left">
+                                <p class="text-xs text-gray-400">Welcome,</p>
+                                <p class="text-sm font-bold text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-colors"></i>
+                        </button>
+
+                        <div class="absolute right-0 mt-2 w-64 bg-slate-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                            <div class="p-4 border-b border-gray-700">
+                                <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                                <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider">
+                                    {{ current_user.plan_type }} Plan
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <a href="{{ url_for('user_dashboard') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-tachometer-alt w-5 text-blue-400"></i> Dashboard
+                                </a>
+                                <a href="{{ url_for('builder') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-file-alt w-5 text-purple-400"></i> My Resumes
+                                </a>
+                                <a href="{{ url_for('pricing') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-crown w-5 text-yellow-400"></i> Upgrade Plan
+                                </a>
+                            </div>
+                            <div class="p-2 border-t border-gray-700">
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-white text-sm font-semibold hover:bg-white/10 transition-all duration-300">Login</a>
+                    <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl btn-primary-glow font-semibold text-sm hover:scale-105 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> Sign Up
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden flex items-center">
+                <button id="mobileMenuBtn" class="text-white text-2xl p-2 focus:outline-none hover:text-blue-400 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-slate-900/95 backdrop-blur-xl h-screen overflow-y-auto">
+        
+        <div class="flex justify-end p-6">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col px-8 space-y-6 pb-20">
+            {% if current_user %}
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl">
+                        {{ current_user.full_name[0] | upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
+                        <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-home w-8 text-center text-blue-500"></i><span>Home</span>
+            </a>
+            <a href="{{ url_for('builder') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-magic w-8 text-center text-purple-500"></i><span>Resume Builder</span>
+            </a>
+            <a href="{{ url_for('templates_section') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-layer-group w-8 text-center text-green-500"></i><span>Templates</span>
+            </a>
+            <a href="{{ url_for('interview_prep') }}" class="flex items-center space-x-4 text-lg font-medium text-white bg-white/10 p-2 rounded-lg transition-colors">
+                <i class="fas fa-user-tie w-8 text-center text-orange-500"></i><span>Interview Prep</span>
+            </a>
+            <a href="/cover-letter" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-pen-nib w-8 text-center text-pink-500"></i><span>Cover Letter AI</span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-tag w-8 text-center text-yellow-500"></i><span>Upgrade Plan</span>
+            </a>
+
+            <div class="h-px bg-gray-700 my-2"></div>
+
+            {% if current_user %}
+                <a href="{{ url_for('user_dashboard') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <i class="fas fa-tachometer-alt w-8 text-center text-blue-400"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="flex items-center space-x-4 text-lg font-bold text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors">
+                    <i class="fas fa-sign-out-alt w-8 text-center"></i><span>Log Out</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}" class="w-full text-center py-3 rounded-xl border border-gray-600 text-white font-semibold hover:bg-gray-800 transition-all">
+                    Login
+                </a>
+                <a href="{{ url_for('login_page', tab='signup') }}" class="w-full text-center py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg">
+                    Sign Up Free
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-12 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full glass-panel mb-6">
+                <span class="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                <span class="text-sm text-blue-300 font-semibold">🤖 AI-Powered Interview Preparation</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">Ace Your Next <span class="gradient-text">Interview</span></h1>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto">Practice with AI-generated questions tailored to your target role. Get sample answers and personalized feedback.</p>
+        </div>
+
+        <!-- Job Details Card -->
+        <div class="glass-panel rounded-2xl p-6 mb-8 fade-in-up" style="animation-delay: 100ms">
+            <div class="flex items-start mb-6">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/20 to-cyan-600/20 flex items-center justify-center mr-4">
+                    <i class="fas fa-briefcase text-2xl text-blue-400"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Enter Job Details</h2>
+                    <p class="text-gray-400">Provide details about the role you're interviewing for</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div class="form-group">
+                    <input type="text" id="jobTitleInput" placeholder=" " class="form-input">
+                    <label for="jobTitleInput" class="form-label">
+                        <i class="fas fa-user-tie mr-2 text-blue-400"></i>Job Title (e.g., Software Engineer)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="companyName" placeholder=" " class="form-input">
+                    <label for="companyName" class="form-label">
+                        <i class="fas fa-building mr-2 text-blue-400"></i>Company Name (Optional)
+                    </label>
+                </div>
+                <div class="form-group md:col-span-2">
+                    <textarea id="jobDescriptionInput" rows="4" placeholder=" " class="form-input"></textarea>
+                    <label for="jobDescriptionInput" class="form-label">
+                        <i class="fas fa-file-alt mr-2 text-blue-400"></i>Job Description
+                    </label>
+                </div>
+                <div class="form-group md:col-span-2">
+                    <textarea id="skillsInput" rows="3" placeholder=" " class="form-input"></textarea>
+                    <label for="skillsInput" class="form-label">
+                        <i class="fas fa-cogs mr-2 text-blue-400"></i>Your Skills (Comma separated)
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4">
+                <button id="generateQuestionsBtn" class="px-6 py-3 rounded-xl btn-primary-glow font-semibold hover:scale-105 transition-transform duration-300 group">
+                    <i class="fas fa-robot mr-2 group-hover:rotate-12 transition-transform"></i>Generate Interview Questions
+                </button>
+                <button id="generateAnswersBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group">
+                    <i class="fas fa-lightbulb mr-2 group-hover:rotate-12 transition-transform"></i>Generate Sample Answers
+                </button>
+                <button id="practiceModeBtn" class="px-6 py-3 rounded-xl glass-panel text-white font-semibold hover:bg-white/10 transition-all duration-300">
+                    <i class="fas fa-microphone mr-2"></i>Practice Mode
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="mb-8 fade-in-up" style="animation-delay: 150ms">
+            <div class="flex flex-wrap gap-3">
+                <button class="category-btn active px-5 py-2.5 rounded-xl btn-primary-glow font-medium" data-category="all">
+                    <i class="fas fa-layer-group mr-2"></i>All Questions
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10" data-category="technical">
+                    <i class="fas fa-code mr-2"></i>Technical
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10" data-category="behavioral">
+                    <i class="fas fa-users mr-2"></i>Behavioral
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10" data-category="situational">
+                    <i class="fas fa-brain mr-2"></i>Situational
+                </button>
+                <button class="category-btn px-5 py-2.5 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10" data-category="hr">
+                    <i class="fas fa-user-tie mr-2"></i>HR Questions
+                </button>
+            </div>
+        </div>
+
+        <!-- Questions Grid -->
+       <div id="questionsContainer" class="grid md:grid-cols-2 gap-6 mb-8 fade-in-up" style="animation-delay: 200ms">
+
+    <div id="questionsSkeleton" class="hidden md:col-span-2 grid md:grid-cols-2 gap-6">
+        <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shimmer"></div>
+            <div class="flex justify-between mb-4">
+                <div class="h-6 w-24 bg-gray-700/50 rounded-lg"></div>
+                <div class="h-6 w-16 bg-gray-700/50 rounded-lg"></div>
+            </div>
+            <div class="h-6 w-3/4 bg-gray-700/50 rounded mb-3"></div>
+            <div class="h-6 w-1/2 bg-gray-700/50 rounded mb-6"></div>
+            <div class="flex justify-between">
+                <div class="h-4 w-20 bg-gray-700/50 rounded"></div>
+                <div class="h-8 w-24 bg-gray-700/50 rounded-lg"></div>
+            </div>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shimmer"></div>
+            <div class="flex justify-between mb-4">
+                <div class="h-6 w-24 bg-gray-700/50 rounded-lg"></div>
+                <div class="h-6 w-16 bg-gray-700/50 rounded-lg"></div>
+            </div>
+            <div class="h-6 w-3/4 bg-gray-700/50 rounded mb-3"></div>
+            <div class="h-6 w-1/2 bg-gray-700/50 rounded mb-6"></div>
+            <div class="flex justify-between">
+                <div class="h-4 w-20 bg-gray-700/50 rounded"></div>
+                <div class="h-8 w-24 bg-gray-700/50 rounded-lg"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="initialState" class="md:col-span-2 text-center py-12">
+        <div class="inline-block p-8 rounded-2xl glass-panel">
+            <i class="fas fa-comments text-4xl text-blue-400 mb-4"></i>
+            <h3 class="text-xl font-bold text-white mb-2">No Questions Yet</h3>
+            <p class="text-gray-400">Enter job details above and click "Generate Interview Questions" to get started</p>
+        </div>
+    </div>
+
+</div>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 fade-in-up" style="animation-delay: 250ms">
+            <div class="glass-panel p-5 rounded-xl text-center">
+                <div class="text-2xl font-bold text-blue-400 mb-1" id="totalQuestions">0</div>
+                <div class="text-sm text-gray-400">Total Questions</div>
+            </div>
+            <div class="glass-panel p-5 rounded-xl text-center">
+                <div class="text-2xl font-bold text-green-400 mb-1" id="answeredCount">0</div>
+                <div class="text-sm text-gray-400">Answered</div>
+            </div>
+            <div class="glass-panel p-5 rounded-xl text-center">
+                <div class="text-2xl font-bold text-purple-400 mb-1" id="favoritesCount">0</div>
+                <div class="text-sm text-gray-400">Favorites</div>
+            </div>
+            <div class="glass-panel p-5 rounded-xl text-center">
+                <div class="text-2xl font-bold text-yellow-400 mb-1" id="practiceScore">0%</div>
+                <div class="text-sm text-gray-400">Practice Score</div>
+            </div>
+        </div>
+
+        <!-- AI Answer Generator -->
+        <div id="answerGenerator" class="glass-panel rounded-2xl p-6 mb-8 fade-in-up hidden" style="animation-delay: 300ms">
+            <div class="flex items-start mb-6">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-600/20 flex items-center justify-center mr-4">
+                    <i class="fas fa-robot text-2xl text-purple-400"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">AI Answer Generator</h2>
+                    <p class="text-gray-400">Get AI-powered answers tailored to your experience</p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-3">Selected Question</label>
+                <div id="selectedQuestion" class="bg-gray-800/50 p-5 rounded-xl border border-gray-700 mb-4 text-white text-lg">
+                    Select a question to generate answer
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-3">
+                    <i class="fas fa-edit mr-2 text-blue-400"></i>Your Experience/Context
+                </label>
+                <textarea id="answerContext" rows="4" placeholder="Add specific details about your experience, projects, or achievements..." class="w-full p-4 glass-panel border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300"></textarea>
+            </div>
+
+            <div class="flex gap-4">
+                <button id="generateAnswerBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group">
+                    <i class="fas fa-magic mr-2 group-hover:rotate-12 transition-transform"></i>Generate AI Answer
+                </button>
+                <button id="clearAnswerBtn" class="px-6 py-3 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10 transition-all duration-300">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </button>
+            </div>
+
+            <!-- AI Answer Display -->
+            <div id="aiAnswer" class="mt-6 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-bold text-white">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>AI-Generated Answer
+                    </h4>
+                    <div class="flex gap-2">
+                        <button id="speakAnswerBtn" class="px-3 py-1.5 rounded-lg glass-panel text-pink-400 text-sm hover:bg-white/10 transition-all duration-300">
+                            <i class="fas fa-volume-up mr-1"></i>Listen
+                        </button>
+
+                        <button id="regenerateAnswerBtn" class="px-3 py-1.5 rounded-lg glass-panel text-blue-400 text-sm hover:bg-white/10 transition-all duration-300">
+                           <i class="fas fa-redo mr-1"></i>Regenerate
+                        </button>
+                        <button id="copyAnswerBtn" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm hover:scale-105 transition-transform duration-300">
+                            <i class="fas fa-copy mr-1"></i>Copy
+                        </button>
+                        <button id="saveAnswerBtn" class="px-3 py-1.5 rounded-lg glass-panel text-purple-400 text-sm hover:bg-white/10 transition-all duration-300">
+                            <i class="fas fa-save mr-1"></i>Save
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="answerContent" class="bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-5 rounded-xl border border-gray-700 text-gray-300 leading-relaxed">
+                    <!-- AI answer will appear here -->
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-500">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    This answer is AI-generated. Customize it with your specific experiences.
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips Section -->
+        <div class="grid md:grid-cols-3 gap-6 mb-12 fade-in-up" style="animation-delay: 350ms">
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-bullseye text-blue-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Be Specific</h3>
+                <p class="text-gray-400 text-sm">Use the STAR method (Situation, Task, Action, Result) for behavioral questions.</p>
+            </div>
+            
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-chart-line text-green-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Quantify Achievements</h3>
+                <p class="text-gray-400 text-sm">Use numbers and metrics to demonstrate your impact (e.g., "improved efficiency by 30%").</p>
+            </div>
+            
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-lightbulb text-purple-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Ask Questions</h3>
+                <p class="text-gray-400 text-sm">Prepare 2-3 thoughtful questions to ask the interviewer about the role and company.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                 <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== MODALS & LOADERS ========== -->
+    <!-- Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="text-white text-lg font-medium">AI is working...</div>
+            <div class="text-gray-400 text-sm mt-2">Generating interview questions</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+   <div id="toast" class="fixed bottom-24 md:bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-[110]">
+    <div class="flex items-center">
+        <i class="fas fa-check-circle text-xl mr-3"></i>
+        <div>
+            <div class="font-semibold">Notification</div>
+            <div id="toastMessage" class="text-sm">Action successful</div>
+        </div>
+    </div>
+</div>
+
+    <!-- Practice Mode Modal -->
+    <div id="practiceModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-gray-800 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Practice Interview Mode</h3>
+                    <p class="text-gray-400 text-sm">Practice answering questions with timer</p>
+                </div>
+                <button id="closePracticeModal" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6 text-center">
+                <div class="text-4xl font-bold text-white mb-2" id="timer">02:00</div>
+                <div class="text-gray-400">Time remaining</div>
+            </div>
+            
+            <div class="bg-gray-800/50 p-6 rounded-xl mb-6 relative">
+                <div id="practiceQuestion" class="text-xl text-white mb-4">Loading question...</div>
+    
+                <div class="relative">
+                    <textarea id="practiceAnswer" rows="6" placeholder="Type or speak your answer here..." class="w-full p-4 pr-12 glass-panel border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"></textarea>
+        
+                    <button id="practiceMicBtn" class="absolute bottom-3 right-3 p-3 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 transition-all duration-300 shadow-lg border border-gray-600 group" title="Speak Answer">
+                        <i class="fas fa-microphone group-hover:text-white"></i>
+                    </button>
+                    </div>
+                <p class="text-xs text-gray-500 mt-2 ml-1">* Click microphone to speak your answer</p>
+            </div>
+            
+            <div class="flex gap-4">
+                <button id="startPracticeBtn" class="flex-1 px-6 py-3 rounded-xl btn-primary-glow font-semibold">
+                    <i class="fas fa-play mr-2"></i>Start Practice
+                </button>
+                <button id="nextPracticeBtn" class="flex-1 px-6 py-3 rounded-xl glass-panel text-white font-medium hover:bg-white/10">
+                    <i class="fas fa-forward mr-2"></i>Next Question
+                </button>
+                <button id="stopPracticeBtn" class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold">
+                    <i class="fas fa-stop mr-2"></i>Stop
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bottomNav" class="fixed bottom-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 md:hidden pb-safe transition-all duration-300">
+    <div class="flex justify-around items-center h-16 px-2">
+        
+        <a href="{{ url_for('index') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <a href="{{ url_for('templates_section') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-layer-group text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Templates</span>
+        </a>
+
+        <a href="{{ url_for('builder') }}" class="relative -top-5">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border-4 border-slate-900 transform transition-transform active:scale-95">
+                <i class="fas fa-magic text-white text-xl"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('interview_prep') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-user-tie text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Interview</span>
+        </a>
+
+        <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+            <i class="fas fa-sun text-lg mb-1"></i> <span class="text-[10px] font-medium">Theme</span>
+        </button>
+    </div>
+</div>
+
+    <script src="{{ url_for('static', filename='js/interview.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+</body>
+</html>

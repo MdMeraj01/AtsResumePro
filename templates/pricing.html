@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pricing Plans | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link href="{{ url_for('static', filename='css/pricing.css') }}" rel="stylesheet">
+</head>
+<body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen transition-colors duration-500">
+
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+        <div class="absolute top-3/4 left-3/4 w-64 h-64 bg-cyan-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 2s"></div>
+    </div>
+
+    <!-- ========== NAVBAR ========== -->
+     <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20 w-full">
+            
+            <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Builder</a>
+                <a href="{{ url_for('templates_section') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Templates</a>
+                <a href="{{ url_for('interview_prep') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Interview Prep</a>
+                
+                <a href="/cover-letter" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-bold hover:bg-indigo-100 transition-all border border-indigo-200 text-sm">
+                    <i class="fas fa-pen-nib"></i> Cover Letter
+                    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                </a>
+                
+                <a href="{{ url_for('pricing') }}" class="nav-link text-sm font-medium text-blue-400 font-semibold border-b-2 border-blue-400">Pricing</a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-300 hover:text-white transition-all duration-300">
+                    <i class="fas fa-sun"></i>
+                </button>
+
+                {% if current_user %}
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div class="text-left">
+                                <p class="text-xs text-gray-400">Welcome,</p>
+                                <p class="text-sm font-bold text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-colors"></i>
+                        </button>
+
+                        <div class="absolute right-0 mt-2 w-64 bg-slate-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                            <div class="p-4 border-b border-gray-700">
+                                <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                                <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider">
+                                    {{ current_user.plan_type }} Plan
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <a href="{{ url_for('user_dashboard') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-tachometer-alt w-5 text-blue-400"></i> Dashboard
+                                </a>
+                                <a href="{{ url_for('builder') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-file-alt w-5 text-purple-400"></i> My Resumes
+                                </a>
+                                <a href="{{ url_for('pricing') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-crown w-5 text-yellow-400"></i> Upgrade Plan
+                                </a>
+                            </div>
+                            <div class="p-2 border-t border-gray-700">
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-white text-sm font-semibold hover:bg-white/10 transition-all duration-300">Login</a>
+                    <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl btn-primary-glow font-semibold text-sm hover:scale-105 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> Sign Up
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden flex items-center">
+                <button id="mobileMenuBtn" class="text-white text-2xl p-2 focus:outline-none hover:text-blue-400 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-slate-900/95 backdrop-blur-xl h-screen overflow-y-auto">
+        
+        <div class="flex justify-end p-6">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col px-8 space-y-6 pb-20">
+            {% if current_user %}
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl">
+                        {{ current_user.full_name[0] | upper }}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
+                        <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-home w-8 text-center text-blue-500"></i><span>Home</span>
+            </a>
+            <a href="{{ url_for('builder') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-magic w-8 text-center text-purple-500"></i><span>Resume Builder</span>
+            </a>
+            <a href="{{ url_for('templates_section') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-layer-group w-8 text-center text-green-500"></i><span>Templates</span>
+            </a>
+            <a href="/cover-letter" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-pen-nib w-8 text-center text-pink-500"></i><span>Cover Letter AI</span>
+            </a>
+            <a href="{{ url_for('interview_prep') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-user-tie w-8 text-center text-orange-500"></i><span>Interview Prep</span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="flex items-center space-x-4 text-lg font-medium text-white bg-white/10 p-2 rounded-lg transition-colors">
+                <i class="fas fa-tag w-8 text-center text-yellow-500"></i><span>Upgrade Plan</span>
+            </a>
+
+            <div class="h-px bg-gray-700 my-2"></div>
+
+            {% if current_user %}
+                <a href="{{ url_for('user_dashboard') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <i class="fas fa-tachometer-alt w-8 text-center text-blue-400"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="flex items-center space-x-4 text-lg font-bold text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors">
+                    <i class="fas fa-sign-out-alt w-8 text-center"></i><span>Log Out</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}" class="w-full text-center py-3 rounded-xl border border-gray-600 text-white font-semibold hover:bg-gray-800 transition-all">
+                    Login
+                </a>
+                <a href="{{ url_for('login_page', tab='signup') }}" class="w-full text-center py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg">
+                    Sign Up Free
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-16 fade-in-up">
+            <div class="inline-flex items-center px-4 py-2 rounded-full glass-panel mb-6">
+                <span class="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                <span class="text-sm text-blue-300 font-semibold">💰 Transparent Pricing • No Hidden Fees</span>
+            </div>
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                Simple, <span class="gradient-text">Fair Pricing</span>
+            </h1>
+            <p class="text-xl text-gray-400 max-w-3xl mx-auto mb-10">
+                Choose the perfect plan for your career journey. All plans include our core features with no limitations on downloads.
+            </p>
+            
+            <!-- Billing Toggle -->
+            <div class="inline-flex items-center p-1 rounded-xl glass-panel mb-12">
+                <button id="monthlyBtn" class="px-6 py-3 rounded-lg text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-600">Monthly</button>
+                <button id="yearlyBtn" class="px-6 py-3 rounded-lg text-gray-400 font-semibold hover:text-white transition-colors">Yearly</button>
+                <span class="ml-3 px-3 py-1 text-xs bg-green-500/20 text-green-400 rounded-full">Save 40%</span>
+            </div>
+        </div>
+
+        <!-- Pricing Cards -->
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 fade-in-up" style="animation-delay: 100ms">
+    
+    <div class="glass-panel rounded-2xl p-8 relative overflow-hidden border border-gray-700 hover:border-blue-500 transition-all">
+        <div class="text-center mb-8">
+            <h3 class="text-2xl font-bold text-white mb-2">Basic</h3>
+            <p class="text-gray-400 mb-6">For freshers & students</p>
+            <div class="text-5xl font-bold text-white mb-2">₹199<span class="text-lg text-gray-400">/mo</span></div>
+            <a href="#" data-plan="basic" class="buy-plan-btn block w-full py-3 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold mb-6 transition-all">Get Basic</a>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-green-400 mr-3"></i> 8 Basic Templates</div>
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-green-400 mr-3"></i> Unlimited Downloads (Basic)</div>
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-green-400 mr-3"></i> Basic ATS Check</div>
+            <div class="flex items-center text-gray-500"><i class="fas fa-times mr-3"></i> No Premium Templates</div>
+            <div class="flex items-center text-gray-500"><i class="fas fa-times mr-3"></i> No AI Features</div>
+        </div>
+    </div>
+    
+    <div class="glass-panel rounded-2xl p-8 relative overflow-hidden border-2 border-blue-500 transform scale-105 shadow-2xl shadow-blue-500/20">
+        <div class="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">POPULAR</div>
+        <div class="text-center mb-8">
+            <h3 class="text-2xl font-bold text-white mb-2">Standard</h3>
+            <p class="text-gray-400 mb-6">Best for professionals</p>
+            <div class="text-5xl font-bold text-blue-400 mb-2">₹499<span class="text-lg text-gray-400">/mo</span></div>
+            <a href="#" data-plan="standard" class="buy-plan-btn block w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold mb-6 hover:scale-105 transition-all">Get Standard</a>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div class="flex items-center text-white"><i class="fas fa-check text-blue-400 mr-3"></i> All 20+ Templates</div>
+            <div class="flex items-center text-white"><i class="fas fa-check text-blue-400 mr-3"></i> Unlimited Downloads (All)</div>
+            <div class="flex items-center text-white"><i class="fas fa-check text-blue-400 mr-3"></i> AI Resume Writer</div>
+            <div class="flex items-center text-white"><i class="fas fa-check text-blue-400 mr-3"></i> Cover Letter Builder</div>
+            <div class="flex items-center text-gray-500"><i class="fas fa-times mr-3"></i> Priority Support</div>
+        </div>
+    </div>
+    
+    <div class="glass-panel rounded-2xl p-8 relative overflow-hidden border border-yellow-500/50 hover:border-yellow-500 transition-all">
+        <div class="text-center mb-8">
+            <h3 class="text-2xl font-bold text-white mb-2">Premium</h3>
+            <p class="text-gray-400 mb-6">For career acceleration</p>
+            <div class="text-5xl font-bold text-yellow-400 mb-2">₹999<span class="text-lg text-gray-400">/mo</span></div>
+            <a href="#" data-plan="premium" class="buy-plan-btn block w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold mb-6 hover:shadow-lg transition-all">Get Premium</a>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-yellow-400 mr-3"></i> Everything in Standard</div>
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-yellow-400 mr-3"></i> Priority 24/7 Support</div>
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-yellow-400 mr-3"></i> LinkedIn Optimization</div>
+            <div class="flex items-center text-gray-300"><i class="fas fa-check text-yellow-400 mr-3"></i> 1-on-1 Review</div>
+        </div>
+    </div>
+
+</div>
+
+        <!-- Comparison Table -->
+        <div class="glass-panel rounded-2xl p-8 mb-16 fade-in-up" style="animation-delay: 200ms">
+            <h2 class="text-3xl font-bold text-white mb-8 text-center">Plan Comparison</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-800">
+                            <th class="text-left py-4 text-gray-400 font-semibold">Feature</th>
+                            <th class="text-center py-4">
+                                <div class="font-bold text-white">Basic</div>
+                                <div class="text-sm text-gray-400">₹299/month</div>
+                            </th>
+                            <th class="text-center py-4">
+                                <div class="font-bold text-white">Professional</div>
+                                <div class="text-sm text-gray-400">₹599/month</div>
+                            </th>
+                            <th class="text-center py-4">
+                                <div class="font-bold text-white">Enterprise</div>
+                                <div class="text-sm text-gray-400">₹999/month</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 text-gray-300">Resume Templates</td>
+                            <td class="text-center py-4">
+                                <span class="text-blue-400 font-semibold">5</span>
+                            </td>
+                            <td class="text-center py-4">
+                                <span class="text-blue-400 font-semibold">20+</span>
+                            </td>
+                            <td class="text-center py-4">
+                                <span class="text-blue-400 font-semibold">Unlimited</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 text-gray-300">ATS Optimization</td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 text-gray-300">AI Resume Review</td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-times text-gray-500"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 text-gray-300">Interview Preparation</td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-times text-gray-500"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 text-gray-300">Cover Letter Builder</td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-times text-gray-500"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800/50">
+                            <td class="py-4 text-gray-300">Support</td>
+                            <td class="text-center py-4">
+                                <span class="text-gray-400">Email</span>
+                            </td>
+                            <td class="text-center py-4">
+                                <span class="text-gray-400">Priority Email</span>
+                            </td>
+                            <td class="text-center py-4">
+                                <span class="text-blue-400">24/7 Priority</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 text-gray-300">Career Coaching</td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-times text-gray-500"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-times text-gray-500"></i>
+                            </td>
+                            <td class="text-center py-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="mb-16 fade-in-up" style="animation-delay: 250ms">
+            <h2 class="text-3xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-3">
+                        <i class="fas fa-question-circle text-blue-400 mr-2"></i>
+                        Can I change my plan later?
+                    </h3>
+                    <p class="text-gray-400">Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.</p>
+                </div>
+                
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-3">
+                        <i class="fas fa-question-circle text-blue-400 mr-2"></i>
+                        Is there a free trial?
+                    </h3>
+                    <p class="text-gray-400">We offer a 7-day free trial for all paid plans. No credit card required to start the trial.</p>
+                </div>
+                
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-3">
+                        <i class="fas fa-question-circle text-blue-400 mr-2"></i>
+                        What payment methods do you accept?
+                    </h3>
+                    <p class="text-gray-400">We accept all major credit/debit cards, UPI, Net Banking, and PayPal for international payments.</p>
+                </div>
+                
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-3">
+                        <i class="fas fa-question-circle text-blue-400 mr-2"></i>
+                        Can I cancel my subscription?
+                    </h3>
+                    <p class="text-gray-400">Yes, you can cancel anytime. Your subscription will remain active until the end of your billing period.</p>
+                </div>
+                
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-3">
+                        <i class="fas fa-question-circle text-blue-400 mr-2"></i>
+                        Do you offer refunds?
+                    </h3>
+                    <p class="text-gray-400">We offer a 14-day money-back guarantee. If you're not satisfied, we'll refund your payment.</p>
+                </div>
+                
+                <div class="glass-panel rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-white mb-3">
+                        <i class="fas fa-question-circle text-blue-400 mr-2"></i>
+                        Is my data secure?
+                    </h3>
+                    <p class="text-gray-400">Yes, we use bank-level encryption and never share your personal data with third parties.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="text-center fade-in-up" style="animation-delay: 300ms">
+            <div class="glass-panel rounded-2xl p-12 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                <div class="absolute bottom-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
+                
+                <div class="relative z-10">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Boost Your Career?</h2>
+                    <p class="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                        Join thousands of successful professionals who landed their dream jobs with ATS Resume Builder Pro
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="#" class="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg hover:scale-105 transition-transform duration-300 shadow-2xl">
+                            <i class="fas fa-rocket mr-2"></i>Start 7-Day Free Trial
+                        </a>
+                        <a href="#" class="px-8 py-4 glass-panel text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-300">
+                            <i class="fas fa-question-circle mr-2"></i>Contact Sales
+                        </a>
+                    </div>
+                    
+                    <p class="text-gray-500 text-sm mt-6">No credit card required • Cancel anytime</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                  <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== MODALS & LOADERS ========== -->
+    <!-- Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="text-white text-lg font-medium">Processing...</div>
+            <div class="text-gray-400 text-sm mt-2">Redirecting to payment gateway</div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+   <div id="toast" class="fixed bottom-24 md:bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-[110]">
+    <div class="flex items-center">
+        <i class="fas fa-check-circle text-xl mr-3"></i>
+        <div>
+            <div class="font-semibold">Notification</div>
+            <div id="toastMessage" class="text-sm">Action successful</div>
+        </div>
+    </div>
+</div>
+
+    <div id="bottomNav" class="fixed bottom-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 md:hidden pb-safe transition-all duration-300">
+    <div class="flex justify-around items-center h-16 px-2">
+        
+        <a href="{{ url_for('index') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <a href="{{ url_for('templates_section') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-layer-group text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Templates</span>
+        </a>
+
+        <a href="{{ url_for('builder') }}" class="relative -top-5">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border-4 border-slate-900 transform transition-transform active:scale-95">
+                <i class="fas fa-magic text-white text-xl"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('interview_prep') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-user-tie text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Interview</span>
+        </a>
+
+        <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+            <i class="fas fa-sun text-lg mb-1"></i> <span class="text-[10px] font-medium">Theme</span>
+        </button>
+    </div>
+</div>
+    <script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const monthlyBtn = document.getElementById('monthlyBtn');
+        const yearlyBtn = document.getElementById('yearlyBtn');
+        const buyButtons = document.querySelectorAll('.buy-plan-btn'); 
+        
+        let currentCycle = 'monthly';
+
+        function updateLinks() {
+            buyButtons.forEach(btn => {
+                const plan = btn.getAttribute('data-plan'); // html me data-plan="basic" hona chahiye
+                // 👇 LINK GENERATION (Redirect to checkout)
+                btn.href = `/checkout?plan=${plan}&cycle=${currentCycle}`;
+            });
+        }
+
+        // Toggle Logic (Purana wala same rakho, bas last me updateLinks call karo)
+        monthlyBtn.addEventListener('click', () => {
+            currentCycle = 'monthly';
+            // ... (Color change logic) ...
+            updateLinks();
+        });
+
+        yearlyBtn.addEventListener('click', () => {
+            currentCycle = 'yearly';
+            // ... (Color change logic) ...
+            updateLinks();
+        });
+
+        // Init
+        updateLinks();
+    });
+</script>
+</body>
+</html>

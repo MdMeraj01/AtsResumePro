@@ -1,0 +1,114 @@
+<div class="resume-template" id="resume-preview-area">
+    <style>
+        .resume-template { font-family: Arial, sans-serif; color: #333; background: #fff; padding: 40px; max-width: 850px; margin: auto; }
+        
+        /* Page Break Fixes */
+        .template-section, li, .template-experience-item, .template-education-item { page-break-inside: avoid; }
+
+        /* Photo */
+        #preview-image { display: none; width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; border: 3px solid #eee; }
+
+        /* Header Styling */
+        .name { text-align: center; font-size: 36px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
+        .subtitle { text-align: center; font-size: 16px; color: #444; margin-bottom: 15px; }
+        
+        /* --- FIX 1: CONTACT INFO SIDE-BY-SIDE --- */
+        .contact-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px; /* Items ke beech gap */
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            white-space: nowrap; /* Text tutega nahi */
+        }
+        .contact-item i { margin-right: 5px; color: #333; }
+        .separator { color: #ccc; }
+
+        hr { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+        
+        .section-title { font-size: 20px; font-weight: 700; margin: 25px 0 15px; border-bottom: 2px solid #ccc; padding-bottom: 5px; text-transform: uppercase; color: #333; }
+        
+        h3 { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 2px; }
+        h3 span { font-weight: normal; font-size: 14px; color: #000; }
+        .sub-text { color: #444; font-style: italic; margin-bottom: 8px; font-size: 14px; }
+        ul { margin-left: 20px; margin-top: 5px; }
+        li { margin-bottom: 4px; }
+    </style>
+
+    <img id="preview-image" src="" alt="Profile Photo">
+    <h1 class="name" id="preview-name">YOUR NAME</h1>
+    <p class="subtitle" id="preview-title">Job Title</p>
+    
+    <div class="contact-container">
+        <span class="contact-item" id="wrap-address">
+            <i class="fas fa-map-marker-alt"></i> <span id="preview-address">Location</span>
+        </span>
+        <span class="separator">|</span>
+        <span class="contact-item" id="wrap-email">
+            <i class="fas fa-envelope"></i> <span id="preview-email">email@example.com</span>
+        </span>
+        <span class="separator">|</span>
+        <span class="contact-item" id="wrap-phone">
+            <i class="fas fa-phone"></i> <span id="preview-phone">Phone</span>
+        </span>
+    </div>
+    <div id="preview-socials" style="text-align: center; font-size: 14px; margin-top: -10px; margin-bottom: 20px;"></div>
+
+    <hr>
+
+    <div id="section-summary" class="template-section" style="display: none;">
+        <h2 class="section-title">PROFESSIONAL SUMMARY</h2>
+        <p class="summary" id="preview-profile"></p>
+    </div>
+
+    <div id="section-experience" class="template-section" style="display: none;">
+        <h2 class="section-title">WORK EXPERIENCE</h2>
+        <div id="preview-experience"></div>
+    </div>
+
+    <div id="section-education" class="template-section" style="display: none;">
+        <h2 class="section-title">EDUCATION</h2>
+        <div id="preview-education"></div>
+    </div>
+
+    <div id="section-skills" class="template-section" style="display: none;">
+        <h2 class="section-title">SKILLS</h2>
+        <div id="wrap-tech-skills" style="display: none;">
+            <strong>Technical:</strong> <span id="preview-skills"></span>
+        </div>
+        <div id="wrap-soft-skills" style="display: none; margin-top: 8px;">
+            <strong>Soft Skills:</strong> <span id="preview-soft-skills"></span>
+        </div>
+        <div id="wrap-tools-skills" style="display: none; margin-top: 8px;">
+            <strong>Tools:</strong> <span id="preview-tools-skills"></span>
+        </div>
+    </div>
+
+    <div id="section-projects" class="template-section" style="display: none;">
+        <h2 class="section-title">PROJECTS</h2>
+        <div id="preview-projects"></div>
+    </div>
+
+    <div id="section-certifications" class="template-section" style="display: none;">
+        <h2 class="section-title">CERTIFICATIONS</h2>
+        <div id="preview-certifications"></div>
+    </div>
+
+    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div id="section-languages" style="display: none;">
+            <h2 class="section-title" style="font-size: 16px; border: none; margin: 0;">Languages</h2>
+            <ul id="preview-languages"></ul>
+        </div>
+        <div id="section-hobbies" style="display: none;">
+            <h2 class="section-title" style="font-size: 16px; border: none; margin: 0;">Hobbies</h2>
+            <ul id="preview-hobbies"></ul>
+        </div>
+    </div>
+</div>

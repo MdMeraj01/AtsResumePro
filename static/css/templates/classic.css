@@ -1,0 +1,160 @@
+/* static/css/templates/creative.css */
+
+/* Import Fonts - Using 'Montserrat' for headings to match that bold look */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap');
+
+.resume-template.creative-theme {
+    font-family: 'Open Sans', sans-serif;
+    color: #333;
+    background: #fff;
+    width: 100%;
+    min-height: 297mm;
+    padding: 40px 50px;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+/* --- HEADER --- */
+.header-section {
+    margin-bottom: 30px;
+}
+
+.creative-theme .name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 32px;
+    font-weight: 800; /* Extra Bold */
+    text-transform: uppercase;
+    color: #2c2c2c;
+    margin: 0 0 5px 0;
+    letter-spacing: 0.5px;
+}
+
+.creative-theme .job-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.creative-theme .contact-row {
+    font-size: 11px;
+    color: #444;
+}
+
+.creative-theme .separator {
+    margin: 0 6px;
+    color: #999;
+}
+
+/* --- SECTIONS --- */
+.resume-section {
+    margin-bottom: 25px;
+}
+
+/* The Grey Pill Heading */
+.creative-theme .section-heading {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #444;
+    text-transform: uppercase;
+    background-color: #e6e8eb; /* Light Grey Background */
+    padding: 6px 15px;
+    border-radius: 20px; /* Rounded pill shape */
+    margin-bottom: 12px;
+    font-style: italic; /* Matches image style */
+    letter-spacing: 1px;
+}
+
+.creative-theme .section-content {
+    font-size: 11px;
+    text-align: justify;
+    padding: 0 5px;
+}
+
+/* --- SKILLS GRID --- */
+.creative-theme .skills-grid {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding: 0 5px;
+    font-size: 11px;
+}
+
+.creative-theme .skill-column {
+    width: 32%;
+    margin-bottom: 5px;
+}
+
+/* --- EXPERIENCE & EDUCATION ITEMS --- */
+.template-experience-item, 
+.template-education-item,
+.template-project-item {
+    margin-bottom: 15px;
+    padding: 0 5px;
+}
+
+/* Row for Title and Date */
+.creative-theme h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #000;
+    margin: 0 0 2px 0;
+    display: flex;
+    justify-content: space-between; /* Pushes date to right */
+    align-items: baseline;
+}
+
+/* Date Styling (Right Aligned) */
+.creative-theme h3 span {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: #000;
+}
+
+/* Company/University Name */
+.creative-theme .sub-text {
+    font-size: 11px;
+    font-weight: 400;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+/* List Styling */
+.creative-theme ul {
+    margin: 2px 0 0 18px;
+    padding: 0;
+    list-style-type: disc;
+}
+
+.creative-theme li {
+    font-size: 11px;
+    margin-bottom: 3px;
+    color: #222;
+}
+
+/* --- ADDITIONAL INFO LIST --- */
+.additional-info-list {
+    list-style: none !important;
+    margin: 0 5px !important;
+    padding: 0 !important;
+}
+
+.additional-info-list li {
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.additional-info-list strong {
+    font-weight: 700;
+    margin-right: 5px;
+}
+
+/* HIDE EMPTY ELEMENTS */
+[style*="display: none"] {
+    display: none !important;
+}

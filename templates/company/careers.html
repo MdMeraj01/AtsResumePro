@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Careers | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- SMOOTH TRANSITIONS --- */
+        body, nav, div, section, p, h1, h2, h3, h4, span, a, button, i, li {
+            transition: all 0.3s ease;
+        }
+
+        /* --- GLASS PANEL STYLES --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* --- NAVBAR GLASS --- */
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dark .nav-glass {
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- GRADIENT TEXT --- */
+        .gradient-text {
+            background: linear-gradient(to right, #2563eb, #9333ea, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* --- JOB CARD HOVER --- */
+        .job-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="antialiased font-sans min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-white transition-colors duration-300">
+
+    <nav class="fixed w-full z-50 nav-glass">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20 w-full">
+                <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 dark:text-white">ATS<span class="text-blue-500">Pro</span></span>
+                </div>
+    
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{{ url_for('index') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">Home</a>
+                    <a href="{{ url_for('builder') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">Builder</a>
+                    <a href="{{ url_for('templates_section') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">Templates</a>
+                    <a href="{{ url_for('careers') }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 font-bold border-b-2 border-blue-600 dark:border-blue-400">Careers</a>
+                </div>
+    
+                <div class="hidden md:flex items-center space-x-4">
+                    <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                    {% if current_user %}
+                        <div class="relative group">
+                            <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-black/5 dark:hover:bg-white/10 transition-all">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                    {{ current_user.full_name[0] | upper }}
+                                </div>
+                            </button>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10">Login</a>
+                    {% endif %}
+                </div>
+                
+                <div class="md:hidden flex items-center">
+                    <button id="mobileMenuBtn" class="text-gray-600 dark:text-gray-300 text-2xl p-2"><i class="fas fa-bars"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-white dark:bg-slate-900 h-screen overflow-y-auto">
+            <div class="flex justify-end p-6">
+                <button id="mobileCloseBtn" class="text-gray-600 dark:text-gray-300 text-3xl"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex flex-col px-8 space-y-6 pb-20">
+                <a href="{{ url_for('index') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300">Builder</a>
+                <a href="{{ url_for('templates_section') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300">Templates</a>
+                <a href="{{ url_for('careers') }}" class="text-lg font-medium text-blue-600 dark:text-blue-400">Careers</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="pt-32 pb-16 px-4 text-center bg-white dark:bg-white/5 transition-colors">
+        <div class="max-w-4xl mx-auto">
+            <span class="px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-semibold border border-blue-200 dark:border-blue-500/20 inline-block mb-6">
+                We're Hiring! 🚀
+            </span>
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white">
+                Build the Future of <br><span class="gradient-text">Career Technology</span>
+            </h1>
+            <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10">
+                Join our mission to help millions of job seekers land their dream jobs with AI.
+                We are a remote-first team of innovators, dreamers, and doers.
+            </p>
+            <a href="#open-roles" class="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-transform hover:scale-105 shadow-lg">
+                View Open Roles
+            </a>
+        </div>
+    </section>
+
+    <section class="py-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Why Join Us?</h2>
+                <p class="text-gray-500 dark:text-gray-400">Work perks that actually matter.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass-panel p-8 rounded-2xl border border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 transition-all">
+                    <div class="w-14 h-14 bg-green-100 dark:bg-green-500/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-globe-americas text-2xl text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Remote-First</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Work from anywhere in the world. We focus on output, not hours spent in a chair.</p>
+                </div>
+
+                <div class="glass-panel p-8 rounded-2xl border border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 transition-all">
+                    <div class="w-14 h-14 bg-purple-100 dark:bg-purple-500/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-heartbeat text-2xl text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Health & Wellness</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Comprehensive health insurance and a monthly wellness stipend for gym or therapy.</p>
+                </div>
+
+                <div class="glass-panel p-8 rounded-2xl border border-gray-200 dark:border-white/10 hover:bg-white dark:hover:bg-white/5 transition-all">
+                    <div class="w-14 h-14 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fas fa-laptop-code text-2xl text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Top Tech Gear</h3>
+                    <p class="text-gray-600 dark:text-gray-400">We set you up with the latest MacBook Pro, monitor, and accessories of your choice.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="open-roles" class="py-20 bg-white dark:bg-white/5 transition-colors">
+        <div class="max-w-5xl mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-10 text-center text-gray-900 dark:text-white">Current Openings</h2>
+
+            <div class="space-y-4">
+                
+                <div class="job-card glass-panel p-6 rounded-2xl border border-gray-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between transition-all bg-gray-50 dark:bg-transparent">
+                    <div class="mb-4 md:mb-0 text-center md:text-left">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Senior Full Stack Engineer</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Remote (Global) &bull; 
+                            <i class="fas fa-clock ml-2 mr-2"></i>Full Time
+                        </p>
+                    </div>
+                    <a href="#" class="px-6 py-2 rounded-lg bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-200 dark:hover:bg-blue-600/40 transition-colors">
+                        Apply Now
+                    </a>
+                </div>
+
+                <div class="job-card glass-panel p-6 rounded-2xl border border-gray-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between transition-all bg-gray-50 dark:bg-transparent">
+                    <div class="mb-4 md:mb-0 text-center md:text-left">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">AI/ML Engineer</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Remote (US/EU) &bull; 
+                            <i class="fas fa-clock ml-2 mr-2"></i>Full Time
+                        </p>
+                    </div>
+                    <a href="#" class="px-6 py-2 rounded-lg bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-200 dark:hover:bg-blue-600/40 transition-colors">
+                        Apply Now
+                    </a>
+                </div>
+
+                <div class="job-card glass-panel p-6 rounded-2xl border border-gray-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between transition-all bg-gray-50 dark:bg-transparent">
+                    <div class="mb-4 md:mb-0 text-center md:text-left">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Product Designer (UI/UX)</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Remote (Asia/Pacific) &bull; 
+                            <i class="fas fa-clock ml-2 mr-2"></i>Contract
+                        </p>
+                    </div>
+                    <a href="#" class="px-6 py-2 rounded-lg bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-200 dark:hover:bg-blue-600/40 transition-colors">
+                        Apply Now
+                    </a>
+                </div>
+
+                <div class="job-card glass-panel p-6 rounded-2xl border border-gray-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between transition-all bg-gray-50 dark:bg-transparent">
+                    <div class="mb-4 md:mb-0 text-center md:text-left">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Growth Marketing Manager</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Remote (Global) &bull; 
+                            <i class="fas fa-clock ml-2 mr-2"></i>Full Time
+                        </p>
+                    </div>
+                    <a href="#" class="px-6 py-2 rounded-lg bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-200 dark:hover:bg-blue-600/40 transition-colors">
+                        Apply Now
+                    </a>
+                </div>
+
+            </div>
+            
+            <div class="text-center mt-12">
+                <p class="text-gray-500 dark:text-gray-400">Don't see a perfect fit? Email us at <a href="mailto:jobs@atsresumepro.com" class="text-blue-500 hover:underline">jobs@atsresumepro.com</a></p>
+            </div>
+        </div>
+    </section>
+
+     <!-- ========== FOOTER ========== -->
+     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                 <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- THEME TOGGLE LOGIC ---
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        if (localStorage.getItem('theme') === 'light') {
+            html.classList.remove('dark');
+        } else {
+            html.classList.add('dark');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // --- MOBILE MENU ---
+        const btn = document.getElementById('mobileMenuBtn');
+        const menu = document.getElementById('mobileMenu');
+        const close = document.getElementById('mobileCloseBtn');
+        btn.addEventListener('click', () => menu.classList.remove('translate-x-full'));
+        close.addEventListener('click', () => menu.classList.add('translate-x-full'));
+    </script>
+</body>
+</html>

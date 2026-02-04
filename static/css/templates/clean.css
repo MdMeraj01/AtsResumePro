@@ -1,0 +1,174 @@
+/* static/css/templates/bold.css */
+
+/* Import Professional Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+.resume-template.bold-theme {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    background: #fff;
+    width: 100%;
+    min-height: 297mm;
+    padding: 0; /* Header spans full width */
+    box-sizing: border-box;
+    line-height: 1.6;
+}
+
+/* --- DARK HEADER (Full Width) --- */
+.bold-header {
+    background-color: #2c3e50; /* Dark Blue/Grey from image */
+    color: white;
+    padding: 40px 50px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.bold-theme .name {
+    font-size: 36px;
+    font-weight: 700;
+    margin: 0 0 5px 0;
+    text-transform: capitalize;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.bold-theme .job-title {
+    font-size: 18px;
+    font-weight: 400;
+    color: #bdc3c7; /* Light Grey Text */
+    margin-bottom: 15px;
+    text-transform: capitalize;
+}
+
+.contact-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px 25px;
+    font-size: 12px;
+    color: #ecf0f1;
+}
+
+.contact-row span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.contact-row i {
+    font-size: 11px;
+    color: #3498db; /* Icon Color */
+}
+
+/* --- MAIN CONTENT PADDING --- */
+.bold-content {
+    padding: 0 50px 40px 50px;
+}
+
+/* --- SECTIONS --- */
+.bold-section {
+    margin-bottom: 25px;
+}
+
+.bold-theme .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c3e50;
+    text-transform: uppercase;
+    border-bottom: 2px solid #3498db; /* Blue Line */
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.bold-theme .summary-text {
+    font-size: 12px;
+    color: #444;
+    text-align: justify;
+}
+
+/* --- EXPERIENCE & EDUCATION --- */
+.template-experience-item, 
+.template-education-item,
+.template-project-item {
+    margin-bottom: 18px;
+}
+
+/* Title Row (Title Left, Date Right) */
+.bold-theme h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 2px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Date Styling */
+.bold-theme h3 span {
+    font-weight: 400;
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+/* Subtitle (Company Name - Blueish) */
+.bold-theme .sub-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: #3498db;
+    margin-bottom: 5px;
+}
+
+/* List Bullets */
+.bold-theme ul {
+    margin: 5px 0 0 18px;
+    padding: 0;
+    list-style-type: disc;
+}
+
+.bold-theme li {
+    font-size: 12px;
+    margin-bottom: 3px;
+    color: #444;
+}
+
+/* --- SKILLS & TOOLS (PILLS STYLE) --- */
+/* Ye important hai wo 'Grey Badges' banane ke liye */
+
+/* Container ko flex wrap do */
+.pill-container, 
+#preview-skills, 
+#preview-tools-skills,
+#preview-languages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* Since Builder output plain text CSV (HTML, CSS), 
+   hum CSS trick se text ko thoda style karenge, 
+   ya better hai JS se unhe split karein. 
+   
+   FILHAL: Hum container ko style nahi de rahe, 
+   hum text content ko direct styling de rahe hain agar wo list elements hon.
+*/
+
+/* --- CERTIFICATIONS --- */
+.certification-item {
+    margin-bottom: 10px;
+}
+.certification-item h3 {
+    font-size: 13px;
+}
+.certification-item .sub-text {
+    color: #555;
+    font-style: italic;
+    font-size: 11px;
+}
+
+/* Hide Empty Elements */
+[style*="display: none"] {
+    display: none !important;
+}

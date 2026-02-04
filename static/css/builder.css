@@ -1,0 +1,1484 @@
+/* ========== BUILDER SPECIFIC STYLES ========== */
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --primary-light: #6366f1;
+    --secondary: #7c3aed;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    
+    --bg-main: #0a0f1c;
+    --bg-secondary: #111827;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-light: #cbd5e1;
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --nav-bg: rgba(15, 23, 42, 0.95);
+    --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    --card-shadow-hover: 0 30px 60px rgba(79, 70, 229, 0.15);
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 100vh;
+    
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(124, 58, 237, 0.08) 0%, transparent 40%),
+        linear-gradient(to bottom right, var(--bg-main) 0%, #111827 100%);
+}
+
+/* Light Mode */
+body.light-mode {
+    --bg-main: #f8fafc;
+    --bg-secondary: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-light: #64748b;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(203, 213, 225, 0.8);
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    --card-shadow-hover: 0 30px 60px rgba(79, 70, 229, 0.15);
+    
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+        linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+
+/* Text fixes for light mode */
+body.light-mode .text-white:not(.btn-primary-glow *):not(.glass-panel.text-white) { 
+    color: #0f172a !important; 
+}
+body.light-mode .text-gray-400 { 
+    color: #64748b !important; 
+}
+body.light-mode .text-gray-300 { 
+    color: #475569 !important; 
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Navbar */
+.nav-glass {
+    background: var(--nav-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link {
+    position: relative;
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.5rem 0;
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 2px;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Glass Panels */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-panel:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* Buttons */
+.btn-primary-glow {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+    background-size: 200% 200%;
+    border: none;
+}
+
+.btn-primary-glow:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.4);
+    background-position: 100% 50%;
+    animation: gradient-shift 1.5s ease infinite;
+}
+
+/* Form Elements */
+.form-group {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    color: var(--text-main);
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+body.light-mode .form-input {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-mode .glass-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: #e2e8f0;
+}
+
+body.light-mode .text-gray-400, 
+body.light-mode .text-gray-300 {
+    color: #475569 !important;
+}
+
+.form-label {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    font-size: 0.875rem;
+}
+
+.form-input:focus + .form-label,
+.form-input:not(:placeholder-shown) + .form-label {
+    top: -0.5rem;
+    left: 0.75rem;
+    font-size: 0.75rem;
+    background: var(--bg-main);
+    padding: 0 0.5rem;
+    color: var(--primary);
+}
+
+body.light-mode .form-input:focus + .form-label,
+body.light-mode .form-input:not(:placeholder-shown) + .form-label {
+    background: #f8fafc;
+}
+
+/* Resume Preview */
+.resume-preview {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .resume-preview {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.9));
+    border-color: rgba(203, 213, 225, 0.8);
+     background: #f1f5f9;
+}
+
+
+/* Progress Steps */
+.progress-step {
+    transition: all 0.3s ease;
+}
+
+.progress-step.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+/* Step Buttons */
+.step-btn {
+    transition: all 0.3s ease;
+}
+
+.step-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+/* Keyword Tags */
+.keyword-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    margin: 0.125rem;
+}
+
+.keyword-tag.missing {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, var(--primary-dark), var(--secondary));
+}
+
+/* Animations */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.shimmer-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: shimmer 2s infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .glass-panel {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+}
+
+/* PDF Mode */
+.pdf-mode {
+    background: white;
+}
+
+body.light-mode .pdf-mode {
+    background: white;
+}
+
+/* Modal Backdrop */
+.fixed.inset-0 {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+   /* Progress Bar Mobile Responsiveness */
+@media (max-width: 640px) {
+    .flex.justify-between.relative.z-10 {
+        overflow-x: auto;
+        padding-bottom: 10px;
+        justify-content: flex-start;
+        gap: 1.5rem;
+        -webkit-overflow-scrolling: touch;
+    }
+    .progress-step {
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+        flex-shrink: 0;
+    }
+    .progress-step + span {
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+}
+
+/* Mobile Responsive Specific Fixes */
+@media (max-width: 768px) {
+    /* Header and Title adjustment */
+    h1.text-4xl {
+        font-size: 2rem !important;
+        line-height: 1.2;
+    }
+
+    /* Template selector text visibility fix */
+    #templateSelector {
+        color: #1e293b !important; /* Dark text for visibility in light blocks */
+        background-color: white !important;
+    }
+
+    /* Step buttons (Personal, Education etc) spacing */
+    .step-btn {
+        width: 100% !important; /* Mobile par full width buttons */
+        margin-bottom: 0.5rem;
+        padding: 0.75rem !important;
+        font-size: 0.875rem;
+    }
+
+    /* Form Step Container padding */
+    .form-step {
+        padding: 0.5rem !important;
+    }
+
+    /* Hide unnecessary elements on very small screens to save space */
+    #sectionGuidance {
+        display: none; 
+    }
+}
+
+/* Scrollbar ko clean rakhne ke liye */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Mobile Grid and Button Fixes */
+@media (max-width: 640px) {
+    /* Container padding kam karein taaki side space bache */
+    .glass-panel.rounded-2xl.p-6 {
+        padding: 1rem !important;
+    }
+
+    /* Buttons ke andar spacing kam karein */
+    .step-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Icons ko thoda chota karein mobile par */
+    .step-btn i {
+        font-size: 0.75rem;
+    }
+}
+ 
+
+/* ========== FORM & PREVIEW MOBILE OPTIMIZATION ========== */
+@media (max-width: 768px) {
+    /* 1. Main Container Fix */
+    .max-w-7xl {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        overflow-x: hidden !important; /* Horizental scroll khatam karne ke liye */
+    }
+
+    /* 2. Form Section Adjustment */
+    .glass-panel {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 1rem !important; /* Padding kam ki taaki left side space bache */
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 3. Live Preview Section Fix */
+    /* Preview box ko chota karne aur screen ke andar rakhne ke liye */
+    #resumePreview {
+        padding: 0.75rem !important;
+        font-size: 0.6rem !important; /* Text size chota kiya taaki overflow na ho */
+        line-height: 1.2 !important;
+        width: 100% !important;
+        transform-origin: left top;
+        overflow-x: auto !important; /* Agar content bada ho toh box ke andar hi scroll ho */
+    }
+
+    /* Resume Template Layout Fix */
+    .resume-template {
+        padding: 1rem !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* 4. Inputs left side alignment */
+    .form-input {
+        padding: 0.6rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Preview Buttons (PDF, Word) mobile par resize */
+    .flex.space-x-3 {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+
+    .flex.space-x-3 button {
+        flex: 1 1 auto !important;
+        padding: 0.5rem !important;
+        font-size: 0.7rem !important;
+    }
+}
+
+/* ========== LIGHT MODE VISIBILITY FIXES ========== */
+body.light-mode {
+    background-color: #f8fafc !important; /* Light background */
+    color: #0f172a !important; /* Dark text for readability */
+}
+
+/* 1. Form Inputs Visibility */
+body.light-mode .form-input {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-mode .form-label {
+    color: #64748b !important;
+}
+
+/* 2. Step Buttons Fix (Education, Experience etc) */
+body.light-mode .step-btn {
+    background: #ffffff !important;
+    color: #475569 !important; /* Dark grey text */
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode .step-btn.active {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    color: #ffffff !important; /* Active text white hi rahega */
+    border: none !important;
+}
+
+/* 3. Glass Panels Visibility */
+body.light-mode .glass-panel {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 4. Text and Icons Fix */
+body.light-mode .text-gray-300, 
+body.light-mode .text-gray-400,
+body.light-mode .text-white {
+    color: #1e293b !important; /* Force dark color on white backgrounds */
+}
+
+/* 5. Special Case for Primary Buttons */
+body.light-mode .btn-primary-glow,
+body.light-mode .btn-primary-glow i,
+body.light-mode .btn-primary-glow span {
+    color: #ffffff !important; /* Inka text white hi rehna chahiye */
+}
+
+/* 6. Resume Preview Contrast */
+body.light-mode .resume-preview {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+/* 7. Section Guidance Box */
+body.light-mode #sectionGuidance {
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+}
+body.light-mode #sectionGuidance h4 {
+    color: #1e40af !important;
+}
+
+/* ========== FOOTER LIGHT MODE FIX ========== */
+body.light-mode footer {
+    background: #f1f5f9 !important; /* Light gray/white background */
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Footer Heading Fix */
+body.light-mode footer h4 {
+    color: #0f172a !important; /* Bold dark text */
+}
+
+/* Footer Links and Description Fix */
+body.light-mode footer p,
+body.light-mode footer ul li a,
+body.light-mode footer .text-gray-400,
+body.light-mode footer .text-gray-600 {
+    color: #475569 !important; /* Darker gray for readability */
+}
+
+/* Footer Links Hover Effect */
+body.light-mode footer ul li a:hover {
+    color: #2563eb !important; /* Blue hover color */
+}
+
+/* Social Icons in Footer */
+body.light-mode footer .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+/* Bottom Copyright Section Fix */
+body.light-mode footer .border-t {
+    border-top-color: #e2e8f0 !important;
+}
+
+body.light-mode footer .text-blue-400 {
+    color: #1d4ed8 !important; /* Deep blue for 'Meraj.Dev' link */
+    font-weight: 700;
+}
+
+/* Social Media Icons Hover Fix */
+body.light-mode footer a.w-10:hover {
+    background-color: #e2e8f0 !important;
+    color: #1d4ed8 !important;
+}
+
+/* ========== FINAL MOBILE MENU FIX ========== */
+
+/* 1. Menu Container ko hamesha top par rakhega */
+#mobileMenu {
+    z-index: 9999 !important; /* High value taaki koi element upar na aaye */
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: white !important; /* Solid background for light mode */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. Light Mode specific adjustment */
+body.light-mode #mobileMenu {
+    background-color: #ffffff !important;
+}
+
+/* 3. Dark Mode specific adjustment */
+body:not(.light-mode) #mobileMenu {
+    background-color: #0f172a !important; /* Slate-900 color */
+}
+
+/* 4. Menu khulne par body ko scroll hone se rokna */
+body.menu-open {
+    overflow: hidden !important;
+}
+
+/* 5. Mobile links visibility fix */
+.mobile-nav-link {
+    color: inherit !important;
+    position: relative;
+    z-index: 10000 !important; /* Links ko container se bhi upar rakhega */
+}
+
+/* 6. Close button visibility */
+#mobileCloseBtn {
+    z-index: 10001 !important;
+    cursor: pointer;
+}
+
+/* ========== THEME SPECIFIC MOBILE NAV FIX ========== */
+
+/* Light Mode: Background ko solid white banayein */
+body.light-mode #mobileMenu {
+    background-color: #ffffff !important; /* Solid white background */
+    background-image: none !important; /* Kisi bhi gradient ko hatane ke liye */
+    z-index: 10000 !important; /* Sabse upar dikhne ke liye */
+}
+
+/* Light Mode: Text aur Icons ko dark karein */
+body.light-mode .mobile-nav-link {
+    color: #1e293b !important; /* Dark slate color */
+    border-bottom: 1px solid #f1f5f9 !important; /* Light border */
+}
+
+body.light-mode .mobile-nav-link i {
+    color: #3b82f6 !important; /* Icons ko blue color dein visibility ke liye */
+}
+
+/* Theme Label aur Switch Theme text fix */
+body.light-mode .mobile-text, 
+body.light-mode #mobileMenu span {
+    color: #475569 !important;
+}
+
+/* Close button (X) visibility fix */
+body.light-mode #mobileCloseBtn {
+    color: #0f172a !important;
+    z-index: 10001 !important;
+}
+
+/* Light Mode Auth Buttons Adjustment */
+body.light-mode #mobileLoginBtn {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+body.light-mode #mobileSignupBtn {
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4) !important;
+}
+
+/* Navbar Light Mode Visibility */
+body.light-mode .nav-glass {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode .nav-link, 
+body.light-mode .text-white.tracking-wide {
+    color: #1e293b !important;
+}
+
+/* Mobile Menu Specific Fixes */
+body.light-mode #mobileMenu {
+    background-color: #ffffff !important;
+    z-index: 10000 !important;
+}
+
+body.light-mode .mobile-nav-link {
+    color: #334155 !important;
+    border-bottom-color: #f1f5f9 !important;
+}
+
+body.light-mode #mobileThemeToggle {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+}
+
+/* Scroll lock when menu is open */
+body.menu-open {
+    overflow: hidden !important;
+}
+
+/* ========== UI UPGRADE: MICRO-INTERACTIONS ========== */
+
+/* 1. Input Validation Styles */
+.form-input.valid {
+    border-color: #10b981 !important; /* Green */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.5rem;
+}
+
+.form-input.invalid {
+    border-color: #ef4444 !important; /* Red */
+}
+
+/* 2. Button Press Effect */
+.btn-primary-glow:active, .step-btn:active {
+    transform: scale(0.96);
+    transition: 0.1s;
+}
+
+/* 3. Input Focus Glow */
+.form-input:focus {
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15) !important;
+    border-color: #6366f1 !important;
+    outline: none;
+}
+
+/* 4. Skeleton Loading Animation (For AI) */
+.skeleton {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    background-size: 200% 100%;
+    animation: skeleton-move 1.5s infinite;
+}
+
+@keyframes skeleton-move {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Skeleton Overlay for Textareas */
+.loading-container {
+    position: relative;
+}
+
+.skeleton-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.5); /* Dark mode compatible */
+    display: none; /* Default hidden */
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    border-radius: 0.75rem;
+    z-index: 10;
+}
+
+body.light-mode .skeleton-overlay {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.skeleton-line {
+    width: 100%;
+    height: 12px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+    background-size: 200% 100%;
+    animation: skeleton-move 1.5s infinite;
+}
+
+body.light-mode .skeleton-line {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+}
+
+/* Drag and Drop Visual Styles */
+.entry-card {
+    cursor: grab; /* Hath ka icon taaki pata chale pakad sakte hain */
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.entry-card:active {
+    cursor: grabbing;
+}
+
+.entry-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+/* Drag handle icon (Optional: Entry card ke andar add karne ke liye) */
+.drag-handle {
+    color: var(--text-muted);
+    margin-right: 10px;
+    cursor: grab;
+}
+
+/* Professional Keyword Tags */
+.keyword-tag {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+body.light-mode .keyword-tag {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #e2e8f0;
+}
+
+.keyword-tag i {
+    font-size: 0.7rem;
+    margin-right: 0.4rem;
+}
+
+.keyword-tag.matching {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+
+.keyword-tag.missing {
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.3);
+    color: #f43f5e;
+}
+
+/* =========================================
+   MOBILE BOTTOM NAVIGATION STYLES
+   ========================================= */
+
+/* 1. Body Padding (Taaki content nav bar ke piche na chupe) */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 80px !important; /* Space for bottom bar */
+    }
+}
+
+/* 2. Dark Mode Styles (Default) */
+#bottomNav {
+    background: rgba(15, 23, 42, 0.95); /* Slate 900 */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Center Button Border color matching bg */
+#bottomNav .rounded-full {
+    border-color: #0f172a; 
+}
+
+/* Active Link Color (Blue) */
+.bottom-nav-item.active {
+    color: #60a5fa; /* Blue 400 */
+}
+.bottom-nav-item.active i {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));
+}
+
+/* 3. Light Mode Overrides */
+body.light-mode #bottomNav {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+
+body.light-mode #bottomNav .text-gray-400 {
+    color: #64748b !important; /* Slate 500 */
+}
+
+body.light-mode #bottomNav .rounded-full {
+    border-color: #ffffff !important; /* White border for center button */
+}
+
+body.light-mode .bottom-nav-item.active {
+    color: #2563eb !important; /* Darker Blue */
+}
+
+/* 4. iPhone Safe Area Support */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* =========================================
+   TOAST NOTIFICATION MOBILE FIX
+   Paste at the end of home.css
+   ========================================= */
+
+.toast-notification {
+    /* Desktop Default */
+    bottom: 24px !important;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        /* Mobile: Lift it above Bottom Nav */
+        bottom: 90px !important; 
+        left: 20px !important;
+        right: 20px !important;
+        width: auto !important;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* =========================================
+   TOAST NOTIFICATION MOBILE FIX
+   Paste at the end of home.css
+   ========================================= */
+
+.toast-notification {
+    /* Desktop Default */
+    bottom: 24px !important;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        /* Mobile: Lift it above Bottom Nav */
+        bottom: 90px !important; 
+        left: 20px !important;
+        right: 20px !important;
+        width: auto !important;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE PREVIEW FIX
+   (Paste this at the VERY BOTTOM of builder.css)
+   ============================================================ */
+
+@media screen and (max-width: 1024px) {
+    /* 1. Layout ko Block banao (Side-by-side hatao) */
+    .builder-layout {
+        display: block !important;
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+
+    /* 2. Editor Panel (Form) full width */
+    .editor-panel {
+        width: 100% !important;
+        height: auto !important;
+        padding-bottom: 50px;
+    }
+
+    /* 3. Preview Panel Styling */
+    .preview-panel {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 600px; /* Itni jagah paper ke liye */
+        background-color: #2d3748; /* Dark background */
+        display: flex;
+        justify-content: center;
+        padding-top: 30px;
+        overflow: hidden; /* Scroll band karo, scale use karenge */
+    }
+
+    /* 4. A4 Paper Scaling (Magic here) */
+    #template-render-area {
+        /* Mobile par 40% size kardo taaki fit ho jaye */
+        transform: scale(0.40);
+        transform-origin: top center; 
+        
+        /* Scale karne se niche khali jagah bachti hai, usse kam karo */
+        margin-bottom: -160% !important; 
+        
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+}
+
+/* Chhote Phones ke liye (iPhone SE, etc) */
+@media screen and (max-width: 400px) {
+    #template-render-area {
+        transform: scale(0.35); /* Aur chhota karo */
+        margin-bottom: -180% !important;
+    }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE PREVIEW FIX (FINAL)
+   ============================================================ */
+
+@media screen and (max-width: 1024px) {
+    /* 1. Stack Layout (Top: Form, Bottom: Preview) */
+    .builder-layout {
+        display: block !important;
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+
+    /* 2. Editor Panel Full Width */
+    .editor-panel {
+        width: 100% !important;
+        height: auto !important;
+        border-right: none !important;
+        padding-bottom: 20px;
+    }
+
+    /* 3. Preview Panel Container */
+    .preview-panel {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 600px;
+        background-color: #2d3748; /* Dark grey bg to see paper clearly */
+        display: flex;
+        justify-content: center;
+        padding-top: 40px;
+        overflow: hidden !important; /* IMPORTANT: Hide scrollbars */
+        position: relative;
+    }
+
+    /* 4. A4 Paper Scaling Logic */
+    #template-render-area {
+        transform-origin: top center;
+        transform: scale(0.42); /* Scale to 42% */
+        margin-bottom: -160% !important; /* Pull up empty space */
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+}
+
+/* Very Small Screens */
+@media screen and (max-width: 380px) {
+    #template-render-area {
+        transform: scale(0.35);
+        margin-bottom: -190% !important;
+    }
+}
+
+/* ============================================================
+   MOBILE COMPACT FIX (Form & Preview Chota Karne Ke Liye)
+   Paste this at the very END of builder.css
+   ============================================================ */
+
+@media screen and (max-width: 768px) {
+    /* 1. FORM (Editor) KO COMPACT KARO */
+    .editor-panel {
+        padding: 10px !important; /* Side ki jagah kam ki */
+    }
+
+    /* Cards (Entry Boxes) ko chota karo */
+    .entry-card {
+        padding: 12px !important; 
+        margin-bottom: 12px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Inputs (Likne wale dabbe) ko chota karo */
+    .form-input, select, textarea {
+        font-size: 13px !important; /* Text size kam */
+        padding: 8px 10px !important; /* Dabba chota */
+        height: auto !important;
+    }
+    
+    /* Headings ko chota karo */
+    h2, h3, h4 {
+        font-size: 1.1rem !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* 2. PREVIEW BOX KO CHOTA KARO */
+    .preview-panel {
+        /* Box ki height kam karo taaki puri screen na ghure */
+        min-height: 450px !important; 
+        padding-top: 20px !important;
+        background-color: #2d3748 !important; /* Dark Grey Background */
+    }
+
+    /* 3. RESUME PAPER KO SCALE DOWN (ZOOM OUT) KARO */
+    #template-render-area {
+        /* 0.33 ka matlab 33% size (Bahut chota aur fit) */
+        transform: scale(0.33) !important; 
+        transform-origin: top center !important;
+        
+        /* Scale karne ke baad niche jo khali jagah bachti hai usse cover karo */
+        margin-bottom: -210% !important; 
+        
+        box-shadow: 0 0 10px rgba(0,0,0,0.5) !important;
+    }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE FIX (FINAL & COMPLETED)
+   Paste this at the VERY BOTTOM of builder.css
+   ============================================================ */
+
+@media screen and (max-width: 1024px) {
+    
+    /* 1. LAYOUT RESET (Stack Form & Preview) */
+    .builder-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-y: visible !important;
+        padding-top: 60px !important; /* Space for navbar */
+    }
+
+    /* 2. FORM SECTION (Editor) */
+    .editor-panel {
+        width: 100% !important;
+        height: auto !important;
+        border-right: none !important;
+        padding: 15px !important;
+        overflow: visible !important;
+    }
+
+    /* Make inputs readable on mobile */
+    .form-input, select, textarea {
+        font-size: 16px !important; /* Prevents zoom on iPhone */
+        padding: 12px !important;
+    }
+    
+    /* Step Buttons (Personal, Education...) Grid */
+    #stepButtonsContainer {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 buttons per row */
+        gap: 8px !important;
+    }
+    
+    .step-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        font-size: 0.75rem !important;
+        padding: 8px 4px !important;
+    }
+
+    /* 3. PREVIEW SECTION (The A4 Paper Container) */
+    .preview-panel {
+        width: 100% !important;
+        height: auto !important;
+        background-color: #334155 !important; /* Dark Slate BG */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 40px !important;
+        padding-bottom: 0px !important;
+        overflow: hidden !important; /* Hide scrollbars caused by full scale paper */
+        min-height: 600px !important; /* Ensure enough height for the scaled paper */
+    }
+
+    /* 4. A4 PAPER SCALING MAGIC */
+    #template-render-area {
+        /* Force the paper to keep its original A4 dimensions */
+        width: 210mm !important;
+        min-height: 297mm !important;
+        
+        /* Scale it down to fit mobile screens (approx 40% of original size) */
+        transform: scale(0.40) !important; 
+        transform-origin: top center !important; /* Shrink from the top */
+        
+        /* IMPORTANT: Remove the empty white space left by scaling */
+        margin-bottom: -150% !important; 
+        margin-top: 0px !important;
+        
+        box-shadow: 0 0 20px rgba(0,0,0,0.5) !important;
+    }
+}
+
+/* 5. EXTRA SMALL SCREENS (iPhone SE, Older Androids) */
+@media screen and (max-width: 380px) {
+    #template-render-area {
+        transform: scale(0.35) !important; /* Scale even smaller */
+        margin-bottom: -180% !important;
+    }
+    
+    #stepButtonsContainer {
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 buttons per row */
+    }
+}
+
+/* ============================================================
+   FINAL MOBILE FIX (Paste this at the VERY BOTTOM of builder.css)
+   Old media queries delete karke sirf ye paste karein.
+   ============================================================ */
+
+/* 1. Reset Desktop Grid System for Mobile */
+@media screen and (max-width: 1024px) {
+    
+    /* Force layout to be a simple stack (Block) instead of Grid */
+    .builder-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        padding-top: 70px !important; /* Navbar ke liye jagah */
+        width: 100% !important;
+    }
+
+    /* 2. Editor Panel (Form) Fix */
+    .editor-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        border-right: none !important;
+        padding: 15px !important;
+        order: 1; /* Form pehle dikhega */
+    }
+
+    /* Input Fields text size fix for iPhone zoom issue */
+    .form-input, select, textarea {
+        font-size: 16px !important; 
+        width: 100% !important;
+    }
+    
+    /* 3. Preview Panel (Grey Box) Fix */
+    .preview-panel {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 550px !important; /* Itni jagah paper ke liye reserve karo */
+        background-color: #334155 !important;
+        padding: 20px 0 !important;
+        overflow: hidden !important; /* Paper bahar na nikle */
+        order: 2; /* Preview niche dikhega */
+        display: flex;
+        justify-content: center;
+        align-items: flex-start; /* Top se start karo */
+    }
+
+    /* 4. A4 Paper Scaling Logic (Perfect Fit) */
+    #template-render-area {
+        /* Paper ka size A4 hi rahega */
+        width: 210mm !important;
+        min-height: 297mm !important;
+        
+        /* Mobile Screen par fit karne ke liye chota (Zoom Out) karein */
+        transform: scale(0.38) !important; 
+        transform-origin: top center !important;
+        
+        /* Scale hone ke baad jo khali jagah bachti hai, usse hatayein */
+        margin-bottom: -160% !important; 
+        margin-top: 10px !important;
+        
+        box-shadow: 0 0 20px rgba(0,0,0,0.5) !important;
+        background: white !important;
+    }
+}
+
+/* 5. Small Mobile Screens (iPhone SE, old Androids) */
+@media screen and (max-width: 380px) {
+    #template-render-area {
+        transform: scale(0.33) !important; /* Aur thoda chota */
+        margin-bottom: -190% !important;
+    }
+    
+    .step-btn {
+        padding: 8px 4px !important;
+        font-size: 12px !important;
+    }
+}
+
+/* 6. Step Buttons Grid Fix (Personal, Education buttons) */
+@media screen and (max-width: 640px) {
+    #stepButtonsContainer {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 buttons ek line me */
+        gap: 8px !important;
+    }
+    
+    .step-btn {
+        width: 100% !important;
+        margin: 0 !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+/* 4. A4 Paper Scaling Logic (Perfect Fix) */
+    #template-render-area {
+        /* Force Exact A4 Width (Don't let it shrink) */
+        width: 210mm !important;
+        min-width: 210mm !important;   /* Ye line paper ko nichodne se rokegi */
+        max-width: 210mm !important;
+        min-height: 297mm !important;
+        
+        /* Flexbox Squashing Fix */
+        flex-shrink: 0 !important;     /* IMPORTANT: Paper ko narrow hone se rokega */
+
+        /* Mobile Screen par fit karne ke liye Scale (Zoom Out) */
+        transform: scale(0.45) !important; /* Thoda bada kiya taki clear dikhe */
+        transform-origin: top center !important;
+        
+        /* Spacing Fixes */
+        margin-bottom: -150% !important; 
+        margin-top: 20px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        
+        box-shadow: 0 0 20px rgba(0,0,0,0.5) !important;
+        background: white !important;
+    }
+
+/* ============================================================
+   FINAL CORRECTED MOBILE FIX (Paste at bottom of builder.css)
+   Pichla code hata kar ye wala lagayein.
+   ============================================================ */
+
+@media screen and (max-width: 1024px) {
+    
+    /* 1. LAYOUT RESET */
+    .builder-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+        padding-top: 60px !important;
+    }
+
+    /* 2. PREVIEW PANEL (Container) */
+    .preview-panel {
+        width: 100% !important;
+        /* Fixed height window for viewing resume */
+        height: 600px !important; 
+        min-height: 600px !important;
+        
+        background-color: #334155 !important;
+        padding-top: 40px !important;
+        padding-bottom: 0 !important;
+        
+        /* Centering Magic */
+        display: flex !important;
+        justify-content: center !important; /* Horizontally Center */
+        align-items: flex-start !important; /* Start from Top */
+        
+        overflow: hidden !important; /* Cut extra parts */
+        order: 2; 
+    }
+
+    /* 3. RESUME PAPER (The Content) */
+    #template-render-area {
+        /* Asli A4 Size - DO NOT CHANGE */
+        width: 210mm !important;
+        min-width: 210mm !important;
+        max-width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
+        
+        /* SCALE (Zoom Out) - Perfect Fit for Mobile */
+        transform: scale(0.42) !important; 
+        
+        /* IMPORTANT: Pivot point Top Center */
+        transform-origin: top center !important;
+        
+        /* Alignment Fixes */
+        margin-left: auto !important;
+        margin-right: auto !important;
+        margin-top: 0px !important;
+        
+        /* Remove Ghost Space below scaled element */
+        margin-bottom: -150% !important; 
+        
+        box-shadow: 0 0 25px rgba(0,0,0,0.6) !important;
+        background: white !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* 4. Form Section */
+    .editor-panel {
+        width: 100% !important;
+        padding: 15px !important;
+        order: 1;
+    }
+    
+    /* Input Fixes */
+    .form-input, select, textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Small Phones Adjustment */
+@media screen and (max-width: 380px) {
+    #template-render-area {
+        transform: scale(0.35) !important; /* Thoda aur chota */
+        margin-bottom: -180% !important;
+    }
+    .preview-panel {
+        height: 500px !important;
+    }
+}
+
+/* =========================================
+   USER DROPDOWN LIGHT MODE FIX
+   ========================================= */
+
+/* 1. Dropdown Container Background */
+body.light-mode .group:hover .absolute {
+    background-color: #ffffff !important;   /* Pure White Background */
+    border-color: #e2e8f0 !important;       /* Light Grey Border */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important; /* Soft Shadow */
+}
+
+/* 2. Header Section (User Name & Email) */
+body.light-mode .group .absolute .border-b {
+    border-bottom-color: #f1f5f9 !important; /* Light separator line */
+}
+
+body.light-mode .group .absolute p.font-bold {
+    color: #1e293b !important; /* Dark Text for Name */
+}
+
+body.light-mode .group .absolute p.text-gray-400 {
+    color: #64748b !important; /* Medium Grey for Email */
+}
+
+/* 3. Dropdown Links (Dashboard, Logout) */
+body.light-mode .group .absolute a {
+    color: #334155 !important; /* Dark Grey Text */
+}
+
+/* 4. Hover State for Links */
+body.light-mode .group .absolute a:hover {
+    background-color: #f8fafc !important; /* Very Light Grey on Hover */
+    color: #2563eb !important; /* Blue Text on Hover */
+}
+
+/* 5. Logout Link Specific */
+body.light-mode .group .absolute a.text-red-400 {
+    color: #ef4444 !important; /* Red Text */
+}
+body.light-mode .group .absolute a.text-red-400:hover {
+    background-color: #fef2f2 !important; /* Light Red Background */
+    color: #dc2626 !important; /* Darker Red on Hover */
+}
+
+/* 6. Main Button (User Icon + Name) in Navbar */
+body.light-mode .group > button {
+    background-color: rgba(0, 0, 0, 0.05) !important; /* Light transparent bg */
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .group > button .text-white {
+    color: #1e293b !important; /* Dark Name Text */
+}
+
+body.light-mode .group > button .text-gray-400 {
+    color: #64748b !important; /* Dark "Welcome" Text */
+}
+
+body.light-mode .group > button:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+    border-color: rgba(59, 130, 246, 0.5) !important; /* Blue border on hover */
+}
+

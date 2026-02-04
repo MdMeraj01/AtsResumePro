@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Help Center | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- SMOOTH TRANSITIONS --- */
+        * {
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* --- GLASS PANEL STYLES --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- NAVBAR GLASS --- */
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .dark .nav-glass {
+            background: rgba(15, 23, 42, 0.92);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* --- GRADIENT TEXT --- */
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb, #7c3aed, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* --- ACCORDION ANIMATION --- */
+        .accordion-content {
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .accordion-content.open {
+            max-height: 800px;
+            opacity: 1;
+        }
+        .rotate-icon {
+            transform: rotate(180deg);
+            transition: transform 0.3s ease;
+        }
+
+        /* --- HIGHLIGHT SEARCH --- */
+        .highlight {
+            background-color: rgba(59, 130, 246, 0.2);
+            padding: 2px 4px;
+            border-radius: 4px;
+            color: #1e40af;
+        }
+        .dark .highlight {
+            background-color: rgba(96, 165, 250, 0.3);
+            color: #93c5fd;
+        }
+
+        /* --- STATUS INDICATORS --- */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-operational {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .dark .status-operational {
+            background-color: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        /* --- LOADING ANIMATION --- */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, 
+                transparent 25%, 
+                rgba(255, 255, 255, 0.4) 50%, 
+                transparent 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+    </style>
+</head>
+<body class="antialiased font-sans min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-slate-900 dark:to-slate-900 text-gray-900 dark:text-white transition-colors duration-300">
+
+    <!-- Navigation Bar -->
+    <nav class="fixed w-full z-50 nav-glass">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20 w-full">
+                <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 dark:text-white">ATS<span class="text-blue-500">Pro</span></span>
+                </div>
+    
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{{ url_for('index') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">Home</a>
+                    <a href="{{ url_for('builder') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">Builder</a>
+                    <a href="{{ url_for('templates_section') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">Templates</a>
+                    <a href="{{ url_for('about') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">About Us</a>
+                    <a href="{{ url_for('help_center') }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 font-semibold border-b-2 border-blue-500">Help Center</a>
+                </div>
+    
+                <div class="hidden md:flex items-center space-x-4">
+    <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:scale-105">
+        <i class="fas fa-moon dark:hidden"></i>
+        <i class="fas fa-sun hidden dark:block"></i>
+    </button>
+
+    {% if current_user %}
+        <div class="relative group">
+            <button onclick="window.location.href='{{ url_for('user_dashboard') }}'" class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300 group">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-110 transition-transform">
+                    {{ current_user.full_name[0] | upper }}
+                </div>
+                <div class="text-left">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Welcome back,</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                </div>
+            </button>
+        </div>
+    {% else %}
+        <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300">Login</a>
+        <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-md">
+            Sign Up Free
+        </a>
+    {% endif %}
+</div>
+                
+                <div class="md:hidden flex items-center">
+                    <button id="mobileMenuBtn" class="text-gray-600 dark:text-gray-300 text-2xl p-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-white dark:bg-slate-900 h-screen overflow-y-auto">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 dark:text-white">ATS<span class="text-blue-500">Pro</span></span>
+                </div>
+                <button id="mobileCloseBtn" class="text-gray-600 dark:text-gray-300 text-3xl hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex flex-col p-6 space-y-4">
+                <a href="{{ url_for('index') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-home mr-3 w-6 text-center"></i> Home
+                </a>
+                <a href="{{ url_for('builder') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-pencil-alt mr-3 w-6 text-center"></i> Builder
+                </a>
+                <a href="{{ url_for('templates_section') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-palette mr-3 w-6 text-center"></i> Templates
+                </a>
+                <a href="{{ url_for('about') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-info-circle mr-3 w-6 text-center"></i> About Us
+                </a>
+                <a href="{{ url_for('help_center') }}" class="text-lg font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 p-3 rounded-lg">
+                    <i class="fas fa-life-ring mr-3 w-6 text-center"></i> Help Center
+                </a>
+                <div class="pt-6 border-t border-gray-200 dark:border-gray-800">
+                    <div class="flex justify-center space-x-4">
+                        <button id="mobileThemeToggle" class="p-3 rounded-full glass-panel text-gray-600 dark:text-gray-300">
+                            <i class="fas fa-moon dark:hidden"></i>
+                            <i class="fas fa-sun hidden dark:block"></i>
+                        </button>
+                        {% if current_user %}
+                            <a href="{{ url_for('user_dashboard') }}" class="px-5 py-2.5 rounded-lg glass-panel text-sm font-semibold text-gray-700 dark:text-gray-200">Dashboard</a>
+                        {% else %}
+                            <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-sm font-semibold text-gray-700 dark:text-gray-200">Login</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-4 relative overflow-hidden">
+        <!-- Background Elements -->
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <div class="absolute top-20 left-10 w-72 h-72 bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div class="absolute bottom-20 right-10 w-72 h-72 bg-purple-200/30 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 1s"></div>
+        </div>
+
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <span class="px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-semibold border border-blue-200 dark:border-blue-500/20 inline-block mb-6 animate-bounce-slow">
+                    <i class="fas fa-life-ring mr-2"></i>Support Center
+                </span>
+                <h1 class="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white leading-tight">
+                    How can we <span class="gradient-text">help you</span> today?
+                </h1>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+                    Find instant answers to your questions, access detailed guides, or connect with our support team. We're here to help you succeed.
+                </p>
+            </div>
+            
+            <!-- Search Section -->
+            <div class="max-w-3xl mx-auto mb-16">
+                <div class="relative group">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400 group-focus-within:text-blue-500 dark:group-focus-within:text-blue-400 transition-colors text-lg"></i>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search for answers (e.g., 'How to download PDF', 'AI optimization', 'Account settings')" 
+                            class="w-full pl-14 pr-12 py-5 rounded-2xl glass-panel text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg shadow-xl"
+                        >
+                        <div class="absolute inset-y-0 right-0 pr-5 flex items-center">
+                            <kbd class="hidden md:inline px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 mr-3">⌘K</kbd>
+                            <button id="clearSearch" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors opacity-0 pointer-events-none">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Popular Search Tags -->
+                <div class="flex flex-wrap justify-center gap-2 mt-6">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Popular:</span>
+                    <button class="search-tag" data-tag="pdf export">PDF Export</button>
+                    <button class="search-tag" data-tag="ats score">ATS Score</button>
+                    <button class="search-tag" data-tag="ai suggestions">AI Suggestions</button>
+                    <button class="search-tag" data-tag="billing">Billing & Plans</button>
+                    <button class="search-tag" data-tag="templates">Templates</button>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="max-w-3xl mx-auto mb-20">
+                <div class="glass-panel rounded-2xl p-6 hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <div class="w-3 h-3 bg-green-500 rounded-full animate-ping absolute opacity-75"></div>
+                                <div class="w-3 h-3 bg-green-500 rounded-full relative"></div>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-900 dark:text-white">System Status: <span class="text-green-600 dark:text-green-400">All Systems Operational</span></h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Last updated: Just now • Updated every 5 minutes</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">99.9%</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Uptime (30 days)</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">< 50ms</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Response Time</div>
+                            </div>
+                            <a href="#" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors">
+                                <i class="fas fa-chart-line mr-2"></i>Status History
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Help Categories -->
+    <section class="py-16 px-4">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold mb-12 text-center text-gray-900 dark:text-white">Browse Help Categories</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+                <a href="#getting-started" class="help-category group">
+                    <div class="glass-panel p-8 rounded-2xl hover:shadow-2xl transition-all duration-500 group-hover:-translate-y-2 h-full">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-rocket text-3xl text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Getting Started</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">Learn the basics of creating your first resume and setting up your profile.</p>
+                        <span class="text-blue-600 dark:text-blue-400 text-sm font-medium inline-flex items-center group-hover:underline">
+                            View guides <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </a>
+
+                <a href="#resume-builder" class="help-category group">
+                    <div class="glass-panel p-8 rounded-2xl hover:shadow-2xl transition-all duration-500 group-hover:-translate-y-2 h-full">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-500/20 dark:to-purple-600/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-file-alt text-3xl text-purple-600 dark:text-purple-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Resume Builder</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">Detailed guides on editing, formatting, and optimizing your resume content.</p>
+                        <span class="text-purple-600 dark:text-purple-400 text-sm font-medium inline-flex items-center group-hover:underline">
+                            View guides <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </a>
+
+                <a href="#templates" class="help-category group">
+                    <div class="glass-panel p-8 rounded-2xl hover:shadow-2xl transition-all duration-500 group-hover:-translate-y-2 h-full">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-500/20 dark:to-green-600/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-palette text-3xl text-green-600 dark:text-green-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Templates & Design</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">Customize templates, change layouts, and design your perfect resume.</p>
+                        <span class="text-green-600 dark:text-green-400 text-sm font-medium inline-flex items-center group-hover:underline">
+                            View guides <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </a>
+
+                <a href="#account-billing" class="help-category group">
+                    <div class="glass-panel p-8 rounded-2xl hover:shadow-2xl transition-all duration-500 group-hover:-translate-y-2 h-full">
+                        <div class="w-16 h-16 bg-gradient-to-br from-pink-100 to-pink-200 dark:from-pink-500/20 dark:to-pink-600/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i class="fas fa-credit-card text-3xl text-pink-600 dark:text-pink-400"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-gray-900 dark:text-white">Account & Billing</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">Manage your subscription, update payment methods, and billing questions.</p>
+                        <span class="text-pink-600 dark:text-pink-400 text-sm font-medium inline-flex items-center group-hover:underline">
+                            View guides <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comprehensive FAQ Sections -->
+    <section class="py-16 px-4">
+        <div class="max-w-6xl mx-auto">
+            <!-- Getting Started Section -->
+            <div id="getting-started" class="mb-16 scroll-mt-24">
+                <div class="flex items-center mb-10">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/20 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-rocket text-xl text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Getting Started</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Begin your journey with ATS Resume Builder Pro</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="faq-item">
+                        <button class="faq-question" onclick="toggleFaq('faq1')">
+                            <div class="flex items-center justify-between w-full text-left">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center mr-4">
+                                        <i class="fas fa-question text-blue-600 dark:text-blue-400 text-sm"></i>
+                                    </div>
+                                    <span class="font-bold text-lg text-gray-900 dark:text-white">How do I create my first resume?</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300 ml-4" id="icon-faq1"></i>
+                            </div>
+                        </button>
+                        <div id="faq1" class="accordion-content">
+                            <div class="faq-answer">
+                                <p class="text-gray-600 dark:text-gray-400 mb-4">Creating your first resume is quick and easy:</p>
+                                <ol class="list-decimal pl-5 space-y-2 mb-4">
+                                    <li class="text-gray-600 dark:text-gray-400"><strong>Sign up for free</strong> using your email or Google account</li>
+                                    <li class="text-gray-600 dark:text-gray-400"><strong>Choose a template</strong> from our collection of 50+ professionally designed templates</li>
+                                    <li class="text-gray-600 dark:text-gray-400"><strong>Fill in your information</strong> using our step-by-step guided builder</li>
+                                    <li class="text-gray-600 dark:text-gray-400"><strong>Use AI suggestions</strong> to improve your content and ATS score</li>
+                                    <li class="text-gray-600 dark:text-gray-400"><strong>Download your resume</strong> in PDF, Word, or plain text format</li>
+                                </ol>
+                                <div class="bg-blue-50 dark:bg-blue-500/10 p-4 rounded-lg border border-blue-200 dark:border-blue-500/20">
+                                    <p class="text-sm text-blue-800 dark:text-blue-300 mb-1"><i class="fas fa-lightbulb mr-2"></i> <strong>Pro Tip:</strong></p>
+                                    <p class="text-sm text-blue-700 dark:text-blue-400">Start with a template that matches your industry. Our AI will suggest the best format for your experience level.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <button class="faq-question" onclick="toggleFaq('faq2')">
+                            <div class="flex items-center justify-between w-full text-left">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center mr-4">
+                                        <i class="fas fa-question text-blue-600 dark:text-blue-400 text-sm"></i>
+                                    </div>
+                                    <span class="font-bold text-lg text-gray-900 dark:text-white">Is there a free plan available?</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300 ml-4" id="icon-faq2"></i>
+                            </div>
+                        </button>
+                        <div id="faq2" class="accordion-content">
+                            <div class="faq-answer">
+                                <p class="text-gray-600 dark:text-gray-400 mb-4">Yes! We offer a comprehensive free plan with the following features:</p>
+                                <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                    <div class="bg-green-50 dark:bg-green-500/10 p-4 rounded-lg">
+                                        <h4 class="font-bold text-green-800 dark:text-green-300 mb-2"><i class="fas fa-check-circle mr-2"></i> Free Plan Includes:</h4>
+                                        <ul class="text-sm text-green-700 dark:text-green-400 space-y-1">
+                                            <li>• 3 Professional Templates</li>
+                                            <li>• Basic ATS Score Check</li>
+                                            <li>• PDF & Word Export</li>
+                                            <li>• Save up to 3 Resumes</li>
+                                            <li>• Mobile App Access</li>
+                                        </ul>
+                                    </div>
+                                    <div class="bg-blue-50 dark:bg-blue-500/10 p-4 rounded-lg">
+                                        <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2"><i class="fas fa-crown mr-2"></i> Upgrade for:</h4>
+                                        <ul class="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                                            <li>• Unlimited Templates (50+)</li>
+                                            <li>• Advanced AI Optimization</li>
+                                            <li>• ATS Score Analysis</li>
+                                            <li>• Unlimited Resumes</li>
+                                            <li>• Priority Support</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400">You can upgrade to Pro anytime from your account settings.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resume Builder Section -->
+            <div id="resume-builder" class="mb-16 scroll-mt-24">
+                <div class="flex items-center mb-10">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-500/20 dark:to-purple-600/20 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-file-alt text-xl text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Resume Builder</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Master the art of creating compelling resumes</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="faq-item">
+                        <button class="faq-question" onclick="toggleFaq('faq3')">
+                            <div class="flex items-center justify-between w-full text-left">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center mr-4">
+                                        <i class="fas fa-question text-purple-600 dark:text-purple-400 text-sm"></i>
+                                    </div>
+                                    <span class="font-bold text-lg text-gray-900 dark:text-white">How does the AI resume optimization work?</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300 ml-4" id="icon-faq3"></i>
+                            </div>
+                        </button>
+                        <div id="faq3" class="accordion-content">
+                            <div class="faq-answer">
+                                <p class="text-gray-600 dark:text-gray-400 mb-4">Our AI-powered optimization uses advanced natural language processing to:</p>
+                                <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                    <div class="p-4 rounded-lg bg-purple-50 dark:bg-purple-500/10">
+                                        <h4 class="font-bold text-purple-800 dark:text-purple-300 mb-2"><i class="fas fa-robot mr-2"></i> Content Enhancement</h4>
+                                        <ul class="text-sm text-purple-700 dark:text-purple-400 space-y-1">
+                                            <li>• Action verb suggestions</li>
+                                            <li>• Quantifiable achievements</li>
+                                            <li>• Industry-specific keywords</li>
+                                            <li>• Grammar & tone improvements</li>
+                                        </ul>
+                                    </div>
+                                    <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-500/10">
+                                        <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2"><i class="fas fa-chart-line mr-2"></i> ATS Optimization</h4>
+                                        <ul class="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                                            <li>• Formatting analysis</li>
+                                            <li>• Keyword density check</li>
+                                            <li>• Section completeness</li>
+                                            <li>• Readability score</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400">To use AI suggestions, click the "AI Enhance" button in the editor. Our system analyzes your content and provides actionable recommendations to improve your resume's effectiveness.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <button class="faq-question" onclick="toggleFaq('faq4')">
+                            <div class="flex items-center justify-between w-full text-left">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center mr-4">
+                                        <i class="fas fa-question text-purple-600 dark:text-purple-400 text-sm"></i>
+                                    </div>
+                                    <span class="font-bold text-lg text-gray-900 dark:text-white">What is ATS compatibility and why is it important?</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-500 transition-transform duration-300 ml-4" id="icon-faq4"></i>
+                            </div>
+                        </button>
+                        <div id="faq4" class="accordion-content">
+                            <div class="faq-answer">
+                                <p class="text-gray-600 dark:text-gray-400 mb-4">ATS (Applicant Tracking System) is software used by 75% of employers to scan and filter resumes before human review. Our ATS compatibility features include:</p>
+                                <div class="mb-4 p-4 bg-amber-50 dark:bg-amber-500/10 rounded-lg border border-amber-200 dark:border-amber-500/20">
+                                    <h4 class="font-bold text-amber-800 dark:text-amber-300 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i> Common ATS Pitfalls to Avoid:</h4>
+                                    <ul class="text-sm text-amber-700 dark:text-amber-400 space-y-1">
+                                        <li>• Using images or graphics in critical sections</li>
+                                        <li>• Complex tables and text boxes</li>
+                                        <li>• Uncommon fonts or excessive formatting</li>
+                                        <li>• Missing keywords from job descriptions</li>
+                                    </ul>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400">Our platform checks your resume against these criteria and provides a score (0-100) with specific improvement suggestions. A score above 90% significantly increases your chances of passing automated screening.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Continue with more FAQ sections... -->
+        </div>
+    </section>
+
+    <!-- Contact Support Section -->
+    <section class="py-20 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-panel p-12 rounded-3xl border border-gray-200 dark:border-white/10 hover:shadow-2xl transition-all duration-500 text-center relative overflow-hidden">
+                <!-- Background Elements -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500 to-purple-600 opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-500 to-pink-600 opacity-10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                
+                <div class="relative z-10">
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg">
+                        <i class="fas fa-headset text-3xl text-white"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Still need help? We're here for you</h2>
+                    <p class="text-gray-600 dark:text-gray-400 mb-8 text-lg max-w-2xl mx-auto">
+                        Our support team is available 24/7 to help you with any questions or issues you might encounter.
+                    </p>
+                    
+                    <div class="grid md:grid-cols-3 gap-6 mb-10">
+                        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                            <div class="text-3xl mb-4 text-blue-600 dark:text-blue-400">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h3 class="font-bold mb-2 text-gray-900 dark:text-white">Email Support</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Get detailed responses within 24 hours</p>
+                            <a href="mailto:support@atsresumebuilder.com" class="text-blue-600 dark:text-blue-400 font-medium text-sm hover:underline">
+                                support@atsresumebuilder.com
+                            </a>
+                        </div>
+                        
+                        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                            <div class="text-3xl mb-4 text-green-600 dark:text-green-400">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3 class="font-bold mb-2 text-gray-900 dark:text-white">Live Chat</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Instant answers during business hours</p>
+                            <button onclick="openLiveChat()" class="text-green-600 dark:text-green-400 font-medium text-sm hover:underline">
+                                Start Chat Now
+                            </button>
+                        </div>
+                        
+                        <div class="p-6 rounded-2xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                            <div class="text-3xl mb-4 text-purple-600 dark:text-purple-400">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <h3 class="font-bold mb-2 text-gray-900 dark:text-white">Documentation</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Detailed guides and tutorials</p>
+                            <a href="#" class="text-purple-600 dark:text-purple-400 font-medium text-sm hover:underline">
+                                Browse Documentation
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('contact_us') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 shadow-lg">
+                        <i class="fas fa-paper-plane mr-3"></i> Contact Support Team
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+     <!-- ========== FOOTER ========== -->
+     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                 <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Live Chat Widget (Hidden by default) -->
+    <div id="liveChatWidget" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="glass-panel rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl w-80 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3">
+                            <i class="fas fa-headset text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">Live Support</h3>
+                            <p class="text-blue-100 text-xs">We're online</p>
+                        </div>
+                    </div>
+                    <button onclick="closeLiveChat()" class="text-white hover:text-blue-100">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Chat content here -->
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const html = document.documentElement;
+        
+        function updateThemeIcon() {
+            const isDark = html.classList.contains('dark');
+            document.querySelectorAll('.theme-icon').forEach(icon => {
+                icon.classList.toggle('hidden', isDark);
+                icon.nextElementSibling?.classList.toggle('hidden', !isDark);
+            });
+        }
+        
+        function toggleTheme() {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcon();
+        }
+        
+        // Initial theme setup
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            html.classList.remove('dark');
+        } else if (savedTheme === 'dark') {
+            html.classList.add('dark');
+        }
+        updateThemeIcon();
+        
+        themeToggle?.addEventListener('click', toggleTheme);
+        mobileThemeToggle?.addEventListener('click', toggleTheme);
+        
+        // Mobile Menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+        
+        mobileMenuBtn?.addEventListener('click', () => {
+            mobileMenu.classList.remove('translate-x-full');
+        });
+        
+        mobileCloseBtn?.addEventListener('click', () => {
+            mobileMenu.classList.add('translate-x-full');
+        });
+        
+        // Close mobile menu when clicking links
+        document.querySelectorAll('#mobileMenu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+            });
+        });
+        
+        // FAQ Accordion
+        function toggleFaq(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            
+            // Close all other FAQs
+            document.querySelectorAll('.accordion-content').forEach(el => {
+                if (el.id !== id) {
+                    el.classList.remove('open');
+                    const otherIcon = document.getElementById('icon-' + el.id);
+                    if (otherIcon) otherIcon.classList.remove('rotate-icon');
+                }
+            });
+            
+            // Toggle current FAQ
+            content.classList.toggle('open');
+            icon.classList.toggle('rotate-icon');
+            
+            // Smooth scroll to FAQ if opening
+            if (content.classList.contains('open')) {
+                setTimeout(() => {
+                    content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
+        }
+        
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const searchTags = document.querySelectorAll('.search-tag');
+        
+        searchInput?.addEventListener('input', function(e) {
+            const value = e.target.value.trim();
+            clearSearch.style.opacity = value ? '1' : '0';
+            clearSearch.style.pointerEvents = value ? 'all' : 'none';
+            
+            if (value.length > 2) {
+                highlightSearchResults(value);
+            } else {
+                clearHighlights();
+            }
+        });
+        
+        clearSearch?.addEventListener('click', function() {
+            searchInput.value = '';
+            clearSearch.style.opacity = '0';
+            clearSearch.style.pointerEvents = 'none';
+            clearHighlights();
+            searchInput.focus();
+        });
+        
+        searchTags?.forEach(tag => {
+            tag.addEventListener('click', function() {
+                const searchTerm = this.dataset.tag;
+                searchInput.value = searchTerm;
+                searchInput.dispatchEvent(new Event('input'));
+                highlightSearchResults(searchTerm);
+            });
+        });
+        
+        function highlightSearchResults(term) {
+            const elements = document.querySelectorAll('.faq-question, .faq-answer, h3, p');
+            elements.forEach(el => {
+                const text = el.textContent;
+                const regex = new RegExp(`(${term})`, 'gi');
+                if (regex.test(text)) {
+                    el.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // You could add more sophisticated highlighting here
+                }
+            });
+        }
+        
+        function clearHighlights() {
+            // Remove any existing highlights
+        }
+        
+        // Live Chat
+        function openLiveChat() {
+            document.getElementById('liveChatWidget').classList.remove('hidden');
+        }
+        
+        function closeLiveChat() {
+            document.getElementById('liveChatWidget').classList.add('hidden');
+        }
+        
+        // Auto-open first FAQ
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const firstFaq = document.querySelector('.faq-question');
+                if (firstFaq) {
+                    firstFaq.click();
+                }
+            }, 1000);
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

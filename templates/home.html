@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ATS Resume Builder Pro | AI-Powered Resume Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/home.css') }}" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <style>
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        @keyframes rotate-gradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .shimmer-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 2s infinite;
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .gradient-border {
+            position: relative;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+            border-radius: inherit;
+            z-index: -1;
+            animation: rotate-gradient 3s linear infinite;
+        }
+        .typewriter {
+            overflow: hidden;
+            border-right: 3px solid #667eea;
+            white-space: nowrap;
+            margin: 0 auto;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #667eea; }
+        }
+    </style>
+</head>
+<body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+
+    <div id="preloader" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="relative w-24 h-24 mb-4">
+            <div class="absolute inset-0 border-4 border-blue-500/30 rounded-full animate-ping"></div>
+            <div class="absolute inset-2 border-4 border-t-blue-500 border-r-purple-500 border-b-cyan-500 border-l-transparent rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <i class="fas fa-file-alt text-2xl text-white animate-pulse"></i>
+            </div>
+        </div>
+        <h2 class="text-xl font-bold text-white tracking-widest animate-pulse">ATS<span class="text-blue-400">Pro</span></h2>
+    </div>
+
+    <div id="scrollProgress" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 z-[100] w-0 transition-all duration-100"></div>
+
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+        <div class="absolute top-3/4 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 2s"></div>
+    </div>
+
+     <nav class="fixed w-full z-50 nav-glass transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20">
+            
+            <div class="flex items-center space-x-3 cursor-pointer group" onclick="window.location.href='{{ url_for('index') }}'">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300">Builder</a>
+                <a href="{{ url_for('templates_section') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300">Templates</a>
+                <a href="{{ url_for('interview_prep') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300">Interview Prep</a>
+                <a href="{{ url_for('pricing') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300">Pricing</a>
+                <a href="/cover-letter" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-bold hover:bg-indigo-100 transition-all border border-indigo-200">
+                    <i class="fas fa-pen-nib"></i> Cover Letter
+                    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                
+                <button id="themeToggle" onclick="toggleTheme()" class="p-3 rounded-full glass-panel text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 group">
+                    <i class="fas fa-sun group-hover:rotate-180 transition-transform duration-700" id="themeIcon"></i>
+                </button>
+
+                {% if current_user %}
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div class="text-left hidden lg:block">
+                                <p class="text-xs text-gray-400">Welcome,</p>
+                                <p class="text-sm font-bold text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-colors"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-64 bg-slate-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                            <div class="p-4 border-b border-gray-700">
+                                <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                            </div>
+                            <div class="p-2">
+                                <a href="{{ url_for('user_dashboard') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-tachometer-alt w-5 text-blue-400"></i> Dashboard
+                                </a>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-white text-sm font-semibold hover:bg-white/10 transition-all duration-300">Login</a>
+                    <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl btn-primary-glow font-semibold text-sm hover:scale-105 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> Sign Up
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-bars"></i>
+            </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-500 md:hidden flex flex-col bg-slate-900/95 backdrop-blur-xl h-screen overflow-y-auto">
+        
+        <div class="flex justify-end p-6">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col px-8 space-y-6 pb-20">
+            {% if current_user %}
+            <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700 mb-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">{{ current_user.full_name[0] | upper }}</div>
+                    <div>
+                        <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                        <p class="text-gray-400 text-xs">{{ current_user.email }}</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="{{ url_for('user_dashboard') }}" class="text-center py-2 bg-blue-600 rounded text-white text-sm">Dashboard</a>
+                    <a href="{{ url_for('logout') }}" class="text-center py-2 bg-red-500/20 text-red-400 rounded text-sm">Logout</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-xl font-bold text-white hover:text-blue-400 transition-colors">
+                <i class="fas fa-home w-8 text-center text-blue-500"></i><span>Home</span>
+            </a>
+            <a href="{{ url_for('builder') }}" class="flex items-center space-x-4 text-xl font-bold text-white hover:text-blue-400 transition-colors">
+                <i class="fas fa-magic w-8 text-center text-purple-500"></i><span>Builder</span>
+            </a>
+            <a href="{{ url_for('templates_section') }}" class="flex items-center space-x-4 text-xl font-bold text-white hover:text-blue-400 transition-colors">
+                <i class="fas fa-layer-group w-8 text-center text-green-500"></i><span>Templates</span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="flex items-center space-x-4 text-xl font-bold text-white hover:text-blue-400 transition-colors">
+                <i class="fas fa-tag w-8 text-center text-yellow-500"></i><span>Pricing</span>
+            </a>
+
+            <div class="h-px bg-gray-700 my-4"></div>
+
+            <button onclick="toggleTheme()" class="flex items-center space-x-4 text-xl font-bold text-gray-300 hover:text-white transition-colors w-full text-left">
+                <div class="w-8 flex justify-center"><i class="fas fa-sun text-orange-400" id="mobileThemeIcon"></i></div>
+                <span>Switch Theme</span>
+            </button>
+            
+            {% if not current_user %}
+            <a href="{{ url_for('login_page') }}" class="flex items-center space-x-4 text-xl font-bold text-gray-300 hover:text-white mt-4">
+                 <i class="fas fa-sign-in-alt w-8 text-center text-gray-400"></i><span>Login</span>
+            </a>
+            <a href="{{ url_for('login_page', tab='signup') }}" class="mt-4 btn-primary-glow w-full py-4 rounded-xl font-bold text-white text-center shadow-lg">
+                Sign Up Free
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+    <section class="relative pt-32 pb-20 lg:pt-48 overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+    <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+            
+            <div class="text-center lg:text-left fade-in-up flex flex-col justify-center min-w-0"> <div class="inline-flex items-center px-4 py-2 rounded-full glass-panel mb-6 animate-pulse mx-auto lg:mx-0 w-fit">
+                    <span class="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                    <span class="text-sm text-blue-300 font-semibold">🚀 AI-Powered Resume Intelligence</span>
+                </div>
+                
+                <h1 class="text-5xl lg:text-7xl font-bold mb-6 leading-tight text-white">
+                    <span class="typewriter">Beat the</span>
+                    <br>
+                    <span class="gradient-text text-6xl lg:text-8xl font-black mt-2">ATS Algorithms</span>
+                </h1>
+                
+                <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                    Stop getting rejected by bots. Create professional, ATS-optimized resumes in minutes with 
+                    <span class="font-semibold text-blue-400">Artificial Intelligence AI</span> integration. 
+                    <span class="block mt-2 text-lg">Used by <span class="font-bold text-green-400">15,000+</span> professionals to land jobs at top companies.</span>
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
+                    <a href="{{ url_for('builder') }}" class="btn-primary-glow px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center hover:scale-105 transition-transform duration-300 group">
+                        <i class="fas fa-magic mr-3 group-hover:rotate-12 transition-transform"></i>
+                        Build Free Resume 
+                        <i class="fas fa-arrow-right ml-3 group-hover:translate-x-2 transition-transform"></i>
+                    </a>
+                    <a href="#how-it-works" class="px-8 py-4 rounded-xl glass-panel text-white font-bold text-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center hover:border-blue-500/50">
+                        <i class="fas fa-play-circle mr-3 text-blue-400"></i> How it Works
+                    </a>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="glass-panel p-4 rounded-xl text-center hover:scale-105 transition-transform">
+                        <div class="text-2xl font-bold text-blue-400">98%</div>
+                        <div class="text-sm text-gray-400">ATS Success</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl text-center hover:scale-105 transition-transform">
+                        <div class="text-2xl font-bold text-green-400">15+</div>
+                        <div class="text-sm text-gray-400">Templates</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl text-center hover:scale-105 transition-transform">
+                        <div class="text-2xl font-bold text-purple-400">AI</div>
+                        <div class="text-sm text-gray-400">Powered</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl text-center hover:scale-105 transition-transform">
+                        <div class="text-2xl font-bold text-cyan-400">Free</div>
+                        <div class="text-sm text-gray-400">Forever</div>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-800 pt-8 mt-4 w-full max-w-[100vw] overflow-hidden">
+                    <p class="text-sm text-gray-500 mb-6 uppercase tracking-wider font-semibold text-center">Trusted by candidates at top companies</p>
+                    
+                    <div class="relative w-full overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-8 md:w-20 bg-gradient-to-r from-slate-950 to-transparent z-10"></div>
+                        <div class="absolute right-0 top-0 bottom-0 w-8 md:w-20 bg-gradient-to-l from-slate-950 to-transparent z-10"></div>
+
+                        <div class="flex items-center space-x-8 md:space-x-16 animate-scroll w-max hover:pause">
+                            
+                            <i class="fab fa-google text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-amazon text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-microsoft text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-spotify text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-airbnb text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-uber text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-meta text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            
+                            <i class="fab fa-google text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-amazon text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-microsoft text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-spotify text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-airbnb text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-uber text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                            <i class="fab fa-meta text-2xl md:text-3xl text-gray-500 hover:text-white transition-colors duration-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative lg:block hero-float fade-in-up hidden md:block" style="animation-delay: 300ms;">
+                <div class="relative rounded-3xl glass-panel p-6 transform perspective-1000 hover:rotate-y-6 hover:rotate-x-2 transition-all duration-700 shadow-2xl gradient-border">
+                    <div class="absolute -top-4 -right-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse">
+                        🔥 MOST POPULAR
+                    </div>
+                    <img src="{{ url_for('static', filename='images/template1-preview.png') }}" alt="Dashboard" class="rounded-2xl shadow-2xl w-full border border-gray-700/50 hover:scale-[1.02] transition-transform duration-500">
+                    
+                    <div class="absolute -left-6 top-1/3 glass-panel p-4 rounded-xl flex items-center gap-3 shadow-2xl bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 hover:-translate-x-2 transition-transform duration-300">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-check-circle text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 font-medium">ATS Score</p>
+                            <p class="text-2xl font-bold text-white">98/100</p>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute -right-6 bottom-1/3 glass-panel p-4 rounded-xl flex items-center gap-3 shadow-2xl bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 hover:translate-x-2 transition-transform duration-300">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-bolt text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 font-medium">AI Analysis</p>
+                            <p class="text-2xl font-bold text-white">100%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </section>
+    
+    <section class="py-24 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -z-10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
+                    Build Your Resume in <span class="gradient-text">3 Simple Steps</span>
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    No complex forms or design skills needed. Our AI does the heavy lifting for you.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 relative">
+                <div class="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-blue-500/0 via-blue-500/30 to-blue-500/0 z-0"></div>
+
+                <div class="glass-panel p-8 rounded-3xl relative z-10 hover:border-blue-500/50 transition-all duration-300 fade-in-up group">
+                    <div class="w-20 h-20 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center border border-gray-700 shadow-xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-4xl">📝</span>
+                    </div>
+                    <div class="absolute -top-4 -right-4 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-lg">1</div>
+                    <h3 class="text-xl font-bold text-white mb-3 text-center">Enter Details</h3>
+                    <p class="text-gray-400 text-center text-sm">
+                        Fill in your basic info or import from LinkedIn. Our builder guides you through each section.
+                    </p>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl relative z-10 hover:border-purple-500/50 transition-all duration-300 fade-in-up group" style="animation-delay: 200ms;">
+                    <div class="w-20 h-20 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center border border-gray-700 shadow-xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-4xl">✨</span>
+                    </div>
+                    <div class="absolute -top-4 -right-4 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold text-white shadow-lg">2</div>
+                    <h3 class="text-xl font-bold text-white mb-3 text-center">AI Optimization</h3>
+                    <p class="text-gray-400 text-center text-sm">
+                        Click "Generate AI Summary" and let Gemini rewrite your descriptions to beat ATS bots.
+                    </p>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl relative z-10 hover:border-green-500/50 transition-all duration-300 fade-in-up group" style="animation-delay: 400ms;">
+                    <div class="w-20 h-20 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center border border-gray-700 shadow-xl mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <span class="text-4xl">🚀</span>
+                    </div>
+                    <div class="absolute -top-4 -right-4 w-10 h-10 bg-green-600 rounded-full flex items-center justify-center font-bold text-white shadow-lg">3</div>
+                    <h3 class="text-xl font-bold text-white mb-3 text-center">Download & Apply</h3>
+                    <p class="text-gray-400 text-center text-sm">
+                        Select a premium template, export as PDF, and start applying to your dream jobs instantly.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12 fade-in-up" style="animation-delay: 600ms;">
+                <a href="{{ url_for('builder') }}" class="inline-flex items-center px-8 py-4 rounded-xl btn-primary-glow font-bold text-white hover:scale-105 transition-transform duration-300">
+                    Start Building Now <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 relative overflow-hidden">
+    <div class="max-w-4xl mx-auto px-4 text-center mb-12">
+        <h2 class="text-4xl font-bold text-white mb-4">See the <span class="gradient-text">Difference</span></h2>
+        <p class="text-gray-400">Drag the slider to see how we transform your messy resume into an ATS-friendly masterpiece.</p>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="relative w-full h-[600px] rounded-3xl overflow-hidden shadow-2xl border border-gray-700 group select-none" id="comparisonSlider">
+            
+            <div class="absolute inset-0 w-full h-full bg-slate-800">
+                <img src="{{ url_for('static', filename='images/template2-preview.png') }}" class="w-full h-full object-cover object-top" alt="ATS Optimized Resume">
+                <div class="absolute top-4 right-4 bg-green-500/90 text-white px-4 py-1 rounded-full text-sm font-bold backdrop-blur-md">
+                    AFTER (ATS Score: 98)
+                </div>
+            </div>
+
+            <div class="absolute inset-0 w-full h-full bg-slate-200 overflow-hidden" id="beforeImage">
+                <img src="{{ url_for('static', filename='images/template4-preview.jpg') }}" class="w-full h-full object-cover object-top" style="max-width: none; width: 896px;" alt="Old Resume"> 
+                <div class="absolute top-4 left-4 bg-red-500/90 text-white px-4 py-1 rounded-full text-sm font-bold backdrop-blur-md">
+                    BEFORE (ATS Score: 45)
+                </div>
+            </div>
+
+            <div class="absolute top-0 bottom-0 w-1 bg-white cursor-col-resize z-20 shadow-[0_0_20px_rgba(0,0,0,0.5)]" id="sliderHandle" style="left: 50%">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-blue-600 group relative">
+                    <i class="fas fa-arrows-alt-h text-lg relative z-10"></i>
+                    <div class="absolute inset-0 rounded-full border-2 border-white animate-ping opacity-75"></div>
+                    <div class="absolute -top-10 bg-white text-blue-900 text-xs font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                        Drag Me
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+    <section id="how-it-works" class="py-24 relative bg-gradient-to-b from-slate-900/30 to-slate-950/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4 text-white">Why Choose <span class="gradient-text">ATS Pro?</span></h2>
+                <p class="text-gray-400 text-lg max-w-3xl mx-auto">Packed with powerful features designed to get you past screening software and into interviews.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="glass-panel p-8 rounded-3xl hover:scale-105 transition-all duration-500 fade-in-up group">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl flex items-center justify-center mb-6 text-blue-400 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fas fa-robot text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">AI-Powered Writer</h3>
+                    <p class="text-gray-400 mb-4">Stuck on words? Our Gemini AI generates professional summaries and bullet points instantly.</p>
+                    <div class="flex items-center text-blue-400 text-sm font-medium">
+                        <span>Try AI Writer</span>
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl hover:scale-105 transition-all duration-500 fade-in-up group" style="animation-delay: 100ms;">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-2xl flex items-center justify-center mb-6 text-purple-400 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fas fa-bullseye text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Smart Keyword Match</h3>
+                    <p class="text-gray-400 mb-4">Paste job descriptions for instant keyword analysis and optimization recommendations.</p>
+                    <div class="flex items-center text-purple-400 text-sm font-medium">
+                        <span>Optimize Now</span>
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl hover:scale-105 transition-all duration-500 fade-in-up group" style="animation-delay: 200ms;">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-2xl flex items-center justify-center mb-6 text-green-400 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fas fa-chart-line text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Live ATS Scoring</h3>
+                    <p class="text-gray-400 mb-4">Get real-time feedback on your resume's strength with detailed improvement suggestions.</p>
+                    <div class="flex items-center text-green-400 text-sm font-medium">
+                        <span>Check Score</span>
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl hover:scale-105 transition-all duration-500 fade-in-up group" style="animation-delay: 300ms;">
+                    <div class="w-16 h-16 bg-gradient-to-br from-pink-500/20 to-rose-600/20 rounded-2xl flex items-center justify-center mb-6 text-pink-400 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fas fa-file-export text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Multi-Format Export</h3>
+                    <p class="text-gray-400 mb-4">Download in PDF, DOCX, or plain text formats compatible with all ATS systems.</p>
+                    <div class="flex items-center text-pink-400 text-sm font-medium">
+                        <span>Export Options</span>
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl hover:scale-105 transition-all duration-500 fade-in-up group" style="animation-delay: 400ms;">
+                    <div class="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center mb-6 text-yellow-400 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fas fa-layer-group text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">15+ Premium Templates</h3>
+                    <p class="text-gray-400 mb-4">From Creative to Corporate, choose designs optimized for different industries.</p>
+                    <div class="flex items-center text-yellow-400 text-sm font-medium">
+                        <span>Browse Templates</span>
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-8 rounded-3xl hover:scale-105 transition-all duration-500 fade-in-up group" style="animation-delay: 500ms;">
+                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 rounded-2xl flex items-center justify-center mb-6 text-indigo-400 group-hover:scale-110 transition-transform duration-500">
+                        <i class="fas fa-lock text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-4">Military-Grade Privacy</h3>
+                    <p class="text-gray-400 mb-4">Your data is encrypted and never sold. We delete your resumes after 30 days.</p>
+                    <div class="flex items-center text-indigo-400 text-sm font-medium">
+                        <span>Privacy Policy</span>
+                        <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-gradient-to-b from-transparent to-black/40">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-4 text-white fade-in-up">Stunning <span class="gradient-text">Professional Templates</span></h2>
+            <p class="text-gray-400 text-lg mb-12 max-w-2xl mx-auto">Choose from our collection of ATS-optimized, industry-specific templates</p>
+            
+            <div class="flex flex-wrap justify-center gap-8 mb-12">
+                <div class="group relative w-80 h-[450px] rounded-2xl overflow-hidden glass-panel cursor-pointer fade-in-up hover:scale-105 transition-all duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 z-10"></div>
+                    <img src="{{ url_for('static', filename='images/template1-preview.png') }}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-all duration-500">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xl font-bold text-white">Modern Pro</h4>
+                            <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">Popular</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Perfect for tech and startup roles</p>
+                        <a href="{{ url_for('builder') }}" class="inline-flex items-center text-blue-400 text-sm font-medium hover:text-blue-300">
+                            Use Template <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+
+                 <div class="group relative w-80 h-[450px] rounded-2xl overflow-hidden glass-panel cursor-pointer fade-in-up hover:scale-105 transition-all duration-500" style="animation-delay: 100ms;">
+                    <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 z-10"></div>
+                    <img src="{{ url_for('static', filename='images/template2-preview.png') }}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-all duration-500">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xl font-bold text-white">Classic Executive</h4>
+                            <span class="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full">Corporate</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Ideal for finance and management</p>
+                        <a href="{{ url_for('builder') }}" class="inline-flex items-center text-purple-400 text-sm font-medium hover:text-purple-300">
+                            Use Template <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+
+                 <div class="group relative w-80 h-[450px] rounded-2xl overflow-hidden glass-panel cursor-pointer fade-in-up hover:scale-105 transition-all duration-500" style="animation-delay: 200ms;">
+                    <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 z-10"></div>
+                    <img src="{{ url_for('static', filename='images/template3-preview.png') }}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                    <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black to-transparent translate-y-full group-hover:translate-y-0 transition-all duration-500">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xl font-bold text-white">Creative Portfolio</h4>
+                            <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">Design</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">Best for designers and creatives</p>
+                        <a href="{{ url_for('builder') }}" class="inline-flex items-center text-green-400 text-sm font-medium hover:text-green-300">
+                            Use Template <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fade-in-up" style="animation-delay: 300ms;">
+                <a href="{{ url_for('templates_section') }}" class="inline-flex items-center px-8 py-4 rounded-full border border-blue-500/50 text-blue-400 hover:bg-gradient-to-r hover:from-blue-500 hover:to-cyan-500 hover:text-white transition-all duration-500 group">
+                    <i class="fas fa-eye mr-3"></i>
+                    View All 15+ Templates
+                    <i class="fas fa-arrow-right ml-3 group-hover:translate-x-2 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-gradient-to-b from-slate-900/30 to-slate-950">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-4 text-white fade-in-up">Success <span class="gradient-text">Stories</span></h2>
+            <p class="text-gray-400 text-lg text-center mb-12 max-w-2xl mx-auto">Join thousands who landed their dream jobs with ATS Pro</p>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass-panel p-8 rounded-3xl fade-in-up hover:scale-105 transition-transform duration-500">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 mr-4"></div>
+                        <div>
+                            <h4 class="font-bold text-white">Sarah Chen</h4>
+                            <p class="text-blue-400 text-sm">Senior Developer @ Google</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 italic mb-6">"ATS Pro helped me optimize my resume for tech roles. I got 3 offers within 2 weeks!"</p>
+                    <div class="flex text-yellow-400">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-8 rounded-3xl fade-in-up hover:scale-105 transition-transform duration-500" style="animation-delay: 100ms;">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mr-4"></div>
+                        <div>
+                            <h4 class="font-bold text-white">Michael Rodriguez</h4>
+                            <p class="text-purple-400 text-sm">Product Manager @ Amazon</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 italic mb-6">"The AI writer saved me hours. My resume went from average to exceptional."</p>
+                    <div class="flex text-yellow-400">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-8 rounded-3xl fade-in-up hover:scale-105 transition-transform duration-500" style="animation-delay: 200ms;">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 mr-4"></div>
+                        <div>
+                            <h4 class="font-bold text-white">Jessica Williams</h4>
+                            <p class="text-green-400 text-sm">Marketing Director @ Microsoft</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 italic mb-6">"Keyword analysis feature was a game-changer. Landed interviews at all FAANG companies."</p>
+                    <div class="flex text-yellow-400">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 max-w-4xl mx-auto px-4">
+        <h2 class="text-4xl font-bold text-center mb-4 text-white fade-in-up">Frequently Asked <span class="gradient-text">Questions</span></h2>
+        <p class="text-gray-400 text-center mb-12">Everything you need to know about ATS Pro</p>
+        
+        <div class="space-y-4">
+            <div class="glass-panel rounded-2xl overflow-hidden fade-in-up hover:border-blue-500/50 transition-all duration-300">
+                <button class="w-full px-8 py-6 text-left flex justify-between items-center text-white font-semibold focus:outline-none hover:text-blue-400 transition-colors" onclick="toggleFaq(this)">
+                    <span class="text-lg">What exactly is an ATS and why does it matter?</span>
+                    <i class="fas fa-plus text-blue-500 transform transition-transform duration-300"></i>
+                </button>
+                <div class="hidden px-8 pb-8 text-gray-400 border-t border-gray-700 pt-6">
+                    <p class="mb-4">ATS (Applicant Tracking System) is software used by 98% of Fortune 500 companies to screen resumes before they reach human recruiters. It scans for keywords, formatting, and relevance, automatically rejecting resumes that don't match.</p>
+                    <p class="text-blue-400 font-medium">With ATS Pro, your resume gets optimized to pass through these systems with a 98% success rate.</p>
+                </div>
+            </div>
+            
+            <div class="glass-panel rounded-2xl overflow-hidden fade-in-up hover:border-blue-500/50 transition-all duration-300" style="animation-delay: 100ms;">
+                <button class="w-full px-8 py-6 text-left flex justify-between items-center text-white font-semibold focus:outline-none hover:text-blue-400 transition-colors" onclick="toggleFaq(this)">
+                    <span class="text-lg">Is ATS Pro really free to use?</span>
+                    <i class="fas fa-plus text-blue-500 transform transition-transform duration-300"></i>
+                </button>
+                <div class="hidden px-8 pb-8 text-gray-400 border-t border-gray-700 pt-6">
+                    <p class="mb-4">Yes! Our core features are completely free forever. You can:</p>
+                    <ul class="list-disc pl-5 space-y-2 mb-4">
+                        <li>Build unlimited resumes</li>
+                        <li>Access all 15+ templates</li>
+                        <li>Use basic AI suggestions</li>
+                        <li>Download in multiple formats</li>
+                    </ul>
+                    <p>We offer premium features for power users, but the free version is more than enough for most job seekers.</p>
+                </div>
+            </div>
+            
+            <div class="glass-panel rounded-2xl overflow-hidden fade-in-up hover:border-blue-500/50 transition-all duration-300" style="animation-delay: 200ms;">
+                <button class="w-full px-8 py-6 text-left flex justify-between items-center text-white font-semibold focus:outline-none hover:text-blue-400 transition-colors" onclick="toggleFaq(this)">
+                    <span class="text-lg">How does the AI resume writer work?</span>
+                    <i class="fas fa-plus text-blue-500 transform transition-transform duration-300"></i>
+                </button>
+                <div class="hidden px-8 pb-8 text-gray-400 border-t border-gray-700 pt-6">
+                    <p class="mb-4">Our AI uses Google's Gemini technology to analyze your experience and generate professional content:</p>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>Creates powerful achievement statements</li>
+                        <li>Suggests industry-specific keywords</li>
+                        <li>Improves action verb usage</li>
+                        <li>Optimizes for readability and impact</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="glass-panel rounded-2xl overflow-hidden fade-in-up hover:border-blue-500/50 transition-all duration-300" style="animation-delay: 300ms;">
+                <button class="w-full px-8 py-6 text-left flex justify-between items-center text-white font-semibold focus:outline-none hover:text-blue-400 transition-colors" onclick="toggleFaq(this)">
+                    <span class="text-lg">Can I use ATS Pro for different career levels?</span>
+                    <i class="fas fa-plus text-blue-500 transform transition-transform duration-300"></i>
+                </button>
+                <div class="hidden px-8 pb-8 text-gray-400 border-t border-gray-700 pt-6">
+                    <p class="mb-4">Absolutely! ATS Pro works for all career stages:</p>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="p-4 bg-blue-500/10 rounded-lg">
+                            <h6 class="font-bold text-blue-400 mb-2">Entry Level</h6>
+                            <p class="text-sm">Emphasize education and projects</p>
+                        </div>
+                        <div class="p-4 bg-purple-500/10 rounded-lg">
+                            <h6 class="font-bold text-purple-400 mb-2">Mid Career</h6>
+                            <p class="text-sm">Focus on achievements and leadership</p>
+                        </div>
+                        <div class="p-4 bg-green-500/10 rounded-lg">
+                            <h6 class="font-bold text-green-400 mb-2">Executives</h6>
+                            <p class="text-sm">Highlight strategic impact</p>
+                        </div>
+                        <div class="p-4 bg-pink-500/10 rounded-lg">
+                            <h6 class="font-bold text-pink-400 mb-2">Career Changers</h6>
+                            <p class="text-sm">Transferable skills emphasis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-cyan-500/10"></div>
+        <div class="max-w-4xl mx-auto px-4 relative z-10 fade-in-up">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">Ready to Transform Your Career?</h2>
+            <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">Join 15,000+ professionals who landed better jobs with ATS-optimized resumes</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ url_for('builder') }}" class="btn-primary-glow px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center hover:scale-105 transition-transform duration-300 group shadow-xl">
+                    <i class="fas fa-rocket mr-3 text-xl group-hover:rotate-45 transition-transform"></i>
+                    Start Building Free Resume
+                    <i class="fas fa-arrow-right ml-4 group-hover:translate-x-2 transition-transform"></i>
+                </a>
+                <a href="#how-it-works" class="px-10 py-5 rounded-2xl glass-panel text-white font-bold text-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center border border-gray-700 hover:border-blue-500">
+                    <i class="fas fa-video mr-3 text-blue-400"></i>
+                    Watch Demo
+                </a>
+            </div>
+            <p class="text-gray-500 text-sm mt-6"><i class="fas fa-shield-alt mr-2"></i> No credit card required • 100% free forever</p>
+        </div>
+    </section>
+
+    <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 p-4 transform translate-y-full transition-transform duration-500 z-50">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-500/10 rounded-full text-blue-400">
+                    <i class="fas fa-cookie-bite text-xl"></i>
+                </div>
+                <p class="text-gray-300 text-sm">
+                    We use cookies to ensure you get the best experience on ATS Pro. 
+                    <a href="#" class="text-blue-400 hover:underline">Read Policy</a>.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="acceptCookies()" class="px-6 py-2 bg-white text-slate-900 font-bold rounded-lg hover:bg-gray-100 transition-colors text-sm">
+                    Accept
+                </button>
+                <button onclick="document.getElementById('cookieBanner').classList.add('translate-y-full')" class="px-6 py-2 border border-gray-600 text-gray-300 font-bold rounded-lg hover:bg-white/5 transition-colors text-sm">
+                    Decline
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+            <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="scrollTopBtn" class="fixed bottom-24 md:bottom-6 left-6 z-50 w-12 h-12 rounded-full glass-panel flex items-center justify-center text-blue-400 hover:text-white hover:bg-blue-600 transition-all duration-500 opacity-0 translate-y-10 shadow-lg group" onclick="scrollToTop()">
+    <i class="fas fa-arrow-up group-hover:-translate-y-1 transition-transform"></i>
+</button>
+
+    <div class="fixed bottom-24 md:bottom-6 right-6 z-40 flex flex-col items-end space-y-4 transition-all duration-300">
+    <div id="chatBox" class="hidden w-80 glass-panel rounded-2xl overflow-hidden shadow-2xl transform origin-bottom-right transition-all duration-300 scale-90 opacity-0">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 flex justify-between items-center">
+            <h4 class="text-white font-bold flex items-center"><i class="fas fa-robot mr-2"></i> ATS Assistant</h4>
+            <button onclick="toggleChat()" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-4 h-64 overflow-y-auto bg-slate-900/50 space-y-4">
+            <div class="flex items-start">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mr-2">AI</div>
+                <div class="bg-slate-700/50 text-gray-200 p-3 rounded-lg rounded-tl-none text-sm">
+                    Hi there! 👋 Need help optimizing your resume?
+                </div>
+            </div>
+             <div class="flex items-start">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mr-2">AI</div>
+                <div class="bg-slate-700/50 text-gray-200 p-3 rounded-lg rounded-tl-none text-sm">
+                    Click "Get Started" to try our free builder!
+                </div>
+            </div>
+        </div>
+        <div class="p-3 border-t border-gray-700 bg-slate-800/50">
+            <a href="{{ url_for('builder') }}" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 rounded-lg transition-colors">
+                Start Building Now
+            </a>
+        </div>
+    </div>
+
+    <button onclick="toggleChat()" class="w-14 h-14 rounded-full btn-primary-glow flex items-center justify-center shadow-lg hover:scale-110 transition-transform group">
+        <i class="fas fa-comment-dots text-2xl group-hover:hidden"></i>
+        <i class="fas fa-times text-2xl hidden group-hover:block"></i>
+    </button>
+</div>
+
+
+    <div id="bottomNav" class="fixed bottom-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 md:hidden pb-safe transition-all duration-300">
+    <div class="flex justify-around items-center h-16 px-2">
+        
+        <a href="{{ url_for('index') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <a href="{{ url_for('templates_section') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-layer-group text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Templates</span>
+        </a>
+
+        <a href="{{ url_for('builder') }}" class="relative -top-5">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border-4 border-slate-900 transform transition-transform active:scale-95">
+                <i class="fas fa-magic text-white text-xl"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('interview_prep') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-user-tie text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Interview</span>
+        </a>
+
+        <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+            <i class="fas fa-sun text-lg mb-1"></i> <span class="text-[10px] font-medium">Theme</span>
+        </button>
+    </div>
+</div>
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+    <script>
+    // --- 1. MOBILE MENU LOGIC ---
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        const body = document.body;
+        
+        if (menu.classList.contains('translate-x-full')) {
+            // Open Menu
+            menu.classList.remove('translate-x-full');
+            body.style.overflow = 'hidden'; // Stop scrolling
+        } else {
+            // Close Menu
+            menu.classList.add('translate-x-full');
+            body.style.overflow = 'auto'; // Enable scrolling
+        }
+    }
+
+    // --- 2. THEME TOGGLE LOGIC ---
+    // Check local storage for saved theme
+    if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light-mode');
+        updateThemeIcons(true);
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        body.classList.toggle('light-mode');
+        
+        const isLight = body.classList.contains('light-mode');
+        
+        // Update Icons
+        updateThemeIcons(isLight);
+
+        // Save to Local Storage
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+
+    function updateThemeIcons(isLight) {
+        const desktopIcon = document.getElementById('themeIcon');
+        const mobileIcon = document.getElementById('mobileThemeIcon');
+        
+        if (isLight) {
+            if(desktopIcon) desktopIcon.classList.replace('fa-sun', 'fa-moon');
+            if(mobileIcon) mobileIcon.classList.replace('fa-sun', 'fa-moon');
+        } else {
+            if(desktopIcon) desktopIcon.classList.replace('fa-moon', 'fa-sun');
+            if(mobileIcon) mobileIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+    }
+
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        const body = document.body;
+        
+        // Agar menu hidden hai (translate-x-full), to usko dikhao
+        if (menu.classList.contains('translate-x-full')) {
+            menu.classList.remove('translate-x-full');
+            body.style.overflow = 'hidden'; // Background scroll band
+        } else {
+            // Nahi to chupao
+            menu.classList.add('translate-x-full');
+            body.style.overflow = 'auto'; // Background scroll chalu
+        }
+    }
+
+    // Close menu when clicking outside (Optional feature)
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('mobileMenu');
+        const btn = document.getElementById('mobileMenuBtn');
+        const closeBtn = document.getElementById('mobileCloseBtn');
+        
+        // Agar click menu ke andar nahi hai aur button par nahi hai
+        if (!menu.classList.contains('translate-x-full') && 
+            !menu.contains(event.target) && 
+            !btn.contains(event.target)) {
+            toggleMobileMenu();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+/* static/css/templates/infographic.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+.resume-template.infographic-theme {
+    font-family: 'Roboto', sans-serif;
+    background: #fff;
+    width: 100%;
+    min-height: 297mm;
+    display: flex;
+    padding: 0;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+/* --- LEFT SIDEBAR (Dark Slate) --- */
+.info-sidebar {
+    width: 35%;
+    background-color: #2d3748; /* Dark Grey/Blue from PDF */
+    color: #fff;
+    padding: 40px 25px;
+    text-align: center;
+}
+
+/* Photo */
+.photo-container {
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: center;
+}
+.photo-container img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%; /* Circle */
+    border: 5px solid rgba(255,255,255,0.1);
+    object-fit: cover;
+}
+
+/* Name & Title */
+.infographic-theme .name {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.infographic-theme .job-title {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+}
+
+/* Sidebar Contact */
+.contact-info {
+    text-align: left;
+    font-size: 13px;
+    margin-bottom: 40px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 20px;
+}
+.contact-info div {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.contact-info .icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+    color: #4fd1c5; /* Teal Tick Mark */
+}
+
+/* Sidebar Headings */
+.sidebar-title {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #4fd1c5; /* Teal Headings */
+    margin-bottom: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 5px;
+}
+
+/* Sidebar Lists */
+.sidebar-section {
+    text-align: left;
+    margin-bottom: 30px;
+}
+
+/* Education in Sidebar */
+.info-sidebar .template-education-item {
+    margin-bottom: 20px;
+}
+.info-sidebar .template-education-item h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+.info-sidebar .template-education-item span { /* Date */
+    font-size: 12px;
+    opacity: 0.7;
+    display: block;
+    margin-bottom: 2px;
+}
+.info-sidebar .sub-text {
+    font-size: 13px;
+    font-style: italic;
+    color: #cbd5e0;
+}
+
+/* Sidebar Skills */
+.skill-list span {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 4px;
+}
+
+/* --- RIGHT MAIN CONTENT --- */
+.info-main {
+    width: 65%;
+    padding: 50px 40px;
+    color: #333;
+}
+
+.info-section {
+    margin-bottom: 35px;
+}
+
+.infographic-theme .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #4fd1c5; /* Teal Underline */
+    display: inline-block;
+    padding-bottom: 2px;
+}
+
+.infographic-theme .summary-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4a5568;
+    text-align: justify;
+}
+
+/* EXPERIENCE & PROJECTS (WITH ARROWS) */
+.template-experience-item,
+.template-project-item {
+    margin-bottom: 25px;
+}
+
+.infographic-theme h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 5px 0;
+}
+
+.infographic-theme h3 span { /* Date in Main Content */
+    font-size: 13px;
+    font-weight: 600;
+    color: #4fd1c5;
+    float: right;
+}
+
+.infographic-theme .sub-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #718096;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* --- THE ARROW BULLETS (→) --- */
+/* PDF jaisa same arrow */
+.infographic-theme ul {
+    list-style: none; /* Default bullets hide */
+    margin-left: 5px;
+}
+
+.infographic-theme li {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #4a5568;
+    position: relative;
+    padding-left: 25px;
+}
+
+.infographic-theme li::before {
+    content: '→'; /* The Arrow Symbol */
+    color: #2d3748; /* Dark Arrow */
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+    font-size: 16px;
+    top: -2px;
+}
+
+/* Horizontal Skills (Tools/Hobbies) */
+.skill-list-horizontal span {
+    display: inline-block;
+    background: #edf2f7;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+/* Hide Empty */
+[style*="display: none"] { display: none !important; }

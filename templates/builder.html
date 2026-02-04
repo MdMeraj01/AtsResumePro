@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Resume Builder | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link href="{{ url_for('static', filename='css/builder.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/pdf.css') }}" rel="stylesheet">
+</head>
+     <style>
+    /* =========================================
+       1. ANIMATIONS (Only Visual Effects)
+       ========================================= */
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .float-animation {
+        animation: float 3s ease-in-out infinite;
+    }
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    /* Shimmer Effect Wrapper */
+    .shimmer-effect {
+        position: relative;
+        overflow: hidden;
+    }
+    .shimmer-effect::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    /* =========================================
+       2. PHOTO FIXES (Squashed Image Solution)
+       ========================================= */
+    
+    /* Left Side Form Photo */
+    #profilePhotoPreview {
+        object-fit: cover !important;
+        width: 128px !important;       /* Fixed Size */
+        height: 128px !important;
+        border-radius: 50%;
+        border: 4px solid #1e293b;     /* Optional: Dark Border */
+    }
+
+    /* Right Side Resume Template Photo */
+    #preview-image {
+        object-fit: cover !important;
+        border-radius: 50%;
+        aspect-ratio: 1 / 1;          /* Perfect Circle Ratio */
+        display: block;
+    }
+
+    /* NOTE: Layout (Grid/Flex) logic moved to builder.css for mobile fix */
+    
+</style>
+</head>
+<body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen transition-colors duration-500">
+    
+    <!-- Animated Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+    </div>
+
+    <!-- ========== HEADER SECTION ========== -->
+    <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20 w-full">
+            
+            <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <span class="text-xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="{{ url_for('index') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Home</a>
+                <a href="{{ url_for('builder') }}" class="nav-link text-sm font-medium text-blue-400 font-semibold border-b-2 border-blue-400">Builder</a>
+                <a href="{{ url_for('templates_section') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Templates</a>
+                <a href="{{ url_for('interview_prep') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Interview Prep</a>
+                <a href="/cover-letter" class="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full font-bold hover:bg-indigo-100 transition-all border border-indigo-200 text-sm">
+                    <i class="fas fa-pen-nib"></i> Cover Letter
+                    <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                </a>
+                <a href="{{ url_for('pricing') }}" class="nav-link text-sm font-medium hover:text-blue-400 transition-colors duration-300 text-gray-300">Pricing</a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-4">
+                <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-300 hover:text-white transition-all duration-300">
+                    <i class="fas fa-sun"></i>
+                </button>
+
+                {% if current_user %}
+                    <div class="relative group">
+                        <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div class="text-left">
+                                <p class="text-xs text-gray-400">Welcome,</p>
+                                <p class="text-sm font-bold text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-colors"></i>
+                        </button>
+
+                        <div class="absolute right-0 mt-2 w-64 bg-slate-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right z-50">
+                            <div class="p-4 border-b border-gray-700">
+                                <p class="text-white font-bold">{{ current_user.full_name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ current_user.email }}</p>
+                                <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider">
+                                    {{ current_user.plan_type }} Plan
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <a href="{{ url_for('user_dashboard') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-tachometer-alt w-5 text-blue-400"></i> Dashboard
+                                </a>
+                                <a href="{{ url_for('builder') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-file-alt w-5 text-purple-400"></i> My Resumes
+                                </a>
+                                <a href="{{ url_for('pricing') }}" class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                                    <i class="fas fa-crown w-5 text-yellow-400"></i> Upgrade Plan
+                                </a>
+                            </div>
+                            <div class="p-2 border-t border-gray-700">
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                    <i class="fas fa-sign-out-alt w-5"></i> Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-white text-sm font-semibold hover:bg-white/10 transition-all duration-300">Login</a>
+                    <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl btn-primary-glow font-semibold text-sm hover:scale-105 transition-transform duration-300 shadow-lg">
+                        <i class="fas fa-bolt mr-2"></i> Sign Up
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="md:hidden flex items-center">
+                <button id="mobileMenuBtn" class="text-white text-2xl p-2 focus:outline-none hover:text-blue-400 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-slate-900/95 backdrop-blur-xl h-screen overflow-y-auto">
+        
+        <div class="flex justify-end p-6">
+            <button id="mobileCloseBtn" class="text-gray-400 hover:text-white text-3xl transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col px-8 space-y-6 pb-20">
+            
+            {% if current_user %}
+            <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl">
+                    {{ current_user.full_name[0] | upper }}
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
+                    <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-home w-8 text-center text-blue-500"></i><span>Home</span>
+            </a>
+            <a href="{{ url_for('builder') }}" class="flex items-center space-x-4 text-lg font-medium text-white bg-white/10 p-2 rounded-lg transition-colors">
+                <i class="fas fa-magic w-8 text-center text-purple-500"></i><span>Resume Builder</span>
+            </a>
+            <a href="{{ url_for('templates_section') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-layer-group w-8 text-center text-green-500"></i><span>Templates</span>
+            </a>
+            <a href="/cover-letter" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-pen-nib w-8 text-center text-pink-500"></i><span>Cover Letter AI</span>
+            </a>
+            <a href="{{ url_for('pricing') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <i class="fas fa-tag w-8 text-center text-yellow-500"></i><span>Upgrade Plan</span>
+            </a>
+
+            <div class="h-px bg-gray-700 my-2"></div>
+
+            {% if current_user %}
+                <a href="{{ url_for('user_dashboard') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <i class="fas fa-tachometer-alt w-8 text-center text-blue-400"></i><span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="flex items-center space-x-4 text-lg font-bold text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-500/10 transition-colors">
+                    <i class="fas fa-sign-out-alt w-8 text-center"></i><span>Log Out</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login_page') }}" class="w-full text-center py-3 rounded-xl border border-gray-600 text-white font-semibold hover:bg-gray-800 transition-all">
+                    Login
+                </a>
+                <a href="{{ url_for('login_page', tab='signup') }}" class="w-full text-center py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg">
+                    Sign Up Free
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+    <!-- ========== MAIN BUILDER CONTENT ========== -->
+    <div class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="mb-8 fade-in-up">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Resume <span class="gradient-text">Builder</span></h1>
+                    <p class="text-gray-400 text-lg">Create a professional, ATS-optimized resume that gets you noticed</p>
+                </div>
+                
+               <div class="flex flex-col sm:flex-row flex-wrap gap-4 w-full md:w-auto">
+                 <select id="templateSelector" class="w-full sm:w-auto px-5 py-3 rounded-xl glass-panel text-white border border-gray-700 focus:outline-none">
+                        <option value="modern">🎨 Modern</option>
+                        <option value="classic">👔 Classic</option>
+                        <option value="minimal">⚡ Minimal</option>
+                        <option value="creative">✨ Creative</option>
+                        <option value="professional">💼 Professional</option>
+                        <option value="elegant">🌹 Elegant</option>
+                        <option value="bold">🔥 Bold</option>
+                        <option value="compact">📄 Compact</option>
+                        <option value="luxury">💎 Luxury</option> 
+                        <option value="stylish">🌟 Stylish</option>
+                        <option value="infographic">📊 Infographic</option>
+                        <option value="clean">🧹 Clean</option>
+                        <option value="formal">🎩 Formal</option>
+                        <option value="innovative">🚀 Innovative</option>
+                        <option value="timeline">⏳ Timeline</option>
+                        <option value="technical">⚙️ Technical</option>
+                    </select>
+                    
+                    <button id="saveResumeBtn" class="w-full sm:w-auto px-6 py-3 rounded-xl btn-primary-glow font-semibold transition-transform">
+                     <i class="fas fa-save mr-2"></i>Save Resume
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mb-10 fade-in-up" style="animation-delay: 100ms">
+            <div class="relative">
+                <!-- Progress Line -->
+                <div class="absolute top-6 left-0 right-0 h-1 bg-gray-800 rounded-full"></div>
+                <div id="progressBarFill" class="absolute top-6 left-0 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500" style="width: 14%"></div>
+                
+                <!-- Progress Steps -->
+                <div class="overflow-x-auto pb-4 no-scrollbar">
+    <div class="flex justify-between relative z-10 min-w-[700px] md:min-w-full px-2">
+        <div class="flex flex-col items-center">
+            <div class="progress-step active w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold shadow-lg mb-2">1</div>
+            <span class="text-xs md:text-sm font-medium text-gray-300">Personal</span>
+        </div>
+        
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">2</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Education</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">3</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Experience</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">4</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Projects</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">5</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Skills</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">6</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Certs</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">7</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Finish</span>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+
+        <div class="builder-layout grid lg:grid-cols-2 gap-8">
+            <!-- Form Section (left) -->
+            <div class="editor-panel fade-in-up" style="animation-delay: 200ms">
+                <!-- Step Navigation -->
+               <div class="mb-6">
+               <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-4" id="stepButtonsContainer">
+                        <button class="step-btn active px-3 py-2 rounded-xl btn-primary-glow font-medium" data-step="personal">
+                            <i class="fas fa-user"></i> Personal
+                        </button>
+                        <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="education">
+                            <i class="fas fa-graduation-cap"></i> Education
+                        </button>
+                        <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="experience">
+                            <i class="fas fa-briefcase"></i> Exp.
+                        </button>
+                        <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="projects">
+                            <i class="fas fa-code"></i> Projects
+                        </button>
+                        <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="skills">
+                            <i class="fas fa-cogs"></i> Skills
+                        </button>
+                        <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="certifications">
+                            <i class="fas fa-award"></i> Certs
+                        </button>
+                        <button class="step-btn col-span-2 px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="finish">
+                                <i class="fas fa-flag-checkered"></i> Finish
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step Content Container -->
+                <div class="glass-panel rounded-2xl p-6 shimmer-effect">
+                    <!-- Guidance -->
+                    <div id="sectionGuidance" class="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 mt-1">
+                                <i class="fas fa-lightbulb text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white mb-1">Personal Information</h4>
+                                <p class="text-gray-400 text-sm">Fill in your basic contact details and professional summary. This helps employers get to know you.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Information Step -->
+                    <div id="personalStep" class="form-step">
+                        <!-- Profile Photo -->
+                        <div class="flex justify-center mb-6">
+                            <div class="relative group cursor-pointer" onclick="document.getElementById('profilePhoto').click()">
+                                <div class="profile-photo-container relative">
+            
+                                    <img id="profilePhotoPreview" 
+                                         src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='60' fill='%232d3748'/%3E%3Cpath d='M60 30c8.284 0 15 6.716 15 15s-6.716 15-15 15-15-6.716-15-15 6.716-15 15-15zm0 60c16.538 0 30 13.462 30 30H30c0-16.538 13.462-30 30-30z' fill='%234a5568'/%3E%3C/svg%3E" 
+                                         alt="Profile Photo" 
+                                         class="profile-photo w-32 h-32 rounded-full border-4 border-gray-800 object-cover shadow-lg">
+            
+                                        <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <i class="fas fa-camera text-white text-2xl"></i>
+                                    </div>
+                                </div>
+                                </div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4 mb-6">
+                            <div class="form-group">
+                                <input type="text" id="fullName" placeholder=" " class="form-input">
+                                <label for="fullName" class="form-label">
+                                    <i class="fas fa-user mr-2 text-blue-400"></i>Full Name
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="jobTitle" placeholder=" " class="form-input">
+                                <label for="jobTitle" class="form-label">
+                                    <i class="fas fa-briefcase mr-2 text-blue-400"></i>Professional Title
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="email" placeholder=" " class="form-input">
+                                <label for="email" class="form-label">
+                                    <i class="fas fa-envelope mr-2 text-blue-400"></i>Email
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="tel" id="phone" placeholder=" " class="form-input">
+                                <label for="phone" class="form-label">
+                                    <i class="fas fa-phone mr-2 text-blue-400"></i>Phone Number
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="location" placeholder=" " class="form-input">
+                                <label for="location" class="form-label">
+                                    <i class="fas fa-map-marker-alt mr-2 text-blue-400"></i>City, State
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="url" id="linkedin" placeholder=" " class="form-input">
+                                <label for="linkedin" class="form-label">
+                                    <i class="fab fa-linkedin mr-2 text-blue-400"></i>LinkedIn URL
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="url" id="github" placeholder=" " class="form-input">
+                                <label for="github" class="form-label">
+                                    <i class="fab fa-github mr-2 text-blue-400"></i>GitHub URL
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <input type="url" id="portfolio" placeholder=" " class="form-input">
+                                <label for="portfolio" class="form-label">
+                                    <i class="fas fa-globe mr-2 text-blue-400"></i>Portfolio URL
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                        <div class="form-group loading-container" id="summaryContainer">
+                         <div class="skeleton-overlay" id="summarySkeleton">
+                         <div class="skeleton-line" style="width: 80%"></div>
+                         <div class="skeleton-line" style="width: 95%"></div>
+                         <div class="skeleton-line" style="width: 60%"></div>
+                     </div>
+        
+                        <textarea id="summary" rows="4" placeholder=" " class="form-input"></textarea>
+                            <label for="summary" class="form-label">
+                             <i class="fas fa-file-alt mr-2 text-blue-400"></i>Professional Summary
+                           </label>
+                        </div>
+                       <button type="button" id="generateSummaryBtn" class="mt-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium hover:scale-105 transition-transform duration-300 auth-lock">
+                            <i class="fas fa-robot mr-2"></i>Generate with AI
+                        </button>
+                        </div>
+
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-3">
+                                <i class="fas fa-image mr-2 text-blue-400"></i>Profile Photo (Optional)
+                            </label>
+                            <input type="file" id="profilePhoto" accept="image/*" class="w-full p-3 glass-panel border border-gray-700 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all duration-300">
+                        </div>
+                    </div>
+
+                    <!-- Education Step -->
+                    <div id="educationStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-white">Education Details</h3>
+                                <button type="button" id="addEducationBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
+                                    <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Education
+                                </button>
+                            </div>
+                            
+                            <div id="educationList" class="space-y-4">
+                                <!-- Education entries will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Experience Step -->
+                    <div id="experienceStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-white">Work Experience</h3>
+                                <button type="button" id="addExperienceBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
+                                    <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Experience
+                                </button>
+                            </div>
+                            
+                            <div id="experienceList" class="space-y-4">
+                                <!-- Experience entries will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Projects Step -->
+                    <div id="projectsStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-white">Projects</h3>
+                                <button type="button" id="addProjectBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
+                                    <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Project
+                                </button>
+                            </div>
+                            
+                            <div id="projectsList" class="space-y-4">
+                                <!-- Project entries will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Step -->
+                   <div id="skillsStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                               <div>
+                                    <div class="form-group">
+                                        <textarea id="technicalSkills" rows="4" placeholder=" " class="form-input bg-slate-800 border border-gray-600 text-white p-3 rounded-xl w-full"></textarea>
+                                        <label for="technicalSkills" class="form-label text-gray-400 text-sm mb-1 block">
+                                            <i class="fas fa-code mr-2 text-blue-400"></i>Technical Skills
+                                        </label>
+                                        <div class="text-xs text-gray-500 mt-1">Comma separated: Python, React, etc.</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="form-group">
+                                        <textarea id="softSkills" rows="4" placeholder=" " class="form-input bg-slate-800 border border-gray-600 text-white p-3 rounded-xl w-full"></textarea>
+                                        <label for="softSkills" class="form-label text-gray-400 text-sm mb-1 block">
+                                            <i class="fas fa-users mr-2 text-blue-400"></i>Soft Skills
+                                        </label>
+                                        <div class="text-xs text-gray-500 mt-1">Comma separated: Leadership, Teamwork...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                                <div class="form-group">
+                                    <textarea id="languages" rows="3" placeholder=" " class="form-input bg-slate-800 border border-gray-600 text-white p-3 rounded-xl w-full"></textarea>
+                                    <label for="languages" class="form-label text-gray-400 text-sm mb-1 block">
+                                        <i class="fas fa-language mr-2 text-green-400"></i>Languages
+                                   </label>
+                                    <div class="text-xs text-gray-500 mt-1">Comma separated: English, Hindi, Marathi</div>
+                                </div>
+                                <div class="form-group">
+                                    <textarea id="hobbies" rows="3" placeholder=" " class="form-input bg-slate-800 border border-gray-600 text-white p-3 rounded-xl w-full"></textarea>
+                                    <label for="hobbies" class="form-label text-gray-400 text-sm mb-1 block">
+                                        <i class="fas fa-gamepad mr-2 text-purple-400"></i>Hobbies / Interests
+                                    </label>
+                                    <div class="text-xs text-gray-500 mt-1">Comma separated: Cricket, Reading, Coding</div>
+                                      </div>
+                            </div>
+                        
+                            <div class="mb-6">
+                                <div class="form-group">
+                                    <textarea id="tools" rows="3" placeholder=" " class="form-input bg-slate-800 border border-gray-600 text-white p-3 rounded-xl w-full"></textarea>
+                                    <label for="tools" class="form-label text-gray-400 text-sm mb-1 block">
+                                        <i class="fas fa-tools mr-2 text-yellow-400"></i>Tools & Technologies
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Certifications Step -->
+                    <div id="certificationsStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-white">Certifications & Awards</h3>
+                                <button type="button" id="addCertificationBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
+                                    <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Certification
+                                </button>
+                            </div>
+                            
+                            <div id="certificationsList" class="space-y-4">
+                                <!-- Certification entries will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finish Step -->
+                    <div id="finishStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="text-center mb-8">
+                                <div class="w-24 h-24 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-check text-white text-4xl"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Resume Complete! 🎉</h3>
+                                <p class="text-gray-400 mb-6">Your resume is ready for download and optimization.</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                <div class="glass-panel p-6 rounded-xl">
+                                    <h4 class="font-bold text-white mb-4 flex items-center">
+                                        <i class="fas fa-file-pdf mr-2 text-red-400"></i>Download Options
+                                    </h4>
+                                    <div class="space-y-3">
+                                      <button id="downloadPdfFinalBtn" class="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group auth-lock">
+                                        <i class="fas fa-download mr-2"></i>Download as PDF
+                                     </button>
+
+                                     <button id="downloadDocxFinalBtn" class="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group auth-lock">
+                                     <i class="fas fa-download mr-2"></i>Download as Word
+                                     </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="glass-panel p-6 rounded-xl">
+                                    <h4 class="font-bold text-white mb-4 flex items-center">
+                                        <i class="fas fa-robot mr-2 text-purple-400"></i>AI Optimization
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <button id="runAiAnalysisBtn" class="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group">
+                                            <i class="fas fa-chart-line mr-2"></i>Run ATS Analysis
+                                        </button>
+                                        <button id="saveResumeFinalBtn" class="w-full px-6 py-3 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300">
+                                            <i class="fas fa-save mr-2"></i>Save Resume
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between mt-8 pt-6 border-t border-gray-800">
+                        <button id="prevStepBtn" class="px-6 py-3 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10 transition-all duration-300 hidden">
+                            <i class="fas fa-arrow-left mr-2"></i>Previous
+                        </button>
+                        <button id="nextStepBtn" class="px-8 py-3 rounded-xl btn-primary-glow font-semibold hover:scale-105 transition-all duration-300 ml-auto group">
+                            Next Step <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section (right) -->
+            <div class="preview-panel fade-in-up" style="animation-delay: 300ms">
+                <div class="glass-panel rounded-2xl p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Live Preview</h3>
+                            <p class="text-gray-400 text-sm">See your resume update in real-time</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button id="previewResumeBtn" class="px-4 py-2.5 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300">
+                                <i class="fas fa-eye mr-2"></i>Preview
+                            </button>
+                           <button id="downloadPdfBtn" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 text-white font-medium hover:scale-105 transition-transform duration-300">
+    <i class="fas fa-file-pdf mr-2"></i>PDF
+</button>
+
+<button id="downloadWordBtn" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-medium hover:scale-105 transition-transform duration-300">
+    <i class="fas fa-file-word mr-2"></i>Word
+</button>
+                        </div>
+                    </div>
+
+                    <!-- Resume Preview -->
+                   <div class="resume-preview-wrapper bg-slate-700/50 p-4 rounded-xl border border-gray-700 min-h-[600px] flex justify-center overflow-auto custom-scrollbar relative">
+                        <div id="template-render-area" class="transform scale-90 origin-top transition-transform duration-300">
+                            <div class="flex flex-col items-center justify-center h-[500px] text-gray-400">
+                                <i class="fas fa-circle-notch fa-spin text-4xl mb-4 text-blue-500"></i>
+                                <p>Loading Template...</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ATS Score Display -->
+                    <div class="glass-panel rounded-xl p-5 mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="font-bold text-white">Basic ATS Score</h3>
+                                <p class="text-gray-400 text-sm">Automatically calculated as you build</p>
+                            </div>
+                            <div class="text-right">
+                                <div id="basicAtsScorePreview" class="text-2xl font-bold text-white">0</div>
+                                <div class="text-sm text-gray-400">out of 100</div>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-3">
+                            <div id="basicAtsScoreBarPreview" class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-400 mt-2">
+                            <span>Poor</span>
+                            <span>Good</span>
+                            <span>Excellent</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-2 gap-3 mt-6">
+                        <button id="exportJsonBtn" class="px-4 py-3 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10 transition-all duration-300">
+                            <i class="fas fa-file-export mr-2"></i>Export JSON
+                        </button>
+                        <label class="px-4 py-3 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10 transition-all duration-300 cursor-pointer text-center">
+                            <i class="fas fa-file-import mr-2"></i>Import JSON
+                            <input type="file" id="importJsonInput" accept="application/json" class="hidden">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyword Optimization Section -->
+        <div class="mt-8 fade-in-up" style="animation-delay: 400ms">
+            <div class="glass-panel rounded-2xl p-6">
+                <div class="flex items-start mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center mr-4">
+                        <i class="fas fa-robot text-2xl text-purple-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white mb-2">Keyword Optimization</h3>
+                        <p class="text-gray-400">Paste a job description for AI-powered keyword analysis</p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-300 mb-3">Job Description</label>
+                    <textarea id="jobDescription" rows="6" placeholder="Paste the job description here to get AI-powered keyword suggestions..." class="w-full p-4 glass-panel border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300"></textarea>
+                </div>
+                
+                <div class="flex gap-3">
+                  <button id="analyzeKeywordsBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group auth-lock">
+                    <i class="fas fa-magic mr-2 group-hover:rotate-12 transition-transform"></i>Analyze Keywords with AI
+                </button>
+                   <button id="aiAtsAnalysisBtn" class="px-6 py-3 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300 auth-lock">
+                    <i class="fas fa-chart-line mr-2"></i>AI ATS Analysis
+                    </button>
+                </div>
+
+                <!-- Results Container -->
+                <div id="keywordResults" class="mt-8 hidden animate-fade-in">
+                 <div class="grid md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-emerald-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
+                                <i class="fas fa-check-double text-emerald-400"></i>
+                            </div>
+                            <h4 class="font-bold text-white text-lg">Found Keywords</h4>
+                        </div>
+                         <span id="matchCount" class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold">0</span>
+                   </div>
+                      <div id="matchingKeywords" class="flex flex-wrap gap-2 min-h-[50px]">
+                   </div>
+               </div>
+        
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-rose-500">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center mr-3">
+                        <i class="fas fa-exclamation-triangle text-rose-400"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-lg">Missing Keywords</h4>
+                </div>
+                <span id="missCount" class="bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full text-xs font-bold">0</span>
+            </div>
+            <div id="missingKeywords" class="flex flex-wrap gap-2 min-h-[50px]">
+                </div>
+        </div>
+    </div>
+    
+    <div class="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start">
+        <i class="fas fa-info-circle text-blue-400 mt-1 mr-3"></i>
+        <p class="text-sm text-gray-300">
+            <strong>AI Tip:</strong> Add at least 5 missing keywords to your skills or summary section to increase your ATS match rate.
+        </p>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER SECTION ========== -->
+    <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                  <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== MODALS & LOADERS ========== -->
+    <!-- Loader Overlay -->
+    <div id="globalLoader" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div class="text-white text-lg font-medium">Working on it...</div>
+            <div class="text-gray-400 text-sm mt-2">AI is analyzing your resume</div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-xl mr-3"></i>
+            <div>
+                <div class="font-semibold">Success!</div>
+                <div id="toastMessage" class="text-sm">Resume saved successfully</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI ATS Score Modal -->
+    <div id="aiScoreModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl p-8 max-w-md w-full mx-4 border border-gray-800 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white">AI ATS Score Analysis</h3>
+                    <p class="text-gray-400 text-sm">Powered by Gemini AI</p>
+                </div>
+                <button id="closeAiScoreModal" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="text-center mb-8">
+                <div class="text-5xl font-bold text-gradient mb-2" id="aiAtsScore">0</div>
+                <div class="text-gray-400">Overall ATS Score</div>
+                <div class="w-full bg-gray-800 rounded-full h-2 mt-4">
+                    <div class="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600" style="width: 0%" id="aiAtsScoreBar"></div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800/50 p-4 rounded-xl mb-6">
+                <h4 class="font-semibold text-white mb-2">💡 Pro Tip</h4>
+                <p class="text-gray-400 text-sm">
+                    For best results, paste a job description in the Keyword Optimization section and run AI analysis.
+                </p>
+            </div>
+            
+            <button id="closeAiScoreModal2" class="w-full px-6 py-3 rounded-xl btn-primary-glow font-semibold hover:scale-105 transition-transform duration-300">
+                Got it!
+            </button>
+        </div>
+    </div>
+
+    <!-- PDF Preview Modal -->
+    <div id="pdfPreviewModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl w-11/12 h-5/6 flex flex-col border border-gray-800 shadow-2xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-800">
+                <div>
+                    <h3 class="text-xl font-bold text-white">PDF Preview</h3>
+                    <p class="text-gray-400 text-sm">Ready to download or print</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="printPdfBtn" class="px-5 py-2.5 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300">
+                        <i class="fas fa-print mr-2"></i>Print
+                    </button>
+                   <button id="closePdfPreviewBtn" onclick="closePDFPreview()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-pink-600 text-white font-medium hover:scale-105 transition-transform duration-300">
+                        <i class="fas fa-times mr-2"></i>Close
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto p-6">
+                <div id="pdfPreview" class="resume-preview bg-white dark:bg-gray-900 mx-auto max-w-4xl shadow-lg"></div>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="openPDFPreview()" class="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-purple-600 text-white rounded-full shadow-2xl z-[90] flex items-center justify-center animate-bounce">
+    <i class="fas fa-eye text-xl"></i>
+</button>
+
+
+<div id="bottomNav" class="fixed bottom-0 left-0 right-0 z-[100] bg-slate-900/95 backdrop-blur-xl border-t border-gray-800 md:hidden pb-safe transition-all duration-300">
+    <div class="flex justify-around items-center h-16 px-2">
+        
+        <a href="{{ url_for('index') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-home text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Home</span>
+        </a>
+
+        <a href="{{ url_for('templates_section') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-layer-group text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Templates</span>
+        </a>
+
+        <a href="{{ url_for('builder') }}" class="relative -top-5">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/50 border-4 border-slate-900 transform scale-110 transition-transform">
+                <i class="fas fa-magic text-white text-xl animate-pulse"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('interview_prep') }}" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-user-tie text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Interview</span>
+        </a>
+
+        <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+            <i class="fas fa-sun text-lg mb-1"></i>
+            <span class="text-[10px] font-medium">Theme</span>
+        </button>
+    </div>
+</div>
+
+<div id="toast" class="fixed bottom-24 md:bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-[110]">
+    <div class="flex items-center">
+        <i class="fas fa-check-circle text-xl mr-3"></i>
+        <div>
+            <div class="font-semibold">Notification</div>
+            <div id="toastMessage" class="text-sm">Action successful</div>
+        </div>
+    </div>
+</div>
+<div id="upgradeModal" class="fixed inset-0 z-[200] hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeUpgradeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6">
+        <div class="glass-card rounded-2xl p-8 border border-yellow-500/30 shadow-2xl bg-slate-900 relative overflow-hidden text-center">
+            
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/20 blur-[50px] rounded-full pointer-events-none"></div>
+
+            <div class="w-16 h-16 mx-auto bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-yellow-500/20 animate-pulse">
+                <i class="fas fa-crown text-white text-3xl"></i>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-white mb-2">Out of AI Credits!</h2>
+            <p class="text-gray-400 mb-6">You've used all your free AI generations. Upgrade to PRO to get unlimited access.</p>
+
+            <div class="space-y-3">
+                <a href="{{ url_for('pricing') }}" class="block w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold text-lg hover:scale-105 transition-transform shadow-xl">
+                    Upgrade Now - $9/mo
+                </a>
+                <button onclick="closeUpgradeModal()" class="block w-full py-3 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
+                    Maybe Later
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showUpgradeModal() {
+    document.getElementById('upgradeModal').classList.remove('hidden');
+}
+function closeUpgradeModal() {
+    document.getElementById('upgradeModal').classList.add('hidden');
+}
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
+    
+    <script src="{{ url_for('static', filename='js/builder.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Check Login Status from Jinja2
+    const isLoggedIn = {{ 'true' if current_user else 'false' }};
+
+    // 2. Global Click Listener (Capture Phase)
+    document.body.addEventListener('click', function(e) {
+        
+        // Check karo agar click kiya gaya element (ya uska parent) Protected hai
+        const targetBtn = e.target.closest('.auth-lock, #downloadPdfBtn, #downloadWordBtn, #saveResumeBtn, #saveResumeFinalBtn, #generateCoverLetterBtn');
+        
+        if (targetBtn && !isLoggedIn) {
+            // STOP EVERYTHING 🛑
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            // Show Notification
+            showLoginToast();
+
+            // Redirect to Signup Page after 2 seconds
+            setTimeout(() => {
+                // 👇 FIX: Seedha Signup Tab par bhejo
+                window.location.href = "/login?tab=signup"; 
+            }, 2000);
+        }
+    }, true); 
+
+    // Custom Toast Function (Theme Aware)
+    function showLoginToast() {
+        const existing = document.querySelector('.auth-toast');
+        if(existing) existing.remove();
+
+        const toast = document.createElement('div');
+        
+        // Check Current Theme
+        const isLight = document.body.classList.contains('light-mode');
+
+        // Colors based on Theme
+        const bgClass = isLight ? "bg-white border-red-200 text-slate-900" : "bg-slate-900 border-red-500/50 text-white";
+        const textClass = isLight ? "text-slate-600" : "text-gray-400";
+        const iconBg = isLight ? "bg-red-100 text-red-600" : "bg-red-500/20 text-red-500";
+
+        toast.className = `auth-toast fixed top-24 right-5 z-[9999] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-bounce border ${bgClass}`;
+        
+        toast.innerHTML = `
+            <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center">
+                <i class="fas fa-lock text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-lg">Access Restricted</h4>
+                <p class="text-sm ${textClass}">Please Sign Up to use this feature.</p>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            if(toast) toast.remove();
+        }, 3000);
+    }
+});
+
+// ==========================================
+// 🧠 SMART LOAD LOGIC (Paste this inside script tag)
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. URL se ID nikalo (Example: /builder?id=12)
+    const urlParams = new URLSearchParams(window.location.search);
+    const resumeId = urlParams.get('id');
+
+    if (resumeId) {
+        console.log("Found Resume ID:", resumeId);
+        
+        // 2. Server se Data mangwao
+        try {
+            const res = await fetch(`/api/get-resume/${resumeId}`);
+            const data = await res.json();
+            
+            if (data.success) {
+                // 3. Global ID set karo taaki Save karte waqt pata rahe ki update karna hai
+                window.currentResumeId = resumeId; 
+                
+                // 4. Form Bharo (Ye function tumhare builder me hona chahiye)
+                // Note: Agar tumhara function alag naam ka hai to yahan change kar lena
+                if (typeof populateResumeForm === "function") {
+                    populateResumeForm(data.resume.resume_data);
+                    
+                    // Template bhi wahi select karo jo save tha
+                    if(data.resume.template_name) {
+                        // Agar tumhara variable 'currentTemplate' hai
+                        window.currentTemplate = data.resume.template_name;
+                        console.log("Template set to:", data.resume.template_name);
+                    }
+                } else {
+                    console.error("Error: populateResumeForm function not found!");
+                }
+                
+                console.log("✅ Resume Loaded Successfully");
+            } else {
+                alert("Could not load resume: " + data.message);
+            }
+        } catch (e) {
+            console.error("Failed to load resume", e);
+        }
+    }
+});
+
+// ==========================================
+// 💾 SAVE RESUME (FINAL FIX - Template Selection)
+// ==========================================
+async function saveResume() {
+    const saveBtn = document.getElementById('saveBtn');
+    const originalText = saveBtn.innerHTML;
+    
+    // 1. Loading Start
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveBtn.disabled = true;
+
+    try {
+        // 2. Data Collect karo
+        if (typeof collectFormData !== 'function') {
+            alert("Error: collectFormData function missing!");
+            return;
+        }
+        const resumeData = collectFormData(); 
+        
+        // 👇 MAIN FIX: Dropdown se sahi naam uthao
+        const templateDropdown = document.getElementById('templateSelector');
+        const selectedTemplate = templateDropdown ? templateDropdown.value : 'modern';
+
+        // 3. Payload Banao
+        const payload = {
+            data: resumeData,
+            template_name: selectedTemplate, // Ab ye 'classic', 'creative' etc. bhejega
+            resume_id: window.currentResumeId || null 
+        };
+
+        console.log("Saving Template:", selectedTemplate); // Console me check karna
+
+        // 4. API Call
+        const res = await fetch('/api/save-resume', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            window.currentResumeId = result.resume_id; 
+            alert("✅ Resume Saved Successfully!");
+        } else {
+            alert("❌ Save Failed: " + result.message);
+        }
+
+    } catch (error) {
+        console.error("Save Error:", error);
+        alert("System Error during save.");
+    } finally {
+        // Reset Button
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Manual Event Listeners to prevent double counting
+    
+    const pdfBtn = document.getElementById('downloadPdfBtn');
+    // Check if listener already exists to be safe
+    if(pdfBtn) {
+        pdfBtn.replaceWith(pdfBtn.cloneNode(true)); // Clears old listeners
+        document.getElementById('downloadPdfBtn').addEventListener('click', window.downloadPDF);
+    }
+
+    const wordBtn = document.getElementById('downloadWordBtn');
+    if(wordBtn) {
+        wordBtn.replaceWith(wordBtn.cloneNode(true)); // Clears old listeners
+        document.getElementById('downloadWordBtn').addEventListener('click', window.downloadWord);
+    }
+    
+    // Final Step Buttons
+    const finalPdf = document.getElementById('downloadPdfFinalBtn');
+    if(finalPdf) {
+        finalPdf.replaceWith(finalPdf.cloneNode(true));
+        document.getElementById('downloadPdfFinalBtn').addEventListener('click', window.downloadPDF);
+    }
+    
+    const finalWord = document.getElementById('downloadDocxFinalBtn');
+    if(finalWord) {
+        finalWord.replaceWith(finalWord.cloneNode(true));
+        document.getElementById('downloadDocxFinalBtn').addEventListener('click', window.downloadWord);
+    }
+});
+</script>
+</body>
+</html>

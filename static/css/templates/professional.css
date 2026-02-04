@@ -1,0 +1,168 @@
+/* static/css/templates/professional.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@400;600;700&display=swap');
+
+.resume-template.professional-theme {
+    font-family: 'Open Sans', sans-serif;
+    color: #333;
+    background: #fff;
+    width: 100%;
+    min-height: 297mm;
+    padding: 40px;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+/* --- VARIABLES --- */
+.professional-theme {
+    --navy: #0F2C59;  /* Dark Blue */
+    --teal: #008080;  /* Teal Accent */
+    --light-gray: #f4f6f8;
+}
+
+/* --- HEADER (CENTERED FIX) --- */
+.prof-header {
+    border-bottom: 4px solid var(--navy);
+    padding-bottom: 25px;
+    margin-bottom: 30px;
+    text-align: center; /* Name aur Title ko Center karega */
+}
+
+.professional-theme .name {
+    font-family: 'Roboto', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.professional-theme .job-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Icons Row Centered */
+.contact-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Icons ko beech mein layega */
+    gap: 15px 25px;
+    font-size: 12px;
+    color: #555;
+    margin-top: 5px;
+}
+
+.contact-row span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.contact-row i {
+    color: var(--teal);
+    font-size: 14px;
+}
+
+/* --- GRID LAYOUT --- */
+.prof-grid {
+    display: flex;
+    gap: 40px;
+}
+
+.prof-main { width: 60%; }
+.prof-sidebar { width: 40%; }
+
+/* --- SECTIONS --- */
+.prof-section { margin-bottom: 25px; }
+
+.professional-theme .section-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.professional-theme .title-underline {
+    width: 40px;
+    height: 3px;
+    background-color: var(--teal);
+    margin-bottom: 15px;
+}
+
+.professional-theme .summary-text {
+    font-size: 12px;
+    color: #444;
+    text-align: justify;
+    line-height: 1.6;
+}
+
+/* --- ITEMS --- */
+.template-experience-item,
+.template-project-item { margin-bottom: 20px; }
+
+.professional-theme h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 2px 0;
+}
+
+.professional-theme h3 span { /* Date */
+    float: right;
+    font-weight: 400;
+    font-size: 12px;
+    color: #666;
+}
+
+.professional-theme .sub-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 5px;
+}
+
+.professional-theme ul { margin-left: 18px; margin-top: 5px; }
+.professional-theme li { font-size: 12px; margin-bottom: 4px; }
+
+/* --- SIDEBAR ITEMS --- */
+.template-education-item {
+    margin-bottom: 15px;
+    border-bottom: 1px dashed #ddd;
+    padding-bottom: 10px;
+}
+.template-education-item:last-child { border: none; }
+.template-education-item h3 { display: block; }
+.template-education-item h3 span { float: none; display: block; margin-top: 2px; font-size: 11px; }
+
+/* --- SKILLS BOXES (Square Design) --- */
+.box-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* JS se .skill-box class aayegi */
+.professional-theme .skill-box {
+    background-color: #f4f6f8;
+    color: var(--navy);
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-left: 4px solid var(--teal);
+    border-radius: 2px;
+    width: 48%;
+    box-sizing: border-box;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* --- HIDE EMPTY --- */
+[style*="display: none"] { display: none !important; }

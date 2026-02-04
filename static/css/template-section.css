@@ -1,0 +1,1395 @@
+/* templates.css - Merged & Optimized */
+
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --secondary: #7c3aed;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+
+    /* Dark Mode Defaults */
+    --bg-main: #020617; /* Slate 950 */
+    --bg-secondary: #0f172a; /* Slate 900 */
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(15, 23, 42, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --nav-bg: rgba(2, 6, 23, 0.9);
+    --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Base Styles */
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    overflow-x: hidden;
+}
+
+/* Light Mode */
+body.light-mode {
+    --bg-main: #f0f9ff; /* Alice Blue / Light Sky */
+    --bg-secondary: #ffffff;
+    --text-main: #0f172a; /* Slate 900 */
+    --text-muted: #475569; /* Slate 600 */
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(226, 232, 240, 0.8);
+    --nav-bg: rgba(255, 255, 255, 0.95);
+    --card-shadow: 0 10px 30px -10px rgba(148, 163, 184, 0.4);
+}
+
+body.light-mode .text-white:not(.btn-primary-glow):not(.badge) {
+    color: #0f172a !important;
+}
+body.light-mode .text-gray-400 {
+    color: #475569 !important;
+}
+body.light-mode .text-gray-300 {
+    color: #334155 !important;
+}
+body.light-mode .border-gray-700 {
+    border-color: #e2e8f0 !important;
+}
+
+/* Navbar */
+.nav-glass {
+    background: var(--nav-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+/* Mobile Menu Fix */
+#mobileMenu {
+    background-color: var(--bg-main) !important;
+    z-index: 9999 !important;
+    height: 100vh;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+}
+body.menu-open {
+    overflow: hidden; /* Lock scroll when menu is open */
+}
+
+/* Cards & Glass Panels */
+.glass-panel, .template-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy effect */
+}
+
+.template-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px -5px rgba(79, 70, 229, 0.3);
+}
+
+/* Image Container in Cards */
+.template-image-container {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(6, 182, 212, 0.05));
+    position: relative;
+    overflow: hidden;
+}
+
+/* Category Buttons */
+.category-btn {
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+.category-btn:hover {
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary);
+}
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white !important;
+    border-color: transparent;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+/* --- ANIMATIONS (Load & Reveal) --- */
+
+/* 1. Fade In Up (General) */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+    opacity: 0; /* Hidden initially */
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/* 2. Card Stagger Animation (The "Load" Animation) */
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0.9) translateY(30px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.reveal-card {
+    opacity: 0; /* Hidden by default */
+    animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Animated Background Blobs */
+.bg-blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: -1;
+    opacity: 0.4;
+    animation: blobBounce 10s infinite alternate;
+}
+@keyframes blobBounce {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(20px, -20px); }
+}
+/* Glass Panels */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-panel:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary);
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* Buttons */
+.btn-primary-glow {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+    background-size: 200% 200%;
+    border: none;
+}
+
+.btn-primary-glow:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(79, 70, 229, 0.4);
+    background-position: 100% 50%;
+    animation: gradient-shift 1.5s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Template Cards */
+.template-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.template-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(79, 70, 229, 0.2);
+}
+
+.template-image-container {
+    position: relative;
+    overflow: hidden;
+    height: 14rem;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 50%, rgba(6, 182, 212, 0.1) 100%);
+}
+
+.template-image {
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1.5rem;
+}
+
+.template-card:hover .template-image {
+    transform: scale(1.08);
+}
+
+/* Template Badges */
+.badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.badge.primary {
+    background: linear-gradient(135deg, var(--success), #34d399);
+}
+
+.badge.premium {
+    background: linear-gradient(135deg, var(--warning), #fbbf24);
+}
+
+.badge.featured {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+/* Category Tags */
+.category-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.category-tag.modern {
+    background: rgba(79, 70, 229, 0.1);
+    color: #818cf8;
+}
+
+.category-tag.professional {
+    background: rgba(124, 58, 237, 0.1);
+    color: #a78bfa;
+}
+
+.category-tag.creative {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+}
+
+.category-tag.minimal {
+    background: rgba(6, 182, 212, 0.1);
+    color: #22d3ee;
+}
+
+body.light-mode .category-tag.modern {
+    background: rgba(79, 70, 229, 0.15);
+    color: #4338ca;
+}
+
+body.light-mode .category-tag.professional {
+    background: rgba(124, 58, 237, 0.15);
+    color: #6d28d9;
+}
+
+/* Category Buttons */
+.category-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+}
+
+.category-btn:hover {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.1);
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+}
+
+/* Stats Cards */
+.stats-card {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 50%, rgba(6, 182, 212, 0.1) 100%);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+body.light-mode .stats-card {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(124, 58, 237, 0.05) 50%, rgba(6, 182, 212, 0.05) 100%);
+    border-color: rgba(79, 70, 229, 0.1);
+}
+
+/* Feature Cards */
+.feature-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    padding: 2rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.feature-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.feature-icon.blue {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(6, 182, 212, 0.2));
+}
+
+.feature-icon.green {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.2));
+}
+
+.feature-icon.purple {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(192, 132, 252, 0.2));
+}
+
+/* CTA Section */
+.cta-section {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-blob {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cta-blob.top-right {
+    top: 0;
+    right: 0;
+    width: 16rem;
+    height: 16rem;
+    transform: translate(50%, -50%);
+}
+
+.cta-blob.bottom-left {
+    bottom: 0;
+    left: 0;
+    width: 16rem;
+    height: 16rem;
+    transform: translate(-50%, 50%);
+}
+
+/* Footer Fixes */
+footer {
+    background: #020617 !important;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+body.light-mode footer {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0;
+}
+body.light-mode footer h4, body.light-mode footer span {
+    color: #0f172a !important;
+}
+body.light-mode footer p, body.light-mode footer a {
+    color: #64748b;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+
+/* Modal & Loader */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.preview-modal {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    max-width: 80vw;
+    max-height: 90vh;
+    width: 100%;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.loader-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--glass-border);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: linear-gradient(135deg, var(--success), #34d399);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 1000;
+    animation: slideInRight 0.5s ease-out;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+/* Floating Button */
+.floating-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+    z-index: 40;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 35px rgba(79, 70, 229, 0.4);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+}
+
+body.light-mode .mobile-menu {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .glass-panel {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .template-image-container {
+        height: 12rem;
+    }
+    
+    .feature-card {
+        padding: 1.5rem;
+    }
+    
+    .category-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-card {
+        padding: 1rem;
+    }
+    
+    .template-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* template-section.css */
+
+
+/* Dark Mode Base Styles */
+body {
+    background: #0f172a;
+    color: #f8fafc;
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+/* Light Mode */
+body.light-mode {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+body.light-mode .text-white {
+    color: #0f172a !important;
+}
+
+body.light-mode .text-gray-400 {
+    color: #64748b !important;
+}
+
+body.light-mode .text-gray-300 {
+    color: #475569 !important;
+}
+
+/* Glass Panels */
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+}
+
+/* Template Cards */
+.template-card {
+   opacity: 0;
+    transform: translateY(60px); /* Thoda zyada niche rakha taaki effect dikhe */
+    transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: opacity, transform; /* Performance Booster */
+}
+
+.template-card.in-view {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.light-mode .template-card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(203, 213, 225, 0.8);
+}
+
+.template-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary);
+}
+
+/* Category Buttons */
+.category-btn {
+    transition: all 0.3s ease;
+}
+
+.category-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+
+body.light-mode .category-btn:not(.active) {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Modal */
+.modal-overlay {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+/* Badges */
+.badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+/* Mobile Menu */
+.mobile-menu {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+}
+
+body.light-mode .mobile-menu {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Toast */
+.toast {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .glass-panel {
+        backdrop-filter: blur(10px);
+    }
+}
+
+/* Naye Animation Keyframes */
+@keyframes revealUp {
+    0% {
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Is class ko cards par apply karne ke liye */
+.reveal-card {
+    opacity: 0;
+    animation: revealUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* ========== DYNAMIC FOOTER FIX (LIGHT & DARK MODE) ========== */
+
+/* Dark Mode (Default) Footer Styles */
+footer {
+    background: #020617 !important; /* Deep slate black */
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: background-color 0.3s ease;
+}
+
+footer h4 {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+footer p, footer ul li a {
+    color: #94a3b8 !important; /* Slate 400 */
+    transition: all 0.3s ease;
+}
+
+footer ul li a:hover {
+    color: #60a5fa !important; /* Blue 400 */
+    padding-left: 5px;
+}
+
+/* Social Icons Dark Mode */
+footer .social-icon, 
+footer a.w-10 {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Light Mode Footer Styles */
+body.light-mode footer {
+    background: #f8fafc !important; /* Very light slate */
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode footer h4 {
+    color: #0f172a !important; /* Slate 900 */
+}
+
+body.light-mode footer p, 
+body.light-mode footer ul li a {
+    color: #475569 !important; /* Slate 600 */
+}
+
+body.light-mode footer ul li a:hover {
+    color: #2563eb !important; /* Blue 600 */
+}
+
+/* Social Icons Light Mode Fix */
+body.light-mode footer .social-icon,
+body.light-mode footer a.w-10 {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+body.light-mode footer a.w-10:hover {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #2563eb !important;
+}
+
+/* Bottom Bar Fix */
+footer .border-t {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body.light-mode footer .border-t {
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode footer .text-gray-600 {
+    color: #64748b !important;
+}
+
+/* Meraj.Dev Link Highlight */
+footer a[href*="meraj8329"] {
+    color: #3b82f6 !important;
+    font-weight: 600;
+}
+
+body.light-mode footer a[href*="meraj8329"] {
+    color: #1d4ed8 !important;
+}
+
+/* ========== FINAL MOBILE MENU OVERLAP FIX ========== */
+
+/* 1. Light Mode mein solid background ensure karein */
+body.light-mode #mobileMenu {
+    background-color: #ffffff !important; /* Pure white solid background */
+    background-image: none !important;
+    z-index: 10000 !important;
+}
+
+/* 2. Dark Mode mein solid background ensure karein */
+body:not(.light-mode) #mobileMenu {
+    background-color: #0f172a !important; /* Solid Slate-900 */
+    background-image: none !important;
+    z-index: 10000 !important;
+}
+
+/* 3. Piche ka content hide karne ke liye backdrop blur ko optimize karein */
+#mobileMenu {
+    backdrop-filter: blur(0px) !important; /* Blur hata kar solid kar rahe hain */
+    -webkit-backdrop-filter: blur(0px) !important;
+}
+
+/* 4. Spacing aur Alignment fix */
+.mobile-nav-link {
+    display: flex !important;
+    align-items: center !important;
+    padding: 1rem 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+}
+
+/* 5. Switch Theme section readability */
+body.light-mode .mobile-text, 
+body.light-mode #mobileMenu span {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+/* 6. Body scroll lock fix */
+body.menu-open {
+    overflow: hidden !important;
+    touch-action: none;
+}
+
+/* ========== ULTIMATE MOBILE MENU FIX ========== */
+
+/* 1. Menu Container: Isko 100% solid white (Light) ya solid dark banayenge */
+#mobileMenu {
+    background-color: #ffffff !important; /* Pure Solid White */
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 99999 !important; /* Sabse upar */
+    transition: transform 0.4s ease-in-out !important;
+}
+
+/* Dark Mode ke liye solid background */
+body:not(.light-mode) #mobileMenu {
+    background-color: #0f172a !important; /* Pure Solid Dark Slate */
+}
+
+/* 2. Menu khulne par piche ka content hide karne ka logic */
+body.menu-open main, 
+body.menu-open .max-w-7xl:not(#mobileMenu *) {
+    display: none !important; /* Piche ka sab kuch temporary gayab kar dega */
+}
+
+/* 3. Light Mode Text visibility */
+body.light-mode .mobile-nav-link {
+    color: #1e293b !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+/* 4. Close Button visibility */
+#mobileCloseBtn {
+    color: #64748b !important;
+    z-index: 100000 !important;
+}
+
+/* Fix for CTA Section Visibility in Light Mode */
+.gradient-bg {
+    /* Purple-Blue Gradient Background */
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.4);
+}
+
+/* Ensure Text is always WHITE inside this box */
+.gradient-bg h2, 
+.gradient-bg p {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Button Styling Fix inside CTA */
+.gradient-bg a {
+    background-color: #ffffff !important;
+    color: #4f46e5 !important;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.gradient-bg a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* --- FIX 1: Category Buttons Highlight (Light & Dark Mode) --- */
+.category-btn.active {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* Light Mode Specific Hover Fix */
+body.light-mode .category-btn:not(.active):hover {
+    background: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+/* --- FIX 2: Template Badges Visibility --- */
+/* Default Badge Style (Fallback) */
+.badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.75rem; /* 12px */
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    color: white !important;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    letter-spacing: 0.5px;
+    /* Default Purple Gradient if JS fails */
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+
+/* Specific Badge Colors (Yeh classes JS se apply hongi) */
+.badge-popular {
+    background: linear-gradient(135deg, #ef4444, #f43f5e) !important; /* Red/Pink */
+}
+.badge-creative {
+    background: linear-gradient(135deg, #8b5cf6, #d946ef) !important; /* Purple/Fuchsia */
+}
+.badge-ats {
+    background: linear-gradient(135deg, #10b981, #059669) !important; /* Green */
+}
+.badge-elegant {
+    background: linear-gradient(135deg, #0f172a, #334155) !important; /* Dark Slate */
+}
+.badge-premium {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important; /* Gold */
+}
+.badge-visual {
+    background: linear-gradient(135deg, #06b6d4, #3b82f6) !important; /* Cyan/Blue */
+}
+
+/* --- FIX 3: Template Card Text Visibility (Bottom Left) --- */
+
+/* 1. Template Title (e.g., "Modern Professional") */
+.template-card h3 {
+    color: #f8fafc !important; /* Dark Mode: Bright White */
+    font-weight: 700; /* Thoda aur bold */
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Slight shadow for pop in dark mode */
+}
+
+/* 2. Template Description (e.g., "Clean and Modern Design") */
+.template-card p.text-sm {
+    color: #cbd5e1 !important; /* Dark Mode: Light Grey (Readable) */
+    font-weight: 500;
+}
+
+/* --- LIGHT MODE SPECIFIC FIXES --- */
+body.light-mode .template-card h3 {
+    color: #1e293b !important; /* Light Mode: Dark Slate (Sharp Black) */
+    text-shadow: none; /* Light mode mein shadow ki zarurat nahi */
+}
+
+body.light-mode .template-card p.text-sm {
+    color: #475569 !important; /* Light Mode: Dark Grey (Not dull) */
+    font-weight: 600; /* Thoda weight badhaya taaki clear dikhe */
+}
+
+/* --- IMPROVEMENT: Floating Paper Effect --- */
+
+/* 1. Image Styling Enhancement */
+.template-image {
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.4s ease;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Subtle shadow initially */
+    transform-origin: center bottom;
+}
+
+/* 2. Card Hover - The "Float" */
+.template-card:hover .template-image {
+    transform: scale(1.05) translateY(-5px) rotateX(5deg); /* Slight tilt & lift */
+    filter: drop-shadow(0 20px 25px rgba(0,0,0,0.25)); /* Deep shadow on lift */
+}
+
+/* 3. Card Hover - Background Glow */
+.template-card:hover .template-image-container {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(6, 182, 212, 0.15));
+}
+
+/* 4. Color Swatches Alignment */
+.color-swatches {
+    height: 1.5rem; /* Reserve space */
+    align-items: center;
+}
+.color-swatches div {
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Search Bar Light Mode Fix */
+body.light-mode #templateSearch {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #1e293b;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+body.light-mode #templateSearch::placeholder {
+    color: #94a3b8;
+}
+
+/* Custom Tooltip */
+[data-title] {
+    position: relative;
+}
+
+[data-title]:hover::before {
+    content: attr(data-title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    padding: 6px 12px;
+    background: #0f172a;
+    color: white;
+    font-size: 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 50;
+    pointer-events: none;
+}
+
+[data-title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    border: 6px solid transparent;
+    border-top-color: #0f172a;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 50;
+}
+
+[data-title]:hover::before,
+[data-title]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-10px);
+}
+
+/* Light Mode Tooltip */
+body.light-mode [data-title]:hover::before {
+    background: #1e293b;
+}
+body.light-mode [data-title]:hover::after {
+    border-top-color: #1e293b;
+}
+
+/* Sticky Filter Bar */
+.category-filter-container {
+    position: sticky;
+    top: 80px; /* Navbar height ke hisab se adjust karein (approx 80px) */
+    z-index: 40;
+    padding: 1rem 0;
+    background: rgba(2, 6, 23, 0.8); /* Dark background */
+    backdrop-filter: blur(10px);
+    margin: 0 -1rem; /* Full width mobile par */
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+/* Light Mode Fix */
+body.light-mode .category-filter-container {
+    background: rgba(240, 249, 255, 0.8); /* Light background */
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* =========================================
+   MOBILE BOTTOM NAVIGATION STYLES
+   ========================================= */
+
+/* 1. Body Padding (Taaki content nav bar ke piche na chupe) */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 80px !important; /* Space for bottom bar */
+    }
+}
+
+/* 2. Dark Mode Styles (Default) */
+#bottomNav {
+    background: rgba(15, 23, 42, 0.95); /* Slate 900 */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Center Button Border color matching bg */
+#bottomNav .rounded-full {
+    border-color: #0f172a; 
+}
+
+/* Active Link Color (Blue) */
+.bottom-nav-item.active {
+    color: #60a5fa; /* Blue 400 */
+}
+.bottom-nav-item.active i {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 8px rgba(96, 165, 250, 0.5));
+}
+
+/* =========================================
+   💡 LIGHT MODE FIXES (Paste this section)
+========================================= */
+
+body.light-mode .template-card {
+    /* FIX 1: Card ka background White karo (Pehle Black tha) */
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    /* Thoda shadow add kiya taki white background par card utha hua dikhe */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+/* Hover par thoda upar uthega */
+body.light-mode .template-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    border-color: rgba(59, 130, 246, 0.5); /* Light Blue border on hover */
+}
+
+body.light-mode .template-image {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .template-info h3 {
+    color: #1a202c; /* Dark gray text for title */
+}
+
+body.light-mode .template-info p {
+    color: #4a5568; /* Medium gray for description */
+}
+
+/* FIX 2: Hover Effect (Blurry Effect jaise dark mode me hai) */
+body.light-mode .template-overlay {
+    /* Pehle ye white tha, isliye dikh nahi raha tha. 
+       Ab isko thoda dark transparent kiya hai taki 'Blur' effect dikhe */
+    background: rgba(0, 0, 0, 0.4); 
+    backdrop-filter: blur(5px); /* Blur effect */
+}
+
+/* Button Contrast Fix */
+body.light-mode .use-template-btn {
+    background: #000000; /* Black button */
+    color: #ffffff;      /* White text */
+    border: none;
+}
+
+body.light-mode .use-template-btn:hover {
+    background: #2d3748; /* Dark gray on hover */
+    transform: scale(1.05);
+}
+
+/* Badges in Light Mode */
+body.light-mode .badge {
+    background: rgba(0, 0, 0, 0.05);
+    color: #4a5568;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+/* =========================================
+   TOAST NOTIFICATION MOBILE FIX
+   Paste at the end of home.css
+   ========================================= */
+
+.toast-notification {
+    /* Desktop Default */
+    bottom: 24px !important;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        /* Mobile: Lift it above Bottom Nav */
+        bottom: 90px !important; 
+        left: 20px !important;
+        right: 20px !important;
+        width: auto !important;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* =========================================
+   TOAST NOTIFICATION MOBILE FIX
+   Paste at the end of home.css
+   ========================================= */
+
+.toast-notification {
+    /* Desktop Default */
+    bottom: 24px !important;
+}
+
+@media (max-width: 768px) {
+    .toast-notification {
+        /* Mobile: Lift it above Bottom Nav */
+        bottom: 90px !important; 
+        left: 20px !important;
+        right: 20px !important;
+        width: auto !important;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* =========================================
+   USER DROPDOWN LIGHT MODE FIX
+   ========================================= */
+
+/* 1. Dropdown Container Background */
+body.light-mode .group:hover .absolute {
+    background-color: #ffffff !important;   /* Pure White Background */
+    border-color: #e2e8f0 !important;       /* Light Grey Border */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important; /* Soft Shadow */
+}
+
+/* 2. Header Section (User Name & Email) */
+body.light-mode .group .absolute .border-b {
+    border-bottom-color: #f1f5f9 !important; /* Light separator line */
+}
+
+body.light-mode .group .absolute p.font-bold {
+    color: #1e293b !important; /* Dark Text for Name */
+}
+
+body.light-mode .group .absolute p.text-gray-400 {
+    color: #64748b !important; /* Medium Grey for Email */
+}
+
+/* 3. Dropdown Links (Dashboard, Logout) */
+body.light-mode .group .absolute a {
+    color: #334155 !important; /* Dark Grey Text */
+}
+
+/* 4. Hover State for Links */
+body.light-mode .group .absolute a:hover {
+    background-color: #f8fafc !important; /* Very Light Grey on Hover */
+    color: #2563eb !important; /* Blue Text on Hover */
+}
+
+/* 5. Logout Link Specific */
+body.light-mode .group .absolute a.text-red-400 {
+    color: #ef4444 !important; /* Red Text */
+}
+body.light-mode .group .absolute a.text-red-400:hover {
+    background-color: #fef2f2 !important; /* Light Red Background */
+    color: #dc2626 !important; /* Darker Red on Hover */
+}
+
+/* 6. Main Button (User Icon + Name) in Navbar */
+body.light-mode .group > button {
+    background-color: rgba(0, 0, 0, 0.05) !important; /* Light transparent bg */
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .group > button .text-white {
+    color: #1e293b !important; /* Dark Name Text */
+}
+
+body.light-mode .group > button .text-gray-400 {
+    color: #64748b !important; /* Dark "Welcome" Text */
+}
+
+body.light-mode .group > button:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+    border-color: rgba(59, 130, 246, 0.5) !important; /* Blue border on hover */
+}
+
+/* =========================================
+   NAVBAR LIGHT MODE FIX
+   (Templates, Pricing, Interview Prep)
+========================================= */
+
+/* 1. Navbar Background White karna */
+body.light-mode nav.nav-glass,
+body.light-mode nav {
+    background-color: rgba(255, 255, 255, 0.95) !important; /* White Background */
+    border-bottom: 1px solid #e2e8f0 !important; /* Light Border */
+    backdrop-filter: blur(12px);
+}
+
+/* 2. Links aur Text ko Black karna */
+body.light-mode nav .text-gray-300,
+body.light-mode nav .nav-link {
+    color: #4b5563 !important; /* Dark Gray Text */
+}
+
+/* 3. Hover Effect on Links */
+body.light-mode nav .nav-link:hover {
+    color: #2563eb !important; /* Blue Hover */
+}
+
+/* 4. Logo Text (ATS Pro) ko Black karna */
+body.light-mode nav .text-white {
+    color: #111827 !important; /* Black Text */
+}
+
+/* 5. Mobile Hamburger Menu Button */
+body.light-mode #mobileMenuBtn {
+    color: #111827 !important; /* Black Icon */
+}
+
+/* 6. Mobile Menu Overlay Background */
+body.light-mode #mobileMenu {
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    color: #000 !important;
+}
+
+/* 7. Mobile Menu Links */
+body.light-mode #mobileMenu a {
+    color: #374151 !important;
+}
+body.light-mode #mobileMenu a:hover {
+    background-color: #f3f4f6 !important; /* Light Gray Hover */
+}
+
+/* 8. User Dropdown / Glass Panels */
+body.light-mode nav .glass-panel {
+    background-color: #fff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #000 !important;
+}

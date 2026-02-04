@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Checkout | ATS Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="fixed top-0 w-full bg-slate-900 border-b border-gray-800 py-3 text-center z-50">
+        <div class="flex items-center justify-center gap-4 text-sm text-gray-400">
+            <span class="flex items-center"><i class="fas fa-lock text-green-500 mr-2"></i> 100% Secure Payment via PhonePe</span>
+        </div>
+    </div>
+
+    <div class="max-w-5xl w-full grid md:grid-cols-5 gap-8 mt-16">
+        
+        <div class="md:col-span-3 space-y-6">
+            <div class="bg-white text-gray-900 p-8 rounded-2xl shadow-xl">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-wallet mr-3 text-purple-600"></i> Payment Details
+                </h2>
+                
+                <div class="bg-purple-50 border border-purple-100 p-6 rounded-xl flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-4">
+                        <img src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/phonepe-icon.png" class="w-12 h-12 object-contain">
+                        <div>
+                            <h3 class="font-bold text-lg">PhonePe Gateway</h3>
+                            <p class="text-sm text-gray-500">UPI, Cards, NetBanking, Wallet</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                </div>
+
+                <div class="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p><i class="fas fa-info-circle mr-2"></i> You will be redirected to PhonePe's secure page to complete the payment.</p>
+                </div>
+
+                <button onclick="payNow()" id="payBtn" class="w-full mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2 text-lg transform active:scale-95">
+                    <span>Pay ₹{{ amount }} with PhonePe</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                
+                <div class="mt-6 flex justify-center gap-4 grayscale opacity-60">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg" class="h-6">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="h-6">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="h-6">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" class="h-6">
+                </div>
+            </div>
+        </div>
+
+        <div class="md:col-span-2">
+            <div class="glass p-6 rounded-2xl sticky top-24">
+                <h3 class="text-xl font-bold mb-4">Order Summary</h3>
+                
+                <div class="flex gap-4 mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center text-2xl shadow-lg">
+                        {% if plan == 'premium' %}💎{% elif plan == 'standard' %}🚀{% else %}⭐{% endif %}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg capitalize">{{ plan }} Plan</h4>
+                        <p class="text-gray-400 text-sm capitalize">{{ cycle }} Subscription</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 border-t border-gray-700 pt-4 mb-6">
+                    <div class="flex justify-between text-gray-300">
+                        <span>Plan Price</span>
+                        <span>₹{{ amount }}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-300">
+                        <span>Tax</span>
+                        <span class="text-green-400">Included</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-2xl font-bold border-t border-gray-700 pt-4 mb-6">
+                    <span>Total</span>
+                    <span>₹{{ amount }}</span>
+                </div>
+
+                <div class="bg-slate-800/50 rounded-xl p-4 text-xs space-y-2">
+                    <div class="flex items-center gap-2 text-green-400">
+                        <i class="fas fa-shield-alt"></i> Secure SSL Payment
+                    </div>
+                    <div class="flex items-center gap-2 text-blue-400">
+                        <i class="fas fa-bolt"></i> Instant Activation
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function payNow() {
+            const btn = document.getElementById('payBtn');
+            const originalText = btn.innerHTML;
+            
+            // 1. UI Loading State
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Redirecting...';
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            try {
+                // 2. Call PhonePe API (Backend)
+                const res = await fetch('/api/create-phonepe-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        amount: {{ amount }},
+                        plan: '{{ plan }}'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    // 3. ✅ SUCCESS: Redirect to PhonePe Page
+                    window.location.href = data.redirectUrl;
+                } else {
+                    throw new Error(data.message || 'Payment initiation failed');
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert('Error: ' + error.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>

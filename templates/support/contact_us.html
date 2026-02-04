@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Contact Us | ATS Resume Builder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- SMOOTH TRANSITIONS --- */
+        * {
+            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+
+        /* --- GLASS PANEL STYLES --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+        }
+
+        .dark .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- NAVBAR GLASS --- */
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .dark .nav-glass {
+            background: rgba(15, 23, 42, 0.94);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* --- GRADIENT TEXT --- */
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* --- INPUT STYLES --- */
+        .form-input {
+            transition: all 0.3s ease;
+            background: rgba(249, 250, 251, 0.8);
+        }
+
+        .dark .form-input {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+
+        .dark .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* --- CONTACT CARD HOVER --- */
+        .contact-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .contact-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .contact-card:hover {
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        /* --- SUCCESS MESSAGE --- */
+        .success-message {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- LOADING SPINNER --- */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .dark .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #60a5fa;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- RESPONSIVE TYPOGRAPHY --- */
+        @media (max-width: 640px) {
+            .responsive-text {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased font-sans min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-blue-900/10 text-gray-900 dark:text-white transition-colors duration-300">
+
+    <!-- Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-200/20 dark:bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-200/20 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 1s"></div>
+        <div class="absolute top-3/4 left-1/3 w-96 h-96 bg-pink-200/20 dark:bg-pink-500/10 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 2s"></div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="fixed w-full z-50 nav-glass">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20 w-full">
+                <div class="flex items-center space-x-3 cursor-pointer group flex-shrink-0" onclick="window.location.href='{{ url_for('index') }}'">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 dark:text-white">ATS<span class="text-blue-500">Pro</span></span>
+                </div>
+    
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{{ url_for('index') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-300 hover:underline hover:underline-offset-4">Home</a>
+                    <a href="{{ url_for('builder') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-300 hover:underline hover:underline-offset-4">Builder</a>
+                    <a href="{{ url_for('templates_section') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-300 hover:underline hover:underline-offset-4">Templates</a>
+                    <a href="{{ url_for('about') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-300 hover:underline hover:underline-offset-4">About Us</a>
+                    <a href="{{ url_for('help_center') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors duration-300 hover:underline hover:underline-offset-4">Help Center</a>
+                    <a href="{{ url_for('contact_us') }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 font-semibold border-b-2 border-blue-500">Contact Us</a>
+                </div>
+    
+                <div class="hidden md:flex items-center space-x-4">
+                    <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110 hover:shadow-lg">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                    {% if current_user %}
+                        <div class="relative group">
+                            <button onclick="window.location.href='{{ url_for('user_dashboard') }}'"class="flex items-center space-x-3 px-4 py-2.5 rounded-xl glass-panel hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300 group border border-transparent hover:border-blue-500/30">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg group-hover:scale-110 transition-transform">
+                                    {{ current_user.full_name[0] | upper }}
+                                </div>
+                                <div class="text-left">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Welcome back,</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white leading-none">{{ current_user.full_name.split(' ')[0] }}</p>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                            </button>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login_page') }}" class="px-5 py-2.5 rounded-lg glass-panel text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300">Login</a>
+                        <a href="{{ url_for('login_page', tab='signup') }}" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-md">
+                            Sign Up Free
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="md:hidden flex items-center space-x-4">
+                    <button id="themeToggleMobile" class="p-3 rounded-full glass-panel text-gray-600 dark:text-gray-300">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                    <button id="mobileMenuBtn" class="text-gray-600 dark:text-gray-300 text-2xl p-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="fixed inset-0 z-[100] transform translate-x-full transition-transform duration-300 md:hidden flex flex-col bg-white dark:bg-slate-900 h-screen overflow-y-auto">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-file-alt text-white text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900 dark:text-white">ATS<span class="text-blue-500">Pro</span></span>
+                </div>
+                <button id="mobileCloseBtn" class="text-gray-600 dark:text-gray-300 text-3xl hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex flex-col p-6 space-y-4">
+                <a href="{{ url_for('index') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-home mr-3 w-6 text-center"></i> Home
+                </a>
+                <a href="{{ url_for('builder') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-pencil-alt mr-3 w-6 text-center"></i> Resume Builder
+                </a>
+                <a href="{{ url_for('templates_section') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-palette mr-3 w-6 text-center"></i> Templates
+                </a>
+                <a href="{{ url_for('about') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-info-circle mr-3 w-6 text-center"></i> About Us
+                </a>
+                <a href="{{ url_for('help_center') }}" class="text-lg font-medium text-gray-900 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <i class="fas fa-life-ring mr-3 w-6 text-center"></i> Help Center
+                </a>
+                <a href="{{ url_for('contact_us') }}" class="text-lg font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 p-3 rounded-lg">
+                    <i class="fas fa-envelope mr-3 w-6 text-center"></i> Contact Us
+                </a>
+                <div class="pt-6 border-t border-gray-200 dark:border-gray-800 mt-4">
+                    {% if current_user %}
+                        <a href="{{ url_for('user_dashboard') }}" class="flex items-center space-x-3 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold">
+                                {{ current_user.full_name[0] | upper }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ current_user.full_name.split(' ')[0] }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">View Dashboard</p>
+                            </div>
+                        </a>
+                    {% else %}
+                        <div class="grid grid-cols-2 gap-4">
+                            <a href="{{ url_for('login_page') }}" class="px-4 py-3 text-center rounded-lg glass-panel text-sm font-semibold text-gray-700 dark:text-gray-200">Login</a>
+                            <a href="{{ url_for('login_page', tab='signup') }}" class="px-4 py-3 text-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-sm">Sign Up</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-4 relative">
+        <div class="max-w-6xl mx-auto text-center">
+            <span class="px-4 py-2 rounded-full bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-500/10 dark:to-blue-500/10 text-purple-600 dark:text-purple-400 text-sm font-semibold border border-purple-200 dark:border-purple-500/20 inline-block mb-6 animate-float">
+                <i class="fas fa-comments mr-2"></i>Get In Touch
+            </span>
+            <h1 class="text-5xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white leading-tight">
+                We'd love to <span class="gradient-text">hear from you.</span>
+            </h1>
+            <p class="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+                Have questions about our features, need technical support, or want to share feedback? 
+                Our team is here to help you succeed in your career journey.
+            </p>
+            <div class="flex flex-wrap justify-center gap-3 mt-6">
+                <div class="flex items-center text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-clock text-blue-500 dark:text-blue-400 mr-2"></i>
+                    <span class="text-sm">Response time: <span class="font-semibold">Under 24 hours</span></span>
+                </div>
+                <div class="flex items-center text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-check-circle text-green-500 dark:text-green-400 mr-2"></i>
+                    <span class="text-sm">Support available: <span class="font-semibold">7 days/week</span></span>
+                </div>
+                <div class="flex items-center text-gray-600 dark:text-gray-400">
+                    <i class="fas fa-users text-purple-500 dark:text-purple-400 mr-2"></i>
+                    <span class="text-sm">Customer satisfaction: <span class="font-semibold">98%</span></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="py-16 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-12">
+                
+                <!-- Contact Information -->
+                <div class="space-y-8">
+                    <div>
+                        <h2 class="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Contact Information</h2>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-lg">
+                            Fill out the contact form and our dedicated support team will get back to you within 24 hours. 
+                            For immediate assistance, check our comprehensive <a href="{{ url_for('help_center') }}" class="text-blue-600 dark:text-blue-400 font-medium hover:underline">Help Center</a> with detailed guides and FAQs.
+                        </p>
+                    </div>
+
+                    <!-- Contact Cards -->
+                    <div class="grid sm:grid-cols-2 gap-6">
+                        <div class="contact-card glass-panel p-6 rounded-2xl hover:shadow-xl transition-all duration-500">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-500/20 dark:to-blue-600/20 rounded-xl flex items-center justify-center mb-4">
+                                <i class="fas fa-envelope text-blue-600 dark:text-blue-400 text-lg"></i>
+                            </div>
+                            <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">Email Support</h3>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">Get detailed responses from our support team</p>
+                            <a href="mailto:atsresumepro01@gmail.com" class="text-blue-600 dark:text-blue-400 font-medium hover:underline inline-flex items-center">
+                                atsresumepro01@gmail.com <i class="fas fa-external-link-alt ml-2 text-xs"></i>
+                            </a>
+                        </div>
+
+                        <div class="contact-card glass-panel p-6 rounded-2xl hover:shadow-xl transition-all duration-500">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-500/20 dark:to-purple-600/20 rounded-xl flex items-center justify-center mb-4">
+                                <i class="fab fa-twitter text-purple-600 dark:text-purple-400 text-lg"></i>
+                            </div>
+                            <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">Twitter Support</h3>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">Quick updates and direct messaging</p>
+                            <a href="#" class="text-purple-600 dark:text-purple-400 font-medium hover:underline inline-flex items-center">
+                                @ATSResumePro <i class="fas fa-external-link-alt ml-2 text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Additional Contact Options -->
+                    <div class="pt-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Other Ways to Connect</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                <div class="w-10 h-10 bg-green-100 dark:bg-green-500/20 rounded-lg flex items-center justify-center mr-4">
+                                    <i class="fas fa-headset text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-white">Live Chat</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Available Monday-Friday, 9AM-6PM EST</p>
+                                </div>
+                                <button onclick="openLiveChat()" class="ml-auto text-blue-600 dark:text-blue-400 font-medium text-sm hover:underline">
+                                    Start Chat
+                                </button>
+                            </div>
+
+                            <div class="flex items-center p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                <div class="w-10 h-10 bg-orange-100 dark:bg-orange-500/20 rounded-lg flex items-center justify-center mr-4">
+                                    <i class="fas fa-map-marker-alt text-orange-600 dark:text-orange-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-white">Office Location</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Nanded Maharashtra , India.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Media -->
+                    <div class="pt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Follow Our Journey</h3>
+                        <div class="flex space-x-3">
+                            <a href="#" class="w-12 h-12 rounded-xl glass-panel flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 transition-all duration-300 hover:scale-110">
+                                <i class="fab fa-twitter text-lg"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 rounded-xl glass-panel flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-blue-700 hover:to-blue-800 transition-all duration-300 hover:scale-110">
+                                <i class="fab fa-linkedin-in text-lg"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 rounded-xl glass-panel flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-pink-500 hover:to-pink-600 transition-all duration-300 hover:scale-110">
+                                <i class="fab fa-instagram text-lg"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 rounded-xl glass-panel flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-gray-800 hover:to-gray-900 transition-all duration-300 hover:scale-110">
+                                <i class="fab fa-github text-lg"></i>
+                            </a>
+                            <a href="#" class="w-12 h-12 rounded-xl glass-panel flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-white hover:bg-gradient-to-br hover:from-red-500 hover:to-red-600 transition-all duration-300 hover:scale-110">
+                                <i class="fab fa-youtube text-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-500/5 dark:to-purple-500/5 rounded-3xl blur-xl"></div>
+                    <div class="relative glass-panel p-8 md:p-10 rounded-3xl border border-gray-200 dark:border-white/10 shadow-2xl hover:shadow-3xl transition-shadow duration-500">
+                        <h2 class="text-2xl font-bold mb-8 text-gray-900 dark:text-white">Send us a message</h2>
+                        
+                        <!-- Success Message (Hidden by default) -->
+                        <div id="successMessage" class="hidden success-message mb-6 p-4 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 dark:text-green-400 text-xl mr-3"></i>
+                                <div>
+                                    <h4 class="font-bold text-green-800 dark:text-green-300">Message sent successfully!</h4>
+                                    <p class="text-sm text-green-700 dark:text-green-400">We'll get back to you within 24 hours.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                     <form action="{{ url_for('contact_us') }}" method="POST" class="space-y-6">
+
+    {% if success %}
+    <div class="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl flex items-center animate-pulse">
+        <i class="fas fa-check-circle mr-3 text-xl"></i> 
+        <span class="font-medium">{{ success }}</span>
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl flex items-center animate-bounce">
+        <i class="fas fa-exclamation-circle mr-3 text-xl"></i> 
+        <span class="font-medium">{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Full Name <span class="text-red-500">*</span>
+        </label>
+        <input type="text" name="name" required 
+               class="form-input w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-all"
+               placeholder="John Doe">
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Email Address <span class="text-red-500">*</span>
+        </label>
+        <input type="email" name="email" required 
+               class="form-input w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-all"
+               placeholder="john@example.com">
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Phone Number <span class="text-gray-500 text-xs">(Optional)</span>
+        </label>
+        <input type="tel" name="phone"
+               class="form-input w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-all"
+               placeholder="+1 (555) 123-4567">
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Inquiry Type <span class="text-red-500">*</span>
+        </label>
+        <select name="subject" required 
+                class="form-input w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-all">
+            <option value="" disabled selected>Select an option</option>
+            <option value="General Inquiry">General Inquiry</option>
+            <option value="Technical Support">Technical Support</option>
+            <option value="Billing & Subscription">Billing & Subscription</option>
+            <option value="Feature Request">Feature Request</option>
+            <option value="Partnership">Partnership Opportunities</option>
+            <option value="Feedback">Feedback & Suggestions</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Message <span class="text-red-500">*</span>
+        </label>
+        <textarea name="message" rows="5" required 
+                  class="form-input w-full px-4 py-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-slate-800 transition-all"
+                  placeholder="How can we help you? Please provide as much detail as possible..."></textarea>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Minimum 50 characters.</p>
+    </div>
+
+    <div class="flex items-center">
+        <input type="checkbox" id="newsletter" name="newsletter"
+               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+        <label for="newsletter" class="ml-2 text-sm text-gray-600 dark:text-gray-400">
+            I'd like to receive updates, tips, and offers from ATS Resume Builder Pro
+        </label>
+    </div>
+
+    <div class="pt-4">
+        <button type="submit" 
+                class="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 shadow-lg flex items-center justify-center group">
+            <span>Send Message</span>
+            <i class="fas fa-paper-plane ml-2 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+        
+        <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
+            By submitting this form, you agree to our 
+            <a href="{{ url_for('privacy_policy') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Privacy Policy</a> 
+            and 
+            <a href="{{ url_for('terms') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Terms of Service</a>.
+        </p>
+    </div>
+</form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Preview Section -->
+    <section class="py-20 px-4 bg-gradient-to-b from-transparent to-gray-100/50 dark:to-gray-900/30">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4 text-gray-900 dark:text-white">Frequently Asked Questions</h2>
+                <p class="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Quick answers to common questions about contacting us</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <div class="w-10 h-10 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-clock text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white">What's your response time?</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">We typically respond within 24 hours on business days. For urgent issues, use our live chat feature.</p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-2xl">
+                    <div class="w-10 h-10 bg-purple-100 dark:bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-headset text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white">Do you offer phone support?</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Currently, we provide support via email, live chat, and social media to serve you more efficiently.</p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-2xl">
+                    <div class="w-10 h-10 bg-green-100 dark:bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-globe text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2 text-gray-900 dark:text-white">What languages do you support?</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">We provide support in English, Spanish, and French. Our platform supports 12+ languages.</p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <a href="{{ url_for('help_center') }}" class="inline-flex items-center text-blue-600 dark:text-blue-400 font-medium hover:underline">
+                    View all FAQs <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <!-- ========== FOOTER ========== -->
+     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
+            <div class="col-span-2">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fas fa-file-alt text-white text-2xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
+                </div>
+                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
+                <ul class="space-y-3 text-gray-400">
+                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
+                </ul>
+            </div>
+                 <div>
+    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
+    <ul class="space-y-3 text-gray-400">
+        <li>
+            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
+                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
+            </a>
+        </li>
+    </ul>
+</div>
+        </div>
+        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+                <div class="flex items-center mt-4 md:mt-0">
+                    <span class="text-sm mr-4 flex items-center">
+                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
+                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
+                            Meraj.Dev
+                        </a>
+                    </span>
+                    <div class="flex items-center text-green-400">
+                        <i class="fas fa-globe mr-2"></i>
+                        <span>Global 🌎</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Live Chat Widget -->
+    <div id="liveChatWidget" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="glass-panel rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl w-80 overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3">
+                            <i class="fas fa-headset text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-white">Live Chat</h3>
+                            <p class="text-blue-100 text-xs">Typically replies in 2 minutes</p>
+                        </div>
+                    </div>
+                    <button onclick="closeLiveChat()" class="text-white hover:text-blue-100">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 max-h-80 overflow-y-auto">
+                <!-- Chat content would go here -->
+                <p class="text-sm text-gray-600 dark:text-gray-400 text-center py-4">Live chat feature would be implemented here</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeToggleMobile = document.getElementById('themeToggleMobile');
+        const html = document.documentElement;
+        
+        function updateTheme() {
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            
+            // Update icons
+            const moonIcons = document.querySelectorAll('.fa-moon');
+            const sunIcons = document.querySelectorAll('.fa-sun');
+            
+            moonIcons.forEach(icon => {
+                icon.classList.toggle('dark:hidden', isDark);
+                icon.classList.toggle('block', !isDark);
+            });
+            
+            sunIcons.forEach(icon => {
+                icon.classList.toggle('hidden', !isDark);
+                icon.classList.toggle('dark:block', isDark);
+            });
+        }
+        
+        // Initialize theme from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            html.classList.remove('dark');
+        } else if (savedTheme === 'dark') {
+            html.classList.add('dark');
+        }
+        updateTheme();
+        
+        // Add event listeners
+        themeToggle?.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            updateTheme();
+        });
+        
+        themeToggleMobile?.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            updateTheme();
+        });
+        
+        // Mobile Menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+        
+        mobileMenuBtn?.addEventListener('click', () => {
+            mobileMenu.classList.remove('translate-x-full');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        mobileCloseBtn?.addEventListener('click', () => {
+            mobileMenu.classList.add('translate-x-full');
+            document.body.style.overflow = 'auto';
+        });
+        
+        // Close mobile menu when clicking links
+        document.querySelectorAll('#mobileMenu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+                document.body.style.overflow = 'auto';
+            });
+        });
+        
+        // Contact Form Submission
+        const contactForm = document.getElementById('contactForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const successMessage = document.getElementById('successMessage');
+        
+        contactForm?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.textContent = 'Sending...';
+            spinner.classList.remove('hidden');
+            
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Show success message
+            successMessage.classList.remove('hidden');
+            contactForm.reset();
+            
+            // Reset button state
+            submitBtn.disabled = false;
+            btnText.textContent = 'Send Message';
+            spinner.classList.add('hidden');
+            
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                successMessage.classList.add('hidden');
+            }, 5000);
+            
+            // Scroll to success message
+            successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        
+        // Live Chat Functions
+        function openLiveChat() {
+            document.getElementById('liveChatWidget').classList.remove('hidden');
+        }
+        
+        function closeLiveChat() {
+            document.getElementById('liveChatWidget').classList.add('hidden');
+        }
+        
+        // Form validation
+        const formInputs = document.querySelectorAll('input[required], textarea[required], select[required]');
+        formInputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.classList.add('border-red-500');
+                } else {
+                    this.classList.remove('border-red-500');
+                }
+            });
+        });
+        
+        // Character counter for textarea
+       // Character counter for textarea
+        const textarea = document.querySelector('textarea');
+        textarea?.addEventListener('input', function() {
+            const charCount = this.value.length;
+            
+            // Step 1: Check agar counter pehle se hai (Inside Parent)
+            let counter = this.parentElement.querySelector('.char-counter');
+            
+            // Step 2: Agar nahi hai, to naya banao aur Textarea ke theek niche lagao
+            if (!counter) {
+                counter = document.createElement('div');
+                counter.className = 'char-counter text-xs text-gray-500 dark:text-gray-400 mt-1';
+                this.insertAdjacentElement('afterend', counter); // 👈 Ye line fix ki hai (Inside parent insert karega)
+            }
+            
+            // Step 3: Text Update karo
+            counter.textContent = `${charCount}/2000 characters`;
+            
+            // Step 4: Colors Update (Yellow/Red/Gray)
+            counter.classList.remove('text-red-500', 'text-yellow-500', 'text-gray-500', 'dark:text-gray-400'); // Pehle purane colors hatao
+            
+            if (charCount > 1900) {
+                counter.classList.add('text-red-500');
+            } else if (charCount < 50) {
+                counter.classList.add('text-yellow-500');
+            } else {
+                counter.classList.add('text-gray-500', 'dark:text-gray-400');
+            }
+        });
+        
+        // Initialize character counter
+        if (textarea) {
+            textarea.dispatchEvent(new Event('input'));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+  {% comment %} /* --- USER PROVIDED DESIGN (Michael Harris Style) --- */
+        .resume-template {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background: #fff;
+            padding: 40px;
+            max-width: 850px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Optional shadow */
+        }
+
+        /* Photo (Hidden by default) */
+        #preview-image {
+            display: none; /* JS will show this */
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 15px auto;
+            border: 3px solid #eee;
+        }
+
+        /* Header */
+        .name {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            color: #000;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 16px;
+            color: #444;
+            margin-bottom: 10px;
+        }
+
+        .contact {
+            text-align: center;
+            font-size: 14px;
+            margin: 10px 0 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .contact span {
+            margin: 0 5px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 25px 0 15px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            color: #333;
+        }
+
+        /* Summary */
+        .summary {
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Dynamic Items Styling (Experience/Projects/Education) */
+        /* Builder generates specific classes, we override them to match your design */
+        
+        .template-experience-item, 
+        .template-project-item, 
+        .template-education-item {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Flex header for Job Title & Date */
+        .template-experience-item h3, 
+        .template-project-item h3, 
+        .template-education-item h3 {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex; /* Aligns Title and Date */
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            width: 100%;
+        }
+
+        /* The Date Span (Builder puts it inside h3) */
+        .template-experience-item h3 span,
+        .template-project-item h3 span,
+        .template-education-item h3 span {
+            font-weight: bold;
+            font-size: 14px;
+            color: #000;
+        }
+
+        /* Company / Subtitle */
+        .template-experience-item div,
+        .template-project-item p.italic {
+            color: #444;
+            margin: 5px 0 10px;
+            font-style: italic;
+            font-weight: normal;
+        }
+
+        /* Lists */
+        ul {
+            margin-left: 20px;
+            line-height: 1.6;
+            margin-top: 5px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        /* Skills specific */
+        #preview-skills, #preview-languages, #preview-hobbies {
+            margin-bottom: 10px;
+        }
+
+        .resume-template { font-family: Arial, sans-serif; color: #333; background: #fff; padding: 40px; max-width: 850px; margin: auto; }
+        
+        /* Page Break Logic */
+        .template-section, li, .template-experience-item, .template-education-item { page-break-inside: avoid; }
+
+        /* Hidden Sections by default */
+        .hidden-section { display: none; }
+
+        #preview-image { display: none; width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin: 0 auto 15px; border: 3px solid #eee; }
+
+        .name { text-align: center; font-size: 36px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
+        .subtitle { text-align: center; font-size: 16px; color: #444; margin-bottom: 10px; }
+        .contact { text-align: center; font-size: 14px; margin: 10px 0 20px; color: #555; }
+        .contact span { margin: 0 5px; }
+        hr { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+        
+        .section-title { font-size: 20px; font-weight: 700; margin: 25px 0 15px; border-bottom: 2px solid #ccc; padding-bottom: 5px; text-transform: uppercase; color: #333; }
+        
+        /* Item Styles */
+        h3 { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 2px; }
+        h3 span { font-weight: normal; font-size: 14px; color: #000; }
+        .sub-text { color: #444; font-style: italic; margin-bottom: 8px; font-size: 14px; }
+        ul { margin-left: 20px; margin-top: 5px; }
+        li { margin-bottom: 4px; } {% endcomment %}
