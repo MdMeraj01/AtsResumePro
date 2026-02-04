@@ -1,7 +1,19 @@
-flask==2.3.3
+Flask==3.0.2
+gunicorn==21.2.0
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Database (MySQL)
+PyMySQL==1.1.0
+
+# OAuth (Google + GitHub)
+Authlib==1.3.0
 requests==2.31.0
-python-dotenv==1.0.0
-fpdf2==2.7.4
-flask-cors==4.0.0
-openai==1.3.0
-python-docx==0.8.11
+
+# Google Gemini AI
+google-generativeai==0.5.2
+
+# Security / helpers
+itsdangerous==2.2.0
+Werkzeug==3.0.1
