@@ -17,3 +17,6 @@ google-generativeai==0.5.2
 # Security / helpers
 itsdangerous==2.2.0
 Werkzeug==3.0.1
+
+flask-cors==4.0.0
+python-3.10.13
