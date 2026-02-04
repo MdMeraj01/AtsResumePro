@@ -2817,6 +2817,68 @@ def phonepe_callback():
     except Exception as e:
         print(f"Callback Error: {e}")
         return redirect(url_for('pricing'))
+# ==========================================
+# 🔍 SEO ROUTES (Dynamic Sitemap for Render)
+# ==========================================
+
+@app.route('/robots.txt')
+def robots_txt():
+    # Render URL ko hardcode kar diya taaki galti na ho
+    base_url = "https://atsresumepro.onrender.com"
+    content = f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml"
+    return Response(content, mimetype="text/plain")
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    """Generates sitemap for atsresumepro.onrender.com"""
+    base_url = "https://atsresumepro.onrender.com"
+    
+    # Static Pages List
+    pages = [
+        '/', 
+        '/builder', 
+        '/templates', 
+        '/pricing', 
+        '/interview-prep', 
+        '/contact-us', 
+        '/about', 
+        '/login'
+    ]
+    
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    
+    # 1. Static Pages
+    for page in pages:
+        xml.append('<url>')
+        xml.append(f'<loc>{base_url}{page}</loc>')
+        xml.append('<changefreq>weekly</changefreq>')
+        xml.append('<priority>0.8</priority>')
+        xml.append('</url>')
+
+    # 2. Dynamic Blog Posts (Database se)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, created_at FROM blog_posts")
+        posts = cursor.fetchall()
+        conn.close()
+
+        for post in posts:
+            xml.append('<url>')
+            xml.append(f'<loc>{base_url}/blog/post-{post["id"]}</loc>')
+            # Date formatting check
+            date_str = post["created_at"].strftime("%Y-%m-%d") if post["created_at"] else datetime.now().strftime("%Y-%m-%d")
+            xml.append(f'<lastmod>{date_str}</lastmod>')
+            xml.append('<changefreq>monthly</changefreq>')
+            xml.append('<priority>0.6</priority>')
+            xml.append('</url>')
+    except Exception as e:
+        print(f"Sitemap Error: {e}")
+
+    xml.append('</urlset>')
+    return Response('\n'.join(xml), mimetype="application/xml")    
+    
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")
     if API_KEY and API_KEY != 'your-google-api-key-here':
