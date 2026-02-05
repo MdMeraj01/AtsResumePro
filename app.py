@@ -31,14 +31,33 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# app.py
+
 def get_db_connection():
-    return pymysql.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        cursorclass=pymysql.cursors.DictCursor
-    )
+    # .env se variables load karo
+    host = os.getenv("DB_HOST")
+    user = os.getenv("DB_USER")
+    passwd = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_NAME")
+    
+    # Port env me string hota hai, use integer banana padta hai
+    port = int(os.getenv("DB_PORT", 3306)) 
+
+    # Connection Config
+    config = {
+        'host': host,
+        'user': user,
+        'password': passwd,
+        'database': db_name,
+        'port': port,
+        'cursorclass': pymysql.cursors.DictCursor
+    }
+
+    # 🔒 SSL LOGIC: Agar Host Localhost nahi hai (yani Cloud hai), to SSL on karo
+    if host != '127.0.0.1' and host != 'localhost':
+        config['ssl'] = {'ssl': {}} # Empty dict SSL trigger karne ke liye kaafi hai Aiven par
+
+    return pymysql.connect(**config)
 
 
 CORS(app)
