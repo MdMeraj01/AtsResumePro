@@ -32,64 +32,83 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// 3. Render Function (Smart Buttons Logic)
+// ✅ UPDATED RENDER FUNCTION (With 'No Results' Fix)
 function renderTemplatesGrid(templates) {
     const grid = document.getElementById('templatesGrid');
     if (!grid) return;
     
-    grid.innerHTML = templates.map((t, index) => {
+    // 👇 1. "No Results" HTML (Ye code pehle delete ho gaya tha, ab wapas daal diya)
+    const noResultsHTML = `
+    <div id="noResults" class="hidden col-span-full text-center py-20">
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-800 mb-6 relative">
+            <i class="fas fa-search text-4xl text-gray-600"></i>
+            <div class="absolute top-0 right-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-bounce">?</div>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">No Templates Found</h3>
+        <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">Try searching for "Modern", "Creative" or "ATS".</p>
+        <button onclick="resetFilters()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-semibold">
+            Clear Filters
+        </button>
+    </div>
+    `;
+
+    // 2. Templates Cards Generate Karo
+    const cardsHTML = templates.map((t, index) => {
         let buttonHTML = '';
         let badgeHTML = '';
 
-        // --- BADGE LOGIC ---
+        // Badge Logic
         if (t.is_premium) {
             if (t.user_has_access) {
                 badgeHTML = `<div class="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-check"></i> Owned</div>`;
             } else {
-                badgeHTML = `<div class="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-crown"></i> ₹${t.price}</div>`;
+                badgeHTML = `<div class="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-crown"></i> ₹${t.price}</div>`;
             }
         } else {
             badgeHTML = `<div class="absolute top-3 right-3 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10">Free</div>`;
         }
 
-        // --- BUTTON LOGIC ---
+        // Button Logic
         if (t.user_has_access) {
-            // Agar access hai -> "Use Template"
             buttonHTML = `
-                <a href="/builder?template=${t.name}" class="w-full block text-center py-2.5 mt-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-blue-500/50">
-                    <i class="fas fa-magic mr-2"></i> Use Template
+                <a href="/builder?template=${t.name}" 
+                   class="px-6 py-3 rounded-full font-bold shadow-lg transform hover:scale-105 transition-all flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                    <i class="fas fa-pen-fancy"></i> <span>Use Template</span>
                 </a>`;
         } else {
-            // Agar access nahi hai -> "Buy Now"
             buttonHTML = `
-                <button onclick="buyTemplate('${t.name}', ${t.price})" class="w-full py-2.5 mt-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-lg hover:shadow-lg hover:scale-[1.02] transition flex items-center justify-center">
-                    <i class="fas fa-lock mr-2"></i> Buy for ₹${t.price}
+                <button onclick="buyTemplate('${t.name}', ${t.price})" 
+                        class="px-6 py-3 rounded-full font-bold shadow-lg transform hover:scale-105 transition-all flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+                    <i class="fas fa-lock"></i> <span>Unlock ₹${t.price}</span>
                 </button>`;
         }
 
         return `
-        <div class="template-card rounded-2xl overflow-hidden group reveal-card bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col" data-category="${t.category}" style="animation-delay: ${index * 50}ms">
-            <div class="relative overflow-hidden h-64 bg-gray-100 dark:bg-gray-800">
+        <div class="template-card rounded-2xl overflow-hidden group reveal-card bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col transition-all duration-300 hover:shadow-2xl" data-category="${t.category}" style="animation-delay: ${index * 50}ms">
+            <div class="relative h-64 overflow-hidden bg-gray-100 dark:bg-gray-800">
                 ${badgeHTML}
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <img src="/static/images/template-previews/${t.image_file}" 
-                         alt="${t.display_name}" 
-                         class="template-image w-full h-full object-contain p-4 transform group-hover:scale-105 transition-transform duration-500"
-                         onerror="this.src='https://via.placeholder.com/300x400?text=Resume'">
+                <img src="/static/images/template-previews/${t.image_file}" 
+                     alt="${t.display_name}" 
+                     class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
+                     onerror="this.src='https://via.placeholder.com/300x400?text=Resume'">
+                <div class="absolute inset-0 bg-slate-900/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-4 backdrop-blur-sm z-20">
+                    <button onclick="previewTemplate('${t.name}')" 
+                            class="preview-template w-12 h-12 bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-full flex items-center justify-center backdrop-blur-md transition-all transform hover:scale-110"
+                            title="Preview Template" data-template="${t.name}">
+                        <i class="fas fa-eye text-xl"></i>
+                    </button>
+                    ${buttonHTML}
                 </div>
             </div>
-            
-            <div class="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-bold text-lg text-gray-900 dark:text-white">${t.display_name}</h3>
-                    </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">${t.description}</p>
-                </div>
-                ${buttonHTML}
+            <div class="p-5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 z-30">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white">${t.display_name}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">${t.description}</p>
             </div>
         </div>
     `}).join('');
+
+    // 👇 3. DONO KO JOD KAR PAGE PAR DIKHAO
+    grid.innerHTML = noResultsHTML + cardsHTML;
 }
 
 // 4. Buy Function (Global)
@@ -427,8 +446,11 @@ function closeModal() {
     document.getElementById('templatePreviewModal').classList.add('hidden');
 }
 
+// ✅ FIXED PREVIEW FUNCTION
 function previewTemplate(templateName) {
+    // 1. Template Dhundo
     const template = TEMPLATES.find(t => t.name === templateName);
+    
     if (!template) {
         showToast('Template details not found', 'error');
         return;
@@ -439,32 +461,43 @@ function previewTemplate(templateName) {
     const modal = document.getElementById('templatePreviewModal');
     const modalTitle = document.getElementById('previewModalTitle');
     const contentDiv = document.getElementById('templatePreviewContent');
-    const baseUrl = document.getElementById('templateBaseUrl')?.getAttribute('data-url') || '/static/images/template-previews/';
+    
+    // Base URL for images
+    const baseUrl = '/static/images/template-previews/';
     
     if (modal && contentDiv) {
-        modalTitle.textContent = template.display;
+        // 👇 Yahan 'display_name' use karna hai (Pehle 'display' tha jo galat tha)
+        modalTitle.textContent = template.display_name;
         
+        // Badge Logic for Modal
+        let badgeHtml = '';
+        if (template.is_premium) {
+            badgeHtml = `<span class="inline-block mt-3 px-4 py-1 text-sm font-bold rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"><i class="fas fa-crown"></i> Premium ₹${template.price}</span>`;
+        } else {
+            badgeHtml = `<span class="inline-block mt-3 px-4 py-1 text-sm font-bold rounded-full bg-blue-500 text-white shadow-lg">Free Template</span>`;
+        }
+
         // Dynamic HTML Injection
         contentDiv.innerHTML = `
             <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-xl animate-fade-in">
                 <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">${template.display}</h2>
+                    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">${template.display_name}</h2>
                     <p class="text-gray-600 dark:text-gray-400 text-lg">${template.description}</p>
-                    ${template.badge ? `<span class="inline-block mt-3 px-4 py-1 text-sm font-bold rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">${template.badge}</span>` : ''}
+                    ${badgeHtml}
                 </div>
                 
                 <div class="border-4 border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800 p-2 max-w-2xl mx-auto">
-                    <img src="${baseUrl}${template.image}" 
-                         alt="${template.display}" 
+                    <img src="${baseUrl}${template.image_file}" 
+                         alt="${template.display_name}" 
                          class="w-full h-auto object-cover rounded-lg"
-                         onerror="this.src='https://via.placeholder.com/400x600?text=Preview+Image'; this.onerror=null;">
+                         onerror="this.src='https://via.placeholder.com/400x600?text=Preview+Image';">
                 </div>
                 
                 <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="/builder?template=${templateName}" 
+                    <button onclick="useTemplate('${template.name}', ${template.is_premium})" 
                    class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:scale-105 transition-transform duration-200 font-bold text-lg flex items-center justify-center shadow-xl">
-                     <i class="fas fa-magic mr-2"></i> Use This Template
-                    </a>
+                     <i class="fas fa-magic mr-2"></i> ${template.is_premium ? 'Unlock Template' : 'Use This Template'}
+                    </button>
     
                     <button onclick="document.getElementById('templatePreviewModal').classList.add('hidden')" 
                             class="px-8 py-4 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors duration-200 font-bold">

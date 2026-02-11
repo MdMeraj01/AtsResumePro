@@ -879,6 +879,10 @@ def careers():
     # File location: templates/company/careers.html
     return render_template('company/careers.html')
 
+# Refund Policy Route
+@app.route('/refund-policy')
+def refund_policy():
+    return render_template('support/refund_policy.html')
 
 @app.route('/press')
 def press():
@@ -2710,17 +2714,10 @@ def process_payment():
         conn.close()
 
 
-
-# ==========================================
-# 💳 PHONEPE CONFIGURATION (Universal Test Credentials)
-# ==========================================
-
-# 👇 Inhe change mat karna, ye PhonePe ki Universal Keys hain jo sabke liye chalti hain
-PHONEPE_MERCHANT_ID = "M23COJXWUNAEV_2602050026" 
-PHONEPE_SALT_KEY = "OGVlMGI2OGMtYjc3Mi00Mjg5LThhODItNmMxNTFmN2U5NTJi"
+# ✅ YE SAHI HAI (Universal Keys - 100% Chalega)
+PHONEPE_MERCHANT_ID = "PGTESTPAYUAT" 
+PHONEPE_SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399"
 PHONEPE_SALT_INDEX = 1
-
-# Sandbox URL
 PHONEPE_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
 
 # ==========================================

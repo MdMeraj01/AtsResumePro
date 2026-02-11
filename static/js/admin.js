@@ -55,72 +55,54 @@ let analyticsCharts = {
  // ==========================================
 // 1. NAVIGATION & TAB SWITCHING (FIXED COLORS)
 // ==========================================
+// Global object to store all chart instances
+const chartRegistry = {
+    dashboardLine: null,
+    dashboardDoughnut: null,
+    analyticsBar: null,
+    analyticsLine: null
+};
+
+// 1. Navigation Logic Update (switchTab function)
 function switchTab(targetHref) {
     const navItems = document.querySelectorAll('.nav-item');
     const contentSections = document.querySelectorAll('.content-section');
 
-    // --- STEP A: Sabko Inactive (Gray) banao ---
+    // Reset Styles
     navItems.forEach(nav => {
-        // 1. Remove Active Styles (Blue Color & BG)
-        nav.classList.remove(
-            'active', 
-            'bg-blue-50', 'dark:bg-gray-800', 
-            'text-blue-600', 'dark:text-blue-400'
-        );
-        
-        // 2. Add Inactive Styles (Gray Color & Hover Effect)
-        nav.classList.add(
-            'text-gray-600', 'dark:text-gray-400', 
-            'hover:bg-gray-100', 'dark:hover:bg-gray-800', 
-            'hover:text-gray-900', 'dark:hover:text-white'
-        );
+        nav.classList.remove('active', 'bg-blue-50', 'dark:bg-gray-800', 'text-blue-600', 'dark:text-blue-400');
+        nav.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
     });
 
-    // --- STEP B: Sare Sections Hide karo ---
     contentSections.forEach(section => section.classList.add('hidden'));
 
-    // --- STEP C: Target Link ko Active (Blue) banao ---
+    // Set Active State
     const activeNav = document.querySelector(`.nav-item[href="${targetHref}"]`);
     if (activeNav) {
-        // 1. Remove Inactive Styles
-        activeNav.classList.remove(
-            'text-gray-600', 'dark:text-gray-400', 
-            'hover:bg-gray-100', 'dark:hover:bg-gray-800', 
-            'hover:text-gray-900', 'dark:hover:text-white'
-        );
-
-        // 2. Add Active Styles
-        activeNav.classList.add(
-            'active', 
-            'bg-blue-50', 'dark:bg-gray-800', 
-            'text-blue-600', 'dark:text-blue-400'
-        );
+        activeNav.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+        activeNav.classList.add('active', 'bg-blue-50', 'dark:bg-gray-800', 'text-blue-600', 'dark:text-blue-400');
     }
 
-    if (targetHref === '#gallery') {
-        loadGalleryImages();
-    }
-
-    if (targetHref === '#settings') {
-        loadSettings();
-    }
-
-    // --- STEP D: Target Section Show karo ---
+    // Show Section
     const targetId = targetHref.substring(1) + '-section';
     const targetSection = document.getElementById(targetId);
     if (targetSection) targetSection.classList.remove('hidden');
 
-    // --- STEP E: Logic Save & Charts ---
+    // Save State
     localStorage.setItem('activeAdminTab', targetHref);
 
-    // Agar Analytics hai to Chart Reload karo
-    if (targetHref === '#analytics') {
-        setTimeout(() => {
-            if(typeof renderAnalyticsCharts === 'function') renderAnalyticsCharts();
-        }, 100); 
+    // 🔥 LOAD CHARTS BASED ON TAB
+    if (targetHref === '#dashboard') {
+        setTimeout(initDashboardCharts, 100);
     } 
-    else if (targetHref === '#dashboard') {
-        if(typeof initDashboardCharts === 'function') initDashboardCharts();
+    else if (targetHref === '#analytics') {
+        setTimeout(renderAnalyticsCharts, 100);
+    }
+    else if (targetHref === '#gallery') {
+        loadGalleryImages();
+    }
+    else if (targetHref === '#settings') {
+        loadSettings();
     }
 }
 
