@@ -76,8 +76,9 @@ function renderTemplatesGrid(templates) {
                     <i class="fas fa-pen-fancy"></i> <span>Use Template</span>
                 </a>`;
         } else {
+            // ✅ NAYA CODE (Sahi)
             buttonHTML = `
-                <button onclick="buyTemplate('${t.name}', ${t.price})" 
+                <button onclick="window.buySingleTemplate('${t.name}', ${t.price}, this)" 
                         class="px-6 py-3 rounded-full font-bold shadow-lg transform hover:scale-105 transition-all flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white">
                     <i class="fas fa-lock"></i> <span>Unlock ₹${t.price}</span>
                 </button>`;
@@ -112,33 +113,102 @@ function renderTemplatesGrid(templates) {
 }
 
 // 4. Buy Function (Global)
-window.buyTemplate = async function(templateName, price) {
-    if(!confirm(`Do you want to unlock '${templateName}' for ₹${price}?`)) return;
-
-    // Show Loader
-    showLoader(); // (Make sure showLoader is defined)
+// 🚀 ASLI RAZORPAY FUNCTION (Isko paste karein)
+window.buySingleTemplate = async function(templateName, price, buttonElement) {
+    const originalText = buttonElement.innerHTML;
+    
+    // Loading State
+    buttonElement.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+    buttonElement.disabled = true;
 
     try {
-        const res = await fetch('/api/buy-single-template', {
+        // 1. Order ID Mangwao Backend Se
+        const res = await fetch('/api/create-template-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ template_name: templateName, price: price })
         });
-        
-        const data = await res.json();
-        
-        if (data.success) {
-            alert("Success! Template Unlocked. 🎉");
-            location.reload(); // Page reload karo taaki button update ho jaye
-        } else {
-            alert("Error: " + data.message);
-        }
-    } catch(e) {
-        alert("Something went wrong");
-    } finally {
-        hideLoader();
+
+        const orderData = await res.json();
+
+        if (!orderData.success) throw new Error(orderData.message || 'Failed to create order');
+
+        // 2. Razorpay Popup Options
+        const options = {
+            "key": orderData.key_id, 
+            "amount": orderData.amount, 
+            "currency": orderData.currency,
+            "name": "ATS Resume Pro",
+            "description": "Unlock Premium Template: " + templateName.toUpperCase(),
+            "image": "/static/images/favicon.png",
+            "order_id": orderData.order_id,
+            
+            // UPI / QR Code Focus
+            "config": {
+                "display": {
+                    "blocks": {
+                        "upi_qr": {
+                            "name": "Scan QR Code (UPI)",
+                            "instruments": [{ "method": "upi" }]
+                        },
+                        "other_methods": {
+                            "name": "Cards, Netbanking & Wallets",
+                            "instruments": [{ "method": "card" }, { "method": "netbanking" }, { "method": "wallet" }]
+                        }
+                    },
+                    "sequence": ["block.upi_qr", "block.other_methods"],
+                    "preferences": { "show_default_blocks": false }
+                }
+            },
+
+            "handler": async function (response) {
+                buttonElement.innerHTML = '<i class="fas fa-shield-check"></i> Verifying...';
+                
+                // 3. Payment Success Hone par Verify Karo
+                const verifyRes = await fetch('/api/verify-template-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        template_name: templateName,
+                        price: price
+                    })
+                });
+
+                const verifyData = await verifyRes.json();
+                
+                if (verifyData.success) {
+                    alert("🎉 Payment Successful! Template is now unlocked.");
+                    location.reload(); // Page refresh karo taaki template unlock dikhe
+                } else {
+                    alert("❌ Verification Failed: " + verifyData.message);
+                    resetButton();
+                }
+            },
+            "theme": { "color": "#4f46e5" }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response){
+            alert("Payment Failed! Reason: " + response.error.description);
+            resetButton();
+        });
+        rzp.open();
+
+    } catch (error) {
+        console.error(error);
+        alert('Error: ' + error.message);
+        resetButton();
+    }
+
+    function resetButton() {
+        buttonElement.innerHTML = originalText;
+        buttonElement.disabled = false;
     }
 };
+
 // ---------- 2. INITIALIZATION ----------
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Template Page Loaded');
@@ -699,3 +769,99 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
 });
+
+
+    async function buySingleTemplate(templateName, price, buttonElement) {
+        const originalText = buttonElement.innerHTML;
+        
+        // Loading State
+        buttonElement.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+        buttonElement.disabled = true;
+
+        try {
+            // 1. Order ID Mangwao Backend Se
+            const res = await fetch('/api/create-template-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ template_name: templateName, price: price })
+            });
+
+            const orderData = await res.json();
+
+            if (!orderData.success) throw new Error(orderData.message || 'Failed to create order');
+
+            // 2. Razorpay Popup Options
+            const options = {
+                "key": orderData.key_id, 
+                "amount": orderData.amount, 
+                "currency": orderData.currency,
+                "name": "ATS Resume Pro",
+                "description": "Unlock Premium Template: " + templateName.toUpperCase(),
+                "image": "/static/images/favicon.png",
+                "order_id": orderData.order_id,
+                
+                // UPI / QR Code Focus
+                "config": {
+                    "display": {
+                        "blocks": {
+                            "upi_qr": {
+                                "name": "Scan QR Code (UPI)",
+                                "instruments": [{ "method": "upi" }]
+                            },
+                            "other_methods": {
+                                "name": "Cards, Netbanking & Wallets",
+                                "instruments": [{ "method": "card" }, { "method": "netbanking" }, { "method": "wallet" }]
+                            }
+                        },
+                        "sequence": ["block.upi_qr", "block.other_methods"],
+                        "preferences": { "show_default_blocks": false }
+                    }
+                },
+
+                "handler": async function (response) {
+                    buttonElement.innerHTML = '<i class="fas fa-shield-check"></i> Verifying...';
+                    
+                    // 3. Payment Success Hone par Verify Karo
+                    const verifyRes = await fetch('/api/verify-template-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            template_name: templateName,
+                            price: price
+                        })
+                    });
+
+                    const verifyData = await verifyRes.json();
+                    
+                    if (verifyData.success) {
+                        alert("🎉 Payment Successful! Template is now unlocked.");
+                        location.reload(); // Page refresh karo taaki template unlock dikhe
+                    } else {
+                        alert("❌ Verification Failed: " + verifyData.message);
+                        resetButton();
+                    }
+                },
+                "theme": { "color": "#4f46e5" }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response){
+                alert("Payment Failed! Reason: " + response.error.description);
+                resetButton();
+            });
+            rzp.open();
+
+        } catch (error) {
+            console.error(error);
+            alert('Error: ' + error.message);
+            resetButton();
+        }
+
+        function resetButton() {
+            buttonElement.innerHTML = originalText;
+            buttonElement.disabled = false;
+        }
+    }

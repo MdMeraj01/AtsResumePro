@@ -16,6 +16,7 @@ from authlib.integrations.flask_client import OAuth
 import secrets
 import csv
 import io
+import razorpay
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -1429,7 +1430,11 @@ def export_pdf():
                 print(f"ℹ️ INFO: Plan is '{current_plan}', No deduction needed.")
 
             # 5. Log Activity
-            cursor.execute("INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, 'downloaded_pdf', 'PDF Export')", (session['user_id'],))
+            # ✅ YE SAHI HAI: Frontend se template ka naam lo aur wahi save karo
+            data = request.json
+            template_name = data.get('template_name', 'Modern') # Default 'Modern' agar naam na mile
+
+            cursor.execute("INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, 'downloaded_pdf', %s)", (session['user_id'], template_name))
             conn.commit()
 
             # 6. Return Success (Yahan File URL ya Success Message bhejo)
@@ -1901,9 +1906,7 @@ def admin_toggle_status(user_id):
     conn.close()
     return jsonify({'success': False, 'message': 'User ID not found'})
 
-# ==========================================
-# 📊 ANALYTICS API (Updated: Daily Growth)
-# ==========================================
+# 👇 UPDATED admin_analytics FUNCTION (Shows ALL Templates including 0 downloads)
 @app.route('/api/admin/analytics')
 def admin_analytics():
     if 'admin_id' not in session:
@@ -1912,7 +1915,7 @@ def admin_analytics():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # 1. USER GROWTH (Last 30 Days)
+    # 1. USER GROWTH (Same as before)
     cursor.execute("""
         SELECT DATE_FORMAT(created_at, '%d %b') as date_label, COUNT(*) as count 
         FROM users 
@@ -1922,7 +1925,7 @@ def admin_analytics():
     """)
     growth_data = cursor.fetchall()
     
-    # 2. DOWNLOAD TRENDS (Last 30 Days) - New for Analytics Tab
+    # 2. DOWNLOAD TRENDS (Same as before)
     cursor.execute("""
         SELECT DATE_FORMAT(created_at, '%d %b') as date_label, COUNT(*) as count 
         FROM resume_activity 
@@ -1933,36 +1936,78 @@ def admin_analytics():
     """)
     download_data = cursor.fetchall()
 
-    # 3. TEMPLATE USAGE
+    # 👇 3. TEMPLATE USAGE (FIXED LOGIC FOR ALL TEMPLATES)
+    
+    # Step A: Pehle DB se SARE Templates ke naam nikalo (Master List)
+    # Taaki jo templates kabhi use nahi huye wo bhi list me aa jayein
+    cursor.execute("SELECT display_name FROM templates")
+    all_templates_list = cursor.fetchall()
+    
+    # Sabka count 0 set kar do shuru me
+    # Example: {'Modern': 0, 'Luxury': 0, 'Gold': 0 ...}
+    cleaned_stats = {t['display_name']: 0 for t in all_templates_list}
+    
+    # Step B: Ab Activity Data nikalo (Jo use huye hain)
     cursor.execute("""
         SELECT details as template_name, COUNT(*) as count 
         FROM resume_activity 
         WHERE activity_type IN ('downloaded_pdf', 'created') 
-        GROUP BY details 
-        LIMIT 5
+        AND details NOT IN ('PDF Export', 'Resume PDF', 'Credit Used', 'New Resume') 
+        AND details IS NOT NULL 
+        AND details != ''
+        GROUP BY details
     """)
-    template_data = cursor.fetchall()
-    
+    raw_data = cursor.fetchall()
     conn.close()
+
+    # Step C: Counts ko Master List me update karo
+    for row in raw_data:
+        raw_name = row['template_name']
+        count = row['count']
+        
+        # Name Clean karo (Spaces aur '?' hatao)
+        clean_name = raw_name.replace('?', '').strip().title()
+        
+        # Match Logic: Case-insensitive check
+        # Agar 'luxury' database me 'Luxury' naam se hai to count badha do
+        matched = False
+        for db_name in cleaned_stats.keys():
+            if db_name.lower() == clean_name.lower():
+                cleaned_stats[db_name] += count
+                matched = True
+                break
+        
+        # Agar koi purana template hai jo ab delete ho gaya par history me hai, use bhi dikhao
+        if not matched:
+            cleaned_stats[clean_name] = count
+
+    # Step D: Final List Banao
+    final_template_data = [
+        {'template_name': name, 'count': count} 
+        for name, count in cleaned_stats.items()
+    ]
+    
+    # Sort karo (Zyaada download wale upar)
+    final_template_data.sort(key=lambda x: x['count'], reverse=True)
+
+    # -----------------------------------------------
 
     return jsonify({
         'user_growth': {
             'labels': [row['date_label'] for row in growth_data],
             'data': [row['count'] for row in growth_data]
         },
-        'downloads_trend': { # New Data
+        'downloads_trend': {
             'labels': [row['date_label'] for row in download_data],
             'data': [row['count'] for row in download_data]
         },
         'template_usage': {
-            'labels': [row['template_name'] for row in template_data] if template_data else ['No Data'],
-            'data': [row['count'] for row in template_data] if template_data else [0]
+            'labels': [row['template_name'] for row in final_template_data],
+            'data': [row['count'] for row in final_template_data]
         }
     })
     
-# ==========================================
-# 🎨 TEMPLATE MANAGEMENT APIS
-# ==========================================
+ 
 
 # 1. Get All Templates (Public - For Website & Admin)
 # ==========================================
@@ -2021,29 +2066,95 @@ def get_templates():
         'user_plan': user_plan
     })
 
-# 2. Buy Single Template API (Mock Payment)
-@app.route('/api/buy-single-template', methods=['POST'])
-def buy_single_template():
+# ==========================================
+# 🛒 RAZORPAY FOR SINGLE TEMPLATES
+# ==========================================
+
+@app.route('/api/create-template-order', methods=['POST'])
+def create_template_order():
     if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
-    template_name = data.get('template_name')
-    price = data.get('price')
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        data = request.json
+        template_name = data.get('template_name')
+        price = float(data.get('price', 49)) # Single template ka price (e.g. ₹49)
+        
+        # Razorpay takes amount in Paise (e.g., ₹49 = 4900 paise)
+        amount_paise = int(price * 100)
+        
+        # Create Order
+        order_data = {
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": f"tpl_{session['user_id']}_{int(time.time())}",
+            "notes": {
+                "type": "single_template",
+                "template_name": template_name,
+                "user_id": session['user_id']
+            }
+        }
+        
+        order = razorpay_client.order.create(data=order_data)
+        
+        # Send Order ID to Frontend
+        return jsonify({
+            'success': True, 
+            'order_id': order['id'], 
+            'amount': order['amount'], 
+            'currency': order['currency'],
+            'key_id': RAZORPAY_KEY_ID
+        })
+            
+    except Exception as e:
+        print(f"Razorpay Template Order Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/verify-template-payment', methods=['POST'])
+def verify_template_payment():
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        # Save Purchase
+        data = request.json
+        
+        # 1. Verify Signature (Security check)
+        params_dict = {
+            'razorpay_order_id': data['razorpay_order_id'],
+            'razorpay_payment_id': data['razorpay_payment_id'],
+            'razorpay_signature': data['razorpay_signature']
+        }
+        
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # 2. Signature Verify ho gaya, ab DB update karo
+        template_name = data.get('template_name')
+        price = float(data.get('price'))
+        user_id = session['user_id']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # A. Add to User Purchases (Template unlock ho jayega)
         cursor.execute("INSERT INTO user_purchases (user_id, template_name, amount) VALUES (%s, %s, %s)", 
-                       (session['user_id'], template_name, price))
+                       (user_id, template_name, price))
+        
+        # B. Add to Transactions table (Taaki admin ko payment history dikhe)
+        cursor.execute("""
+            INSERT INTO transactions (user_id, plan_name, amount, transaction_id, payment_method, status)
+            VALUES (%s, %s, %s, %s, 'Razorpay', 'Success')
+        """, (user_id, f"Template: {template_name.title()}", price, data['razorpay_payment_id']))
+        
         conn.commit()
-        return jsonify({'success': True, 'message': 'Template Unlocked Successfully!'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-    finally:
         conn.close()
-
+        
+        return jsonify({'success': True, 'message': 'Template Unlocked Successfully!'})
+        
+    except razorpay.errors.SignatureVerificationError:
+        return jsonify({'success': False, 'message': 'Payment verification failed! Fake Signature.'}), 400
+    except Exception as e:
+        print(f"Template Verification Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
 # ==========================================
 # 2. Add New Template (Advanced - Files & DB)
 # ==========================================
@@ -2714,125 +2825,107 @@ def process_payment():
         conn.close()
 
 
-# ✅ YE SAHI HAI (Universal Keys - 100% Chalega)
-PHONEPE_MERCHANT_ID = "PGTESTPAYUAT" 
-PHONEPE_SALT_KEY = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399"
-PHONEPE_SALT_INDEX = 1
-PHONEPE_BASE_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
-
 # ==========================================
-# 💳 PHONEPE PAYMENT ROUTES
+# 💳 RAZORPAY CONFIGURATION (Test Mode)
 # ==========================================
 
-@app.route('/api/create-phonepe-order', methods=['POST'])
-def create_phonepe_order():
+# 👇 Yahan apni Razorpay Dashboard wali Test Keys dalein
+RAZORPAY_KEY_ID = "rzp_live_SP6qGYJyoMM1rM"  # Apni Key ID yahan dalein
+RAZORPAY_KEY_SECRET = "CA8PEsuUdnKeM6ibn0YSkaeR" # Apna Key Secret yahan dalein
+
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+@app.route('/api/create-razorpay-order', methods=['POST'])
+def create_razorpay_order():
     if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
     try:
         data = request.json
         amount = float(data.get('amount'))
-        plan = data.get('plan')
+        plan = data.get('plan', 'Premium')
         
-        # Unique Transaction ID
-        transaction_id = f"TXN_{int(time.time())}_{secrets.token_hex(2).upper()}"
-        
-        # PhonePe Amount (Paise me)
+        # Razorpay takes amount in Paise (e.g., ₹499 = 49900 paise)
         amount_paise = int(amount * 100)
         
-        # 1. Payload
-        payload = {
-            "merchantId": PHONEPE_MERCHANT_ID,
-            "merchantTransactionId": transaction_id,
-            "merchantUserId": str(session['user_id']),
+        # Create Order
+        order_data = {
             "amount": amount_paise,
-            "redirectUrl": url_for('phonepe_callback', _external=True),
-            "redirectMode": "POST",
-            "callbackUrl": url_for('phonepe_callback', _external=True),
-            "paymentInstrument": {
-                "type": "PAY_PAGE"
+            "currency": "INR",
+            "receipt": f"receipt_{session['user_id']}_{int(time.time())}",
+            "notes": {
+                "plan": plan,
+                "user_id": session['user_id']
             }
         }
         
-        # 2. Encode
-        payload_json = json.dumps(payload)
-        base64_payload = base64.b64encode(payload_json.encode('utf-8')).decode('utf-8')
+        order = razorpay_client.order.create(data=order_data)
         
-        # 3. Checksum
-        verification_str = base64_payload + "/pg/v1/pay" + PHONEPE_SALT_KEY
-        checksum = hashlib.sha256(verification_str.encode('utf-8')).hexdigest() + "###" + str(PHONEPE_SALT_INDEX)
-        
-        # 4. Request
-        headers = {
-            "Content-Type": "application/json",
-            "X-VERIFY": checksum
-        }
-        
-        response = requests.post(
-            f"{PHONEPE_BASE_URL}/pg/v1/pay", 
-            json={"request": base64_payload}, 
-            headers=headers
-        )
-        
-        print("PhonePe Response:", response.text) # Debugging ke liye console me dekho
-        resp_data = response.json()
-        
-        if resp_data.get("success"):
-            return jsonify({'success': True, 'redirectUrl': resp_data['data']['instrumentResponse']['redirectInfo']['url']})
-        else:
-            return jsonify({'success': False, 'message': resp_data.get("message", "Payment Failed")})
+        # Send Order ID to Frontend
+        return jsonify({
+            'success': True, 
+            'order_id': order['id'], 
+            'amount': order['amount'], 
+            'currency': order['currency'],
+            'key_id': RAZORPAY_KEY_ID
+        })
             
     except Exception as e:
-        print(f"PhonePe Error: {e}")
+        print(f"Razorpay Order Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@app.route('/payment/callback', methods=['POST'])
-def phonepe_callback():
+@app.route('/api/verify-razorpay-payment', methods=['POST'])
+def verify_razorpay_payment():
+    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    
     try:
-        # PhonePe POST request bhejta hai response ke saath
-        if not request.form.get('code') == 'PAYMENT_SUCCESS':
-             flash("Payment Failed or Cancelled!", "error")
-             return redirect(url_for('pricing'))
-
-        # Payment Success!
-        plan_name = session.get('temp_payment_plan', 'Premium').capitalize()
-        amount = session.get('temp_payment_amount', 0)
-        user_id = session.get('user_id')
+        data = request.json
         
-        if not user_id: return redirect(url_for('login_page'))
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # 1. Verify Signature (Ye confirm karta hai ki payment asli hai)
+        params_dict = {
+            'razorpay_order_id': data['razorpay_order_id'],
+            'razorpay_payment_id': data['razorpay_payment_id'],
+            'razorpay_signature': data['razorpay_signature']
+        }
         
-        # 1. Update User Limits
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # 2. Signature Verify ho gaya, ab DB update karo
+        plan_name = data.get('plan', 'Premium').capitalize()
+        user_id = session['user_id']
+        
         credits = 5
         if plan_name == 'Basic': credits = 10
         elif plan_name == 'Standard': credits = 100
         elif plan_name == 'Premium': credits = 9999
 
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Update User Limits
         cursor.execute("""
             UPDATE users SET plan_type = %s, resume_limit = 9999, ai_credits = %s 
             WHERE id = %s
         """, (plan_name, credits, user_id))
         
-        # 2. Transaction Log
-        tx_id = request.form.get('merchantTransactionId', 'UNK')
+        # Add to Transactions
         cursor.execute("""
             INSERT INTO transactions (user_id, plan_name, amount, transaction_id, payment_method, status)
-            VALUES (%s, %s, %s, %s, 'PhonePe', 'Success')
-        """, (user_id, plan_name, amount, tx_id))
+            VALUES (%s, %s, %s, %s, 'Razorpay', 'Success')
+        """, (user_id, plan_name, float(data['amount'])/100, data['razorpay_payment_id']))
         
         conn.commit()
         conn.close()
         
-        # Email Receipt Bhej Do (Optional)
-        # send_payment_receipt(...) 
+        return jsonify({'success': True, 'message': 'Payment Verified & Plan Activated!'})
         
-        return render_template('payment/success.html', tx_id=tx_id) # Success Page
-        
+    except razorpay.errors.SignatureVerificationError:
+        print("Payment Verification Failed! Fake Signature.")
+        return jsonify({'success': False, 'message': 'Payment verification failed!'}), 400
     except Exception as e:
-        print(f"Callback Error: {e}")
-        return redirect(url_for('pricing'))
+        print(f"Verification Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
 # ==========================================
 # 🔍 SEO ROUTES (Dynamic Sitemap for Render)
 # ==========================================

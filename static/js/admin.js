@@ -199,8 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastTab = localStorage.getItem('activeAdminTab') || '#dashboard';
     switchTab(lastTab);
     
-    // Charts Init (Agar dashboard hai to)
-    if(lastTab === '#dashboard') initCharts();
+     if(lastTab === '#dashboard') {
+        initDashboardCharts(); 
+    }
 });
 
 // 4. Template View Toggle (Grid vs List)
@@ -234,76 +235,76 @@ if (gridViewBtn && listViewBtn) {
 let userGrowthChartInstance = null;
 let templateUsageChartInstance = null;
 
-async function initCharts() {
-    try {
-        const res = await fetch('/api/admin/analytics');
-        const data = await res.json();
+// async function initCharts() {
+//     try {
+//         const res = await fetch('/api/admin/analytics');
+//         const data = await res.json();
 
-        // 1. User Growth Chart
-        const ctx1 = document.getElementById('userGrowthChart');
-        if (ctx1) {
-            // 👇 FIX: Agar purana chart hai to destroy karo
-            if (userGrowthChartInstance) {
-                userGrowthChartInstance.destroy();
-            }
+//         // 1. User Growth Chart
+//         const ctx1 = document.getElementById('userGrowthChart');
+//         if (ctx1) {
+//             // 👇 FIX: Agar purana chart hai to destroy karo
+//             if (userGrowthChartInstance) {
+//                 userGrowthChartInstance.destroy();
+//             }
 
-            userGrowthChartInstance = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: data.user_growth.labels,
-                    datasets: [{
-                        label: 'New Users',
-                        data: data.user_growth.data,
-                        borderColor: '#4F46E5',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
+//             userGrowthChartInstance = new Chart(ctx1, {
+//                 type: 'line',
+//                 data: {
+//                     labels: data.user_growth.labels,
+//                     datasets: [{
+//                         label: 'New Users',
+//                         data: data.user_growth.data,
+//                         borderColor: '#4F46E5',
+//                         backgroundColor: 'rgba(79, 70, 229, 0.1)',
+//                         borderWidth: 2,
+//                         fill: true,
+//                         tension: 0.4
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     maintainAspectRatio: false,
+//                     plugins: { legend: { display: false } },
+//                     scales: { y: { beginAtZero: true } }
+//                 }
+//             });
+//         }
 
-        // 2. Template Usage Chart
-        const ctx2 = document.getElementById('templateUsageChart');
-        if (ctx2) {
-            // 👇 FIX: Agar purana chart hai to destroy karo
-            if (templateUsageChartInstance) {
-                templateUsageChartInstance.destroy();
-            }
+//         // 2. Template Usage Chart
+//         const ctx2 = document.getElementById('templateUsageChart');
+//         if (ctx2) {
+//             // 👇 FIX: Agar purana chart hai to destroy karo
+//             if (templateUsageChartInstance) {
+//                 templateUsageChartInstance.destroy();
+//             }
 
-            templateUsageChartInstance = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: data.template_usage.labels,
-                    datasets: [{
-                        data: data.template_usage.data,
-                        backgroundColor: [
-                            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { position: 'right' } 
-                    }
-                }
-            });
-        }
+//             templateUsageChartInstance = new Chart(ctx2, {
+//                 type: 'doughnut',
+//                 data: {
+//                     labels: data.template_usage.labels,
+//                     datasets: [{
+//                         data: data.template_usage.data,
+//                         backgroundColor: [
+//                             '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'
+//                         ],
+//                         borderWidth: 0
+//                     }]
+//                 },
+//                 options: {
+//                     responsive: true,
+//                     maintainAspectRatio: false,
+//                     plugins: { 
+//                         legend: { position: 'right' } 
+//                     }
+//                 }
+//             });
+//         }
 
-    } catch (error) {
-        console.error("Error loading charts:", error);
-    }
-}
+//     } catch (error) {
+//         console.error("Error loading charts:", error);
+//     }
+// }
 
 // Ensure initCharts runs when Dashboard tab is active
 // Isko apne switchTab logic ke andar call karna (agar zarurat ho)
@@ -1347,3 +1348,98 @@ async function saveUserResources(e) {
         alert("Update failed.");
     }
 }
+
+// ✅ UPDATED DASHBOARD CHARTS FUNCTION (Isi ko har jagah use karein)
+async function initDashboardCharts() {
+    const ctxGrowth = document.getElementById('userGrowthChart');
+    const ctxUsage = document.getElementById('templateUsageChart');
+
+    if (!ctxGrowth || !ctxUsage) return;
+
+    try {
+        const res = await fetch('/api/admin/analytics');
+        const data = await res.json();
+        
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#4b5563';
+
+        // --- A. User Growth (Line Chart) ---
+        if (chartRegistry.dashboardLine) chartRegistry.dashboardLine.destroy();
+        
+        chartRegistry.dashboardLine = new Chart(ctxGrowth, {
+            type: 'line',
+            data: {
+                labels: data.user_growth.labels,
+                datasets: [{
+                    label: 'New Users',
+                    data: data.user_growth.data,
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: true, ticks: { color: textColor } },
+                    x: { ticks: { color: textColor } }
+                }
+            }
+        });
+
+        // --- B. Template Usage (Doughnut Chart) ---
+        if (chartRegistry.dashboardDoughnut) chartRegistry.dashboardDoughnut.destroy();
+
+        // 👇 Magic Function: Jitne template, utne unique colors banao
+        const generateColors = (count) => {
+            const colors = [];
+            for(let i=0; i<count; i++) {
+                // HSL color wheel ghuma kar unique color nikalna
+                const hue = Math.floor((i * 360) / count); 
+                colors.push(`hsl(${hue}, 70%, 50%)`);
+            }
+            return colors;
+        };
+
+        const templateCount = data.template_usage.data.length;
+        const dynamicColors = generateColors(templateCount);
+
+        chartRegistry.dashboardDoughnut = new Chart(ctxUsage, {
+            type: 'doughnut',
+            data: {
+                labels: data.template_usage.labels,
+                datasets: [{
+                    data: data.template_usage.data,
+                    backgroundColor: dynamicColors, // ✅ Auto-generated Colors
+                    borderWidth: 1,
+                    borderColor: isDark ? '#1e293b' : '#ffffff',
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { 
+                        position: 'right', 
+                        labels: { 
+                            color: textColor,
+                            boxWidth: 12,
+                            font: { size: 11 }
+                        } 
+                    } 
+                },
+                cutout: '60%'
+            }
+        });
+
+    } catch (error) {
+        console.error("Dashboard Chart Error:", error);
+    }
+}
+
