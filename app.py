@@ -2830,9 +2830,17 @@ def process_payment():
 # ==========================================
 
 # 👇 Yahan apni Razorpay Dashboard wali Test Keys dalein
-RAZORPAY_KEY_ID = "rzp_live_SP6qGYJyoMM1rM"  # Apni Key ID yahan dalein
-RAZORPAY_KEY_SECRET = "CA8PEsuUdnKeM6ibn0YSkaeR" # Apna Key Secret yahan dalein
+# .env file se keys fetch karo
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
+# Razorpay Client Initialize karo
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    print("✅ Razorpay Keys Loaded Successfully!")
+else:
+    print("⚠️ WARNING: Razorpay Keys not found in .env file!")
+    
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 @app.route('/api/create-razorpay-order', methods=['POST'])
