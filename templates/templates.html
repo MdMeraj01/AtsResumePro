@@ -873,6 +873,45 @@
     </div>
 </div>
 
+<div id="pricingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl transform transition-all">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Unlock Template</h3>
+            <button onclick="document.getElementById('pricingModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <p class="text-gray-500 mb-6" id="pricingTemplateName">Template Name</p>
+
+        <div class="space-y-4">
+            <div onclick="initiateTemplateCheckout('single')" class="cursor-pointer border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 rounded-2xl p-5 flex justify-between items-center group transition-all">
+                <div>
+                    <h4 class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-500">Single Export</h4>
+                    <p class="text-sm text-gray-500">Download this resume once.</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-2xl font-extrabold text-gray-900 dark:text-white">₹49</span>
+                </div>
+            </div>
+
+            <div onclick="initiateTemplateCheckout('lifetime')" class="cursor-pointer border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-5 flex justify-between items-center relative group transition-all transform hover:scale-105 shadow-md">
+                <div class="absolute -top-3 right-4 bg-gradient-to-r from-purple-600 to-pink-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide animate-pulse">
+                    Best Value
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-purple-700 dark:text-purple-400">Lifetime Access</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Edit & download forever.</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-400 line-through">₹299</p>
+                    <span class="text-2xl font-extrabold text-purple-700 dark:text-purple-400">₹149</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="toast" class="fixed bottom-24 md:bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-[110]">
     <div class="flex items-center">
         <i class="fas fa-check-circle text-xl mr-3"></i>

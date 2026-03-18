@@ -114,32 +114,56 @@ function renderTemplatesGrid(templates) {
 
 // 4. Buy Function (Global)
 // 🚀 ASLI RAZORPAY FUNCTION (Isko paste karein)
-window.buySingleTemplate = async function(templateName, price, buttonElement) {
-    const originalText = buttonElement.innerHTML;
+// ==========================================
+// 4. TIERED PRICING (Single vs Lifetime) LOGIC
+// ==========================================
+
+let selectedTemplateForBuy = "";
+
+// STEP 1: Card pe click karte hi Razorpay nahi, balki Modal open hoga
+window.buySingleTemplate = function(templateName, price, buttonElement) {
+    selectedTemplateForBuy = templateName; // Naam save kar liya
     
-    // Loading State
-    buttonElement.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
-    buttonElement.disabled = true;
+    // Modal ke andar naam update karo
+    const nameEl = document.getElementById('pricingTemplateName');
+    if(nameEl) nameEl.innerText = "Selected Template: " + templateName.toUpperCase();
+    
+    // Modal dikhao
+    document.getElementById('pricingModal').classList.remove('hidden');
+};
+
+// STEP 2: Modal se plan (single ya lifetime) select karne ke baad Razorpay khulega
+window.initiateTemplateCheckout = async function(planType) {
+    // 1. Modal band karo aur loading dikhao
+    document.getElementById('pricingModal').classList.add('hidden');
+    showLoader();
 
     try {
-        // 1. Order ID Mangwao Backend Se
+        // 2. Order ID Mangwao Backend Se (Plan type ke sath)
         const res = await fetch('/api/create-template-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ template_name: templateName, price: price })
+            body: JSON.stringify({ 
+                template_name: selectedTemplateForBuy, 
+                plan_type: planType // 'single' ya 'lifetime' pass hoga
+            })
         });
 
         const orderData = await res.json();
 
-        if (!orderData.success) throw new Error(orderData.message || 'Failed to create order');
+        if (!orderData.success) {
+            hideLoader();
+            alert("Error: " + (orderData.error || orderData.message));
+            return;
+        }
 
-        // 2. Razorpay Popup Options
+        // 3. Razorpay Popup Options
         const options = {
             "key": orderData.key_id, 
             "amount": orderData.amount, 
             "currency": orderData.currency,
             "name": "ATS Resume Pro",
-            "description": "Unlock Premium Template: " + templateName.toUpperCase(),
+            "description": planType === 'lifetime' ? "Lifetime Access" : "Single Export",
             "image": "/static/images/favicon.png",
             "order_id": orderData.order_id,
             
@@ -162,18 +186,18 @@ window.buySingleTemplate = async function(templateName, price, buttonElement) {
             },
 
             "handler": async function (response) {
-                buttonElement.innerHTML = '<i class="fas fa-shield-check"></i> Verifying...';
+                showLoader(); // Verify hone tak spinner chalne do
                 
-                // 3. Payment Success Hone par Verify Karo
-                const verifyRes = await fetch('/api/verify-template-payment', {
+                // 4. Payment Success Hone par Verify Karo
+                const verifyRes = await fetch('/api/verify-template-payment', { // Aapke backend route ka naam
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         razorpay_order_id: response.razorpay_order_id,
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_signature: response.razorpay_signature,
-                        template_name: templateName,
-                        price: price
+                        template_name: selectedTemplateForBuy,
+                        plan_type: planType // DB me save karne ke liye
                     })
                 });
 
@@ -181,10 +205,10 @@ window.buySingleTemplate = async function(templateName, price, buttonElement) {
                 
                 if (verifyData.success) {
                     alert("🎉 Payment Successful! Template is now unlocked.");
-                    location.reload(); // Page refresh karo taaki template unlock dikhe
+                    location.reload(); 
                 } else {
+                    hideLoader();
                     alert("❌ Verification Failed: " + verifyData.message);
-                    resetButton();
                 }
             },
             "theme": { "color": "#4f46e5" }
@@ -192,20 +216,17 @@ window.buySingleTemplate = async function(templateName, price, buttonElement) {
 
         const rzp = new Razorpay(options);
         rzp.on('payment.failed', function (response){
+            hideLoader();
             alert("Payment Failed! Reason: " + response.error.description);
-            resetButton();
         });
+        
+        hideLoader(); // Razorpay khulne se pehle loader hata do
         rzp.open();
 
     } catch (error) {
+        hideLoader();
         console.error(error);
         alert('Error: ' + error.message);
-        resetButton();
-    }
-
-    function resetButton() {
-        buttonElement.innerHTML = originalText;
-        buttonElement.disabled = false;
     }
 };
 
@@ -865,3 +886,5 @@ document.addEventListener('DOMContentLoaded', () => {
             buttonElement.disabled = false;
         }
     }
+
+    

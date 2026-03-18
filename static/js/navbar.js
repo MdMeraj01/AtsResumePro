@@ -52,7 +52,7 @@ function updateThemeIcons(isLight) {
     }
 }
 
-// Page Load hone par Theme Check karo
+
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light-mode');

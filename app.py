@@ -126,8 +126,10 @@ def call_gemini_ai(prompt, max_tokens=4096, max_retries=3):
         print("❌ AI Error: GOOGLE_API_KEY missing or invalid.")
         return get_fallback_response(prompt)
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={API_KEY}"
-
+    # url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key={API_KEY}"
+    # url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    # ✅ EK DUM SAHI URL (Latest Gemini 2.5 Flash)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
     payload = {
         "contents": [
             {
@@ -361,17 +363,27 @@ def inject_user():
 # ==========================================
 # 📊 USER DASHBOARD ROUTE (Updated with Limits)
 # ==========================================
+# ==========================================
+# 📊 USER DASHBOARD ROUTE (Error Checking Version)
+# ==========================================
 @app.route('/dashboard')
 def user_dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login_page'))
     
     conn = get_db_connection()
-    cursor = conn.cursor()
+    # Try to use Dictionary Cursor automatically
+    try:
+        import pymysql
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+    except:
+        try:
+            cursor = conn.cursor(dictionary=True)
+        except:
+            cursor = conn.cursor()
     
     try:
-        # 1. User Info Fetch (Make sure to get resume_limit and plan_type)
-        # Note: COALESCE use kiya hai taaki agar value NULL ho to default aa jaye
+        # 1. User Info Fetch
         cursor.execute("""
             SELECT *, 
             COALESCE(ai_credits, 5) as ai_credits, 
@@ -389,7 +401,6 @@ def user_dashboard():
         """, (session['user_id'],))
         my_resumes = cursor.fetchall()
         
-        # Real Count
         real_resume_count = len(my_resumes)
 
         # 3. Stats Fetch
@@ -400,39 +411,62 @@ def user_dashboard():
             GROUP BY activity_type
         """, (session['user_id'],))
         db_stats = cursor.fetchall()
-
+        
         # 4. Stats Update
         stats = []
         for s in db_stats:
-            if s['activity_type'] != 'created':
-                stats.append(s)
+            # Handle both dict and tuple safely
+            act_type = s['activity_type'] if isinstance(s, dict) else s[0]
+            act_count = s['count'] if isinstance(s, dict) else s[1]
+            if act_type != 'created':
+                stats.append({'activity_type': act_type, 'count': act_count})
         stats.append({'activity_type': 'created', 'count': real_resume_count})
 
-        # --- 🆕 NEW LIMIT LOGIC ---
-        resume_limit = user_data['resume_limit']
-        plan_type = user_data['plan_type']
+        # --- LIMIT LOGIC ---
+        # Handle dict or tuple for user_data
+        resume_limit = user_data['resume_limit'] if isinstance(user_data, dict) else user_data[10] # Adjust index if needed
+        plan_type = user_data['plan_type'] if isinstance(user_data, dict) else user_data[11]
         
-        # Calculate Percentage for Progress Bar (3 is max for Free)
         limit_percent = 0
         if plan_type == 'Free':
             limit_percent = (resume_limit / 3) * 100
         else:
-            limit_percent = 100 # Premium users full bar
+            limit_percent = 100 
+            
+       # 5. 🟢 NEW: Fetch Purchased Premium Templates (Crash-Proof)
+        try:
+            # Puraani query jisme access_type hai
+            cursor.execute("""
+                SELECT template_name, access_type, DATE(purchase_date) as purchase_date 
+                FROM user_purchases 
+                WHERE user_id = %s 
+                ORDER BY purchase_date DESC
+            """, (session['user_id'],))
+            purchased_templates = cursor.fetchall()
+        except:
+            # Agar column missing hai, toh default 'single' maan lega aur crash nahi hoga
+            cursor.execute("""
+                SELECT template_name, 'single' as access_type, DATE(purchase_date) as purchase_date 
+                FROM user_purchases 
+                WHERE user_id = %s 
+                ORDER BY purchase_date DESC
+            """, (session['user_id'],))
+            purchased_templates = cursor.fetchall()
 
         return render_template('dashboard.html', 
-                             user=user_data, 
-                             stats=stats, 
-                             my_resumes=my_resumes,
-                             resume_limit=resume_limit, # Pass vars to HTML
-                             plan_type=plan_type,
-                             limit_percent=limit_percent)
+                               user=user_data, 
+                               stats=stats, 
+                               my_resumes=my_resumes,
+                               resume_limit=resume_limit, 
+                               plan_type=plan_type,
+                               limit_percent=limit_percent,
+                               purchased_templates=purchased_templates)
         
     except Exception as e:
-        print(f"Dashboard Error: {e}")
-        return redirect(url_for('index'))
+        # 🔴 MAIN FIX: Agar error aaya to home page jane ke bajaye screen par bada-bada error dikhega
+        return f"<div style='padding:50px; font-family:sans-serif;'><h1>🚨 Dashboard me Error Aa Gaya!</h1><h2 style='color:red;'>{str(e)}</h2><p style='font-size:18px;'>Bhai, is lal rang ke error ko copy karke mujhe bhejo, abhi 1 minute me fix karta hu!</p></div>"
     finally:
-        conn.close()
-            
+        conn.close()            
             
 # ==========================================
 # UPDATE PROFILE ROUTE
@@ -1464,7 +1498,7 @@ def ai_health_check():
         api_ready = True
     return jsonify({
         'gemini_available': api_ready,
-        'model_used': 'gemini-2.5-flash-preview-09-2025',
+        'model_used':'gemini-2.5-flash',
         'status': 'operational' if api_ready else 'configured_but_not_verified'
     })
 
@@ -1689,7 +1723,7 @@ def admin_login():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # ==========================================
-# 👑 ADMIN DASHBOARD ROUTE (Updated)
+# 👑 ADMIN DASHBOARD ROUTE (Updated with Transactions)
 # ==========================================
 @app.route('/admin')
 def admin_dashboard():
@@ -1697,7 +1731,9 @@ def admin_dashboard():
         return redirect(url_for('admin_login_page'))
     
     conn = get_db_connection()
-    cursor = conn.cursor()
+    # Using dictionary=True if it's not already set in get_db_connection()
+    # Assumed your cursor returns dictionaries based on your code
+    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
     
     # 1. Fetch Stats
     cursor.execute("SELECT COUNT(*) as count FROM users")
@@ -1744,6 +1780,57 @@ def admin_dashboard():
     cursor.execute("SELECT * FROM support_tickets ORDER BY created_at DESC LIMIT 10")
     support_tickets = cursor.fetchall()
     
+   # 6. 🟢 NEW: FETCH ALL TRANSACTIONS (Payments) - CRASH PROOF
+    try:
+        # Assuming your time column is named 'created_at' 
+        cursor.execute("""
+            SELECT t.transaction_id, 
+                   t.transaction_id as razorpay_order_id, 
+                   t.amount, 
+                   t.status, 
+                   t.created_at as timestamp, 
+                   u.full_name, 
+                   u.email
+            FROM transactions t
+            JOIN users u ON t.user_id = u.id
+            ORDER BY t.created_at DESC
+            LIMIT 100
+        """)
+        all_transactions = cursor.fetchall()
+    except Exception as e:
+        # Agar column name galat hua, toh page crash nahi hoga!
+        print(f"⚠️ Transaction fetch warning: {e}")
+        all_transactions = []
+    
+    # 7. 🟢 NEW: REVENUE & PREMIUM TEMPLATES STATS
+    try:
+        # 7A: Total Revenue (Sirf Success wale payments ka sum)
+        cursor.execute("SELECT SUM(amount) as total FROM transactions WHERE status = 'Success'")
+        rev_data = cursor.fetchone()
+        total_revenue = rev_data['total'] if rev_data and rev_data['total'] else 0
+
+        # 7B: Top Selling Premium Templates (Jo premium hain aur sabse zyada download/buy hue)
+        cursor.execute("""
+            SELECT display_name, downloads 
+            FROM templates 
+            WHERE is_premium = 1 OR is_premium = 'True' OR is_premium = 'true'
+            ORDER BY downloads DESC LIMIT 3
+        """)
+        top_premium = cursor.fetchall()
+
+        # 7C: Total Premium Templates Sold
+        cursor.execute("""
+            SELECT SUM(downloads) as total 
+            FROM templates 
+            WHERE is_premium = 1 OR is_premium = 'True' OR is_premium = 'true'
+        """)
+        prem_data = cursor.fetchone()
+        total_premium_sales = prem_data['total'] if prem_data and prem_data['total'] else 0
+
+    except Exception as e:
+        print(f"⚠️ Revenue fetch warning: {e}")
+        total_revenue, total_premium_sales, top_premium = 0, 0, []
+        
     conn.close()
 
     # Return Template
@@ -1760,7 +1847,11 @@ def admin_dashboard():
                            top_templates=top_templates,
                            all_blogs=all_blogs,
                            all_admins=all_admins,
-                           support_tickets=support_tickets)
+                           support_tickets=support_tickets,
+                           all_transactions=all_transactions,
+                           total_revenue=total_revenue,
+                           total_premium_sales=total_premium_sales,
+                           top_premium=top_premium)# <-- 🟢 Pass variable to HTML
                             
     
 
@@ -2070,45 +2161,60 @@ def get_templates():
 # 🛒 RAZORPAY FOR SINGLE TEMPLATES
 # ==========================================
 
+# 🟢 UPDATED: Template Order with Single vs Lifetime Pricing
 @app.route('/api/create-template-order', methods=['POST'])
 def create_template_order():
-    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    if 'user_id' not in session:
+        return jsonify({'error': 'Please login first'}), 401
+        
+    template_name = request.json.get('template_name')
+    plan_type = request.json.get('plan_type') # 'single' or 'lifetime'
     
-    try:
-        data = request.json
-        template_name = data.get('template_name')
-        price = float(data.get('price', 49)) # Single template ka price (e.g. ₹49)
-        
-        # Razorpay takes amount in Paise (e.g., ₹49 = 4900 paise)
-        amount_paise = int(price * 100)
-        
-        # Create Order
-        order_data = {
-            "amount": amount_paise,
-            "currency": "INR",
-            "receipt": f"tpl_{session['user_id']}_{int(time.time())}",
-            "notes": {
-                "type": "single_template",
-                "template_name": template_name,
-                "user_id": session['user_id']
-            }
+    # 💰 Set Pricing Logic
+    price = 49 if plan_type == 'single' else 99
+    amount_paise = int(price * 100) # Razorpay requires paise
+    
+    receipt_id = f"tpl_{session['user_id']}_{int(time.time())}"
+    
+    order_data = {
+        "amount": amount_paise,
+        "currency": "INR",
+        "receipt": receipt_id,
+        "notes": {
+            "template": template_name, 
+            "user": session['user_id'],
+            "access_type": plan_type # Save what they bought
         }
-        
+    }
+    
+    # Create order via Razorpay client
+    try:
         order = razorpay_client.order.create(data=order_data)
-        
-        # Send Order ID to Frontend
         return jsonify({
             'success': True, 
             'order_id': order['id'], 
             'amount': order['amount'], 
-            'currency': order['currency'],
-            'key_id': RAZORPAY_KEY_ID
+            'key_id': os.getenv("RAZORPAY_KEY_ID"),
+            'plan_type': plan_type
         })
-            
     except Exception as e:
-        print(f"Razorpay Template Order Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)})
 
+# 🟢 UPDATE PAYMENT SUCCESS ROUTE TO SAVE ACCESS TYPE
+@app.route('/api/verify-payment', methods=['POST'])
+def verify_payment():
+    data = request.json
+    # ... (Aapka razorpay signature verification code) ...
+    
+    # Jab payment success ho jaye, DB mein access_type save karein:
+    cursor = get_db_connection().cursor()
+    cursor.execute("""
+        INSERT INTO user_purchases (user_id, template_name, access_type, purchase_date) 
+        VALUES (%s, %s, %s, NOW())
+    """, (session['user_id'], data['template_name'], data['plan_type']))
+    get_db_connection().commit()
+    
+    return jsonify({'success': True})
 
 @app.route('/api/verify-template-payment', methods=['POST'])
 def verify_template_payment():
@@ -2451,46 +2557,65 @@ def get_user_details(user_id):
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
     conn = get_db_connection()
-    cursor = conn.cursor()
+    # Ensure dictionary cursor is used
+    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
     
-    # User Basic Info
-    cursor.execute("SELECT id, full_name, email, plan_type, status, ai_credits, created_at, profile_pic FROM users WHERE id = %s", (user_id,))
-    user = cursor.fetchone()
-    
-    if not user:
-        conn.close()
-        return jsonify({'success': False, 'message': 'User not found'}), 404
+    try:
+        # User Basic Info
+        cursor.execute("SELECT id, full_name, email, plan_type, status, ai_credits, created_at, profile_pic FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
         
-    # Stats: Total Resumes Created
-    cursor.execute("SELECT COUNT(*) as count FROM resume_activity WHERE user_id = %s AND activity_type != 'ai_usage'", (user_id,))
-    resume_count = cursor.fetchone()['count']
-    
-    # Stats: Last Active
-    cursor.execute("SELECT created_at FROM resume_activity WHERE user_id = %s ORDER BY created_at DESC LIMIT 1", (user_id,))
-    last_active = cursor.fetchone()
-    last_active_date = last_active['created_at'] if last_active else user['created_at']
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+            
+        # Stats: Total Resumes Created
+        cursor.execute("SELECT COUNT(*) as count FROM resume_activity WHERE user_id = %s AND activity_type != 'ai_usage'", (user_id,))
+        resume_count = cursor.fetchone()['count']
+        
+        # Stats: Last Active
+        cursor.execute("SELECT created_at FROM resume_activity WHERE user_id = %s ORDER BY created_at DESC LIMIT 1", (user_id,))
+        last_active = cursor.fetchone()
+        last_active_date = last_active['created_at'] if last_active else user['created_at']
 
-    cursor.execute("SELECT id, title, template_name, updated_at FROM saved_resumes WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
-    saved_docs = cursor.fetchall()
-    conn.close()
-    
-    # Data structure return karo
-    return jsonify({
-        'success': True,
-        'user': {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'email': user['email'],
-            'plan_type': user['plan_type'],
-            'ai_credits': user['ai_credits'] if user['ai_credits'] is not None else 0,
-            'status': user['status'],
-            'joined_at': user['created_at'],
-            'resume_count': resume_count,
-            'last_active': last_active_date,
-            'saved_docs': saved_docs
-        }
-    })
-    
+        # Saved Documents
+        cursor.execute("SELECT id, title, template_name, updated_at FROM saved_resumes WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
+        saved_docs = cursor.fetchall()
+        
+        # 🟢 NEW: Fetch Purchased Premium Templates
+        try:
+            cursor.execute("""
+                SELECT template_name, access_type, DATE(purchase_date) as purchase_date 
+                FROM user_purchases 
+                WHERE user_id = %s 
+                ORDER BY purchase_date DESC
+            """, (user_id,))
+            purchases = cursor.fetchall()
+        except Exception as e:
+            print(f"Purchases fetch error: {e}")
+            purchases = []
+
+        # Data structure return karo
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user['id'],
+                'full_name': user['full_name'],
+                'email': user['email'],
+                'plan_type': user['plan_type'],
+                'ai_credits': user['ai_credits'] if user['ai_credits'] is not None else 0,
+                'status': user['status'],
+                'joined_at': user['created_at'],
+                'resume_count': resume_count,
+                'last_active': last_active_date,
+                'saved_docs': saved_docs,
+                'purchases': purchases # <-- Ye naya data ab JS ko jayega
+            }
+        })
+    except Exception as e:
+        print("Error fetching details:", e)
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()    
 
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])
