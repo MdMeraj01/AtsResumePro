@@ -2161,7 +2161,7 @@ def get_templates():
 # 🛒 RAZORPAY FOR SINGLE TEMPLATES
 # ==========================================
 
-# 🟢 UPDATED: Template Order with Single vs Lifetime Pricing
+# 🟢 UPDATED: Dynamic 3x Pricing Logic
 @app.route('/api/create-template-order', methods=['POST'])
 def create_template_order():
     if 'user_id' not in session:
@@ -2170,26 +2170,40 @@ def create_template_order():
     template_name = request.json.get('template_name')
     plan_type = request.json.get('plan_type') # 'single' or 'lifetime'
     
-    # 💰 Set Pricing Logic
-    price = 49 if plan_type == 'single' else 99
-    amount_paise = int(price * 100) # Razorpay requires paise
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
     
-    receipt_id = f"tpl_{session['user_id']}_{int(time.time())}"
-    
-    order_data = {
-        "amount": amount_paise,
-        "currency": "INR",
-        "receipt": receipt_id,
-        "notes": {
-            "template": template_name, 
-            "user": session['user_id'],
-            "access_type": plan_type # Save what they bought
-        }
-    }
-    
-    # Create order via Razorpay client
     try:
+        # 1. Database se asali price fetch karo (Security ke liye)
+        cursor.execute("SELECT price FROM templates WHERE name = %s", (template_name,))
+        template_data = cursor.fetchone()
+        
+        if not template_data:
+            return jsonify({'success': False, 'message': 'Template not found'}), 404
+            
+        # Handle both dict and tuple returns
+        base_price = float(template_data['price'] if isinstance(template_data, dict) else template_data[0])
+        
+       
+        final_price = base_price if plan_type == 'single' else (base_price * 3)
+        amount_paise = int(final_price * 100) # Razorpay needs paise
+        
+        receipt_id = f"tpl_{session['user_id']}_{int(time.time())}"
+        
+        order_data = {
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": receipt_id,
+            "notes": {
+                "template": template_name, 
+                "user": session['user_id'],
+                "access_type": plan_type
+            }
+        }
+        
+        # 3. Create order via Razorpay client
         order = razorpay_client.order.create(data=order_data)
+        
         return jsonify({
             'success': True, 
             'order_id': order['id'], 
@@ -2198,7 +2212,11 @@ def create_template_order():
             'plan_type': plan_type
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        print(f"Order Error: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        conn.close()
+
 
 # 🟢 UPDATE PAYMENT SUCCESS ROUTE TO SAVE ACCESS TYPE
 @app.route('/api/verify-payment', methods=['POST'])
@@ -3120,6 +3138,8 @@ def sitemap_xml():
 
     xml.append('</urlset>')
     return Response('\n'.join(xml), mimetype="application/xml")    
+
+
     
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")

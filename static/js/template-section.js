@@ -113,20 +113,29 @@ function renderTemplatesGrid(templates) {
 }
 
 // 4. Buy Function (Global)
-// 🚀 ASLI RAZORPAY FUNCTION (Isko paste karein)
 // ==========================================
 // 4. TIERED PRICING (Single vs Lifetime) LOGIC
 // ==========================================
 
 let selectedTemplateForBuy = "";
 
-// STEP 1: Card pe click karte hi Razorpay nahi, balki Modal open hoga
+// STEP 1: Card pe click karte hi Razorpay nahi, balki Modal open hoga aur 3x Price banega
 window.buySingleTemplate = function(templateName, price, buttonElement) {
     selectedTemplateForBuy = templateName; // Naam save kar liya
     
+    // 🧮 Math Logic: Base price aur uska 3x calculate karo
+    const basePrice = parseFloat(price);
+    const lifetimePrice = basePrice * 3;
+    const fakeStrikePrice = lifetimePrice * 2; // Bas cut karke dikhane ke liye
+
     // Modal ke andar naam update karo
     const nameEl = document.getElementById('pricingTemplateName');
     if(nameEl) nameEl.innerText = "Selected Template: " + templateName.toUpperCase();
+    
+    // Modal ke andar prices (₹) update karo
+    if(document.getElementById('singlePriceDisplay')) document.getElementById('singlePriceDisplay').innerText = "₹" + basePrice;
+    if(document.getElementById('lifetimePriceDisplay')) document.getElementById('lifetimePriceDisplay').innerText = "₹" + lifetimePrice;
+    if(document.getElementById('lifetimeStrikePrice')) document.getElementById('lifetimeStrikePrice').innerText = "₹" + fakeStrikePrice;
     
     // Modal dikhao
     document.getElementById('pricingModal').classList.remove('hidden');
@@ -189,7 +198,7 @@ window.initiateTemplateCheckout = async function(planType) {
                 showLoader(); // Verify hone tak spinner chalne do
                 
                 // 4. Payment Success Hone par Verify Karo
-                const verifyRes = await fetch('/api/verify-template-payment', { // Aapke backend route ka naam
+                const verifyRes = await fetch('/api/verify-template-payment', { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

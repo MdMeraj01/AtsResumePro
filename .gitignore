@@ -1,3 +1,4 @@
 .env
 __pycache__/
 *.pyc
+ats_resume_db.sql
