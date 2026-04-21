@@ -3147,8 +3147,9 @@ def sitemap_xml():
 
 # Helper Function: Password Reset Email
 def send_password_reset_email(user_email, otp):
-    sender_email = os.getenv("MAIL_USERNAME")
-    sender_password = os.getenv("MAIL_PASSWORD")
+    # 👇 यहाँ अपना वो चालू वाला 16-डिजिट का App Password डालें (जो टेस्ट में SUCCESS हुआ था)
+    sender_email = "atsresumepro01@gmail.com"
+    sender_password = "slenoxlcycxwczsh" 
     
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -3175,6 +3176,7 @@ def send_password_reset_email(user_email, otp):
     except Exception as e:
         print(f"Email Error: {e}")
         return False
+
 
 # 1. Send OTP for Forgot Password
 @app.route('/api/user/forgot-password', methods=['POST'])
