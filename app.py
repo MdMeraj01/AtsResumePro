@@ -8,6 +8,7 @@ import requests
 from datetime import datetime
 from dotenv import load_dotenv
 import io
+import random
 from fpdf import FPDF
 from docx import Document
 from flask_bcrypt import Bcrypt
@@ -3140,7 +3141,120 @@ def sitemap_xml():
     return Response('\n'.join(xml), mimetype="application/xml")    
 
 
+# ==========================================
+# 🔑 FORGOT PASSWORD & RESET ROUTES
+# ==========================================
+
+# Helper Function: Password Reset Email
+def send_password_reset_email(user_email, otp):
+    sender_email = os.getenv("MAIL_USERNAME")
+    sender_password = os.getenv("MAIL_PASSWORD")
     
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = user_email
+    msg['Subject'] = "Reset Your Password - ATS Resume Pro"
+    
+    body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color: #4F46E5;">Password Reset Request</h2>
+        <p>You recently requested to reset your password. Here is your 6-digit OTP:</p>
+        <h1 style="background-color: #f3f4f6; padding: 10px; display: inline-block; letter-spacing: 5px;">{otp}</h1>
+        <p>If you did not request a password reset, please ignore this email.</p>
+    </div>
+    """
+    msg.attach(MIMEText(body, 'html'))
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Email Error: {e}")
+        return False
+
+# 1. Send OTP for Forgot Password
+@app.route('/api/user/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.json
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required'}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
+    
+    try:
+        # Check if user exists
+        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return jsonify({'success': False, 'message': 'No account found with this email!'}), 404
+            
+        # Generate 6-digit OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Save OTP in database (using the existing verification_code column)
+        cursor.execute("UPDATE users SET verification_code = %s WHERE email = %s", (otp, email))
+        conn.commit()
+        
+        # Send Email
+        if send_password_reset_email(email, otp):
+            return jsonify({'success': True, 'message': 'OTP sent to your email!'})
+        else:
+            return jsonify({'success': False, 'message': 'Failed to send email. Try again.'}), 500
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+# 2. Verify OTP & Set New Password
+@app.route('/api/user/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json
+    email = data.get('email')
+    otp = data.get('otp')
+    new_password = data.get('new_password')
+    
+    if not all([email, otp, new_password]):
+        return jsonify({'success': False, 'message': 'All fields are required'}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
+    
+    try:
+        # Verify OTP
+        cursor.execute("SELECT id, verification_code FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        
+        if not user or user.get('verification_code') != otp:
+            return jsonify({'success': False, 'message': 'Invalid or expired OTP!'}), 400
+            
+        # Hash new password
+        hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        
+        # Update password and clear OTP
+        cursor.execute("""
+            UPDATE users 
+            SET password_hash = %s, verification_code = NULL 
+            WHERE email = %s
+        """, (hashed_password, email))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Password reset successfully! You can now login.'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")
     if API_KEY and API_KEY != 'your-google-api-key-here':

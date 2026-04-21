@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login / Sign Up | ATS Resume Builder Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/login.css')}}" rel="stylesheet">
@@ -139,7 +142,7 @@
                         <span class="checkmark"></span>
                         <span class="checkbox-text">Remember me</span>
                     </label>
-                    <a href="#" class="forgot-link">Forgot Password?</a>
+                    <a href="#" class="forgot-link" onclick="openForgotModal(); return false;">Forgot Password?</a>
                 </div>
                 
                 <button type="submit" class="submit-btn">
@@ -147,8 +150,7 @@
                     <span>Sign In</span>
                     <div class="btn-loader"></div>
                 </button>
-                
-                </form>
+            </form>
 
             <form id="signup-form" class="form" onsubmit="handleSignup(event)">
                 <div class="form-header">
@@ -162,9 +164,7 @@
                     </label>
                     <div class="input-container">
                         <input type="text" id="signup-name" class="form-input" placeholder="John Doe" required>
-                        <div class="input-icon">
-                            <i class="fas fa-user"></i>
-                        </div>
+                        <div class="input-icon"><i class="fas fa-user"></i></div>
                     </div>
                 </div>
                 
@@ -174,9 +174,7 @@
                     </label>
                     <div class="input-container">
                         <input type="email" id="signup-email" class="form-input" placeholder="name@company.com" required>
-                        <div class="input-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
+                        <div class="input-icon"><i class="fas fa-envelope"></i></div>
                     </div>
                 </div>
                 
@@ -186,9 +184,7 @@
                     </label>
                     <div class="input-container">
                         <input type="password" id="signup-password" class="form-input" placeholder="Create a strong password" required>
-                        <div class="input-icon">
-                            <i class="fas fa-key"></i>
-                        </div>
+                        <div class="input-icon"><i class="fas fa-key"></i></div>
                         <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -217,27 +213,27 @@
             </form>
 
             <div class="social-login-section">
-    <div class="divider">
-        <span>Or continue with</span>
-    </div>
-    
-    <div class="social-buttons">
-        <a href="{{ url_for('login_google') }}" class="social-btn google-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-            <i class="fab fa-google"></i>
-            <span>Google</span>
-        </a>
+                <div class="divider">
+                    <span>Or continue with</span>
+                </div>
+                
+                <div class="social-buttons">
+                    <a href="{{ url_for('login_google') }}" class="social-btn google-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                        <i class="fab fa-google"></i>
+                        <span>Google</span>
+                    </a>
 
-        <button class="social-btn github-btn" onclick="window.location.href='{{ url_for('login_github') }}'">
-    <i class="fab fa-github"></i>
-    <span>GitHub</span>
-</button>
+                    <button class="social-btn github-btn" onclick="window.location.href='{{ url_for('login_github') }}'">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </button>
 
-        <button class="social-btn linkedin-btn" onclick="alert('LinkedIn integration coming soon!')">
-            <i class="fab fa-linkedin"></i>
-            <span>LinkedIn</span>
-        </button>
-    </div>
-</div>
+                    <button class="social-btn linkedin-btn" onclick="alert('LinkedIn integration coming soon!')">
+                        <i class="fab fa-linkedin"></i>
+                        <span>LinkedIn</span>
+                    </button>
+                </div>
+            </div>
 
             <div class="mobile-switcher">
                 <p id="switch-text">Don't have an account? <a href="#" onclick="switchTab('signup')">Sign Up</a></p>
@@ -247,7 +243,7 @@
 
     <footer class="main-footer">
         <div class="footer-content">
-            <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+            <p>&copy; 2026 ATS Resume Builder Pro. All rights reserved.</p>
             <div class="footer-links">
                 <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>
                 <a href="{{ url_for('terms') }}">Terms of Service</a>
@@ -259,6 +255,123 @@
 
     <div class="toast-container" id="toast-container"></div>
 
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-md w-full shadow-2xl transform transition-all border border-gray-200 dark:border-gray-700">
+            
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Reset Password</h3>
+                <button onclick="closeForgotModal()" class="text-gray-400 hover:text-red-500 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="forgotEmailForm" onsubmit="handleForgotEmail(event)">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Enter your registered email address and we'll send you an OTP to reset your password.</p>
+                <div class="mb-4">
+                    <input type="email" id="resetEmail" placeholder="you@example.com" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                </div>
+                <button type="submit" id="sendOtpBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all">
+                    Send OTP
+                </button>
+            </form>
+
+            <form id="resetPasswordForm" class="hidden" onsubmit="handleResetPassword(event)">
+                <p class="text-sm text-green-500 font-bold mb-4">OTP sent successfully to your email!</p>
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="resetOtp" placeholder="Enter 6-digit OTP" maxlength="6" class="w-full text-center tracking-widest font-mono font-bold px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    </div>
+                    <div>
+                        <input type="password" id="newPassword" placeholder="New Password" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    </div>
+                </div>
+                <button type="submit" id="savePasswordBtn" class="w-full mt-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transition-all">
+                    Save New Password
+                </button>
+            </form>
+
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+
+    <script>
+        // Open/Close Modal
+        function openForgotModal() {
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+            document.getElementById('forgotEmailForm').classList.remove('hidden');
+            document.getElementById('resetPasswordForm').classList.add('hidden');
+            document.getElementById('resetEmail').value = '';
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+        }
+
+        // Step 1: Send OTP
+        async function handleForgotEmail(e) {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            const btn = document.getElementById('sendOtpBtn');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/user/forgot-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: email })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    // Hide Email form, Show OTP form
+                    document.getElementById('forgotEmailForm').classList.add('hidden');
+                    document.getElementById('resetPasswordForm').classList.remove('hidden');
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Server Error. Please try again.');
+            } finally {
+                btn.innerHTML = 'Send OTP';
+                btn.disabled = false;
+            }
+        }
+
+        // Step 2: Reset Password
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            const otp = document.getElementById('resetOtp').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const btn = document.getElementById('savePasswordBtn');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/user/reset-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, otp, new_password: newPassword })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    alert('🎉 Password reset successful! You can now login.');
+                    closeForgotModal();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch (err) {
+                alert('Server Error. Please try again.');
+            } finally {
+                btn.innerHTML = 'Save New Password';
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>

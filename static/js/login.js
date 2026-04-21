@@ -502,3 +502,4 @@ document.addEventListener('click', function(e) {
         keyboardHint.classList.remove('show');
     }
 });
+
