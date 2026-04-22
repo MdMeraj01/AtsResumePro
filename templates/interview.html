@@ -1,31 +1,21 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-   {% block title %}Free AI Interview Prep Online | Mock Interview Questions & Answers{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{% block description %}
-Prepare for job interviews online with AI. Practice mock interview questions, behavioral and technical answers, and improve your confidence to crack any interview.
-{% endblock %}
-
-{% block keywords %}
-AI interview prep, mock interview questions and answers, interview practice online free, job interview preparation, behavioral interview questions, technical interview questions, interview tips for freshers, AI mock interview tool
-{% endblock %}
-
-{% block og_title %}
-Free AI Interview Prep Tool | Practice Mock Interviews Online
-{% endblock %}
-
-{% block og_desc %}
-Practice job interview questions with AI. Get role-based mock interviews, behavioral and technical questions, and boost your confidence.
-{% endblock %}
-
-{% block twitter_title %}
-AI Interview Prep (Free) | Mock Interview Practice Online
-{% endblock %}
-
-{% block twitter_desc %}
-Practice real interview questions with AI. Improve your answers and get ready to crack your next job interview.
-{% endblock %}
+    <title>Free AI Interview Prep Online | Mock Interview Questions & Answers</title>
+    
+    <meta name="description" content="Prepare for job interviews online with AI. Practice mock interview questions, behavioral and technical answers, and improve your confidence to crack any interview.">
+    <meta name="keywords" content="AI interview prep, mock interview questions and answers, interview practice online free, job interview preparation, behavioral interview questions, technical interview questions, interview tips for freshers, AI mock interview tool">
+    
+    <meta property="og:title" content="Free AI Interview Prep Tool | Practice Mock Interviews Online">
+    <meta property="og:description" content="Practice job interview questions with AI. Get role-based mock interviews, behavioral and technical questions, and boost your confidence.">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Interview Prep (Free) | Mock Interview Practice Online">
+    <meta name="twitter:description" content="Practice real interview questions with AI. Improve your answers and get ready to crack your next job interview.">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -33,6 +23,7 @@ Practice real interview questions with AI. Improve your answers and get ready to
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="{{ url_for('static', filename='css/interview.css') }}" rel="stylesheet">
+    
     <style>
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }

@@ -1,51 +1,35 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth light">
 <head>
-   {% block title %}Free AI Cover Letter Generator Online | Create Job-Winning Letters Instantly{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{% block description %}
-Create a professional cover letter online for free using AI. Generate job-ready cover letters for any role with personalized content in seconds.
-{% endblock %}
-
-{% block keywords %}
-AI cover letter generator, free cover letter generator online, cover letter for job application, professional cover letter maker, job cover letter examples, cover letter builder free, ATS cover letter generator, write cover letter online
-{% endblock %}
-
-{% block og_title %}
-Free AI Cover Letter Generator | Create Job-Winning Letters
-{% endblock %}
-
-{% block og_desc %}
-Generate a personalized cover letter instantly using AI. Perfect for job applications, freshers, and professionals.
-{% endblock %}
-
-{% block twitter_title %}
-AI Cover Letter Generator (Free) | Write in Seconds
-{% endblock %}
-
-{% block twitter_desc %}
-Create professional cover letters in seconds with AI. Perfect for job applications and ATS resumes.
-{% endblock %}
+    <title>Free AI Cover Letter Generator Online | Create Job-Winning Letters Instantly</title>
+    
+    <meta name="description" content="Create a professional cover letter online for free using AI. Generate job-ready cover letters for any role with personalized content in seconds.">
+    <meta name="keywords" content="AI cover letter generator, free cover letter generator online, cover letter for job application, professional cover letter maker, job cover letter examples, cover letter builder free, ATS cover letter generator, write cover letter online">
+    
+    <meta property="og:title" content="Free AI Cover Letter Generator | Create Job-Winning Letters">
+    <meta property="og:description" content="Generate a personalized cover letter instantly using AI. Perfect for job applications, freshers, and professionals.">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Cover Letter Generator (Free) | Write in Seconds">
+    <meta name="twitter:description" content="Create professional cover letters in seconds with AI. Perfect for job applications and ATS resumes.">
     
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- HTML2PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/cover_letter.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/builder.css')}}" rel="stylesheet">
     
-    <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
 </head>
 <body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen transition-colors duration-500">

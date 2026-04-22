@@ -1,48 +1,38 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-   {% block title %}AI Resume Builder Online (Free) | Create ATS-Friendly Resume Instantly{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{% block description %}
-Build a professional ATS-friendly resume online for free using AI. Get real-time ATS score, smart keyword suggestions, and generate job-ready CV in minutes.
-{% endblock %}
-
-{% block keywords %}
-AI resume builder, ATS resume builder online, free resume maker, ATS resume checker, smart CV builder, online resume generator, resume for freshers, professional resume creator, AI CV maker
-{% endblock %}
-
-{% block og_title %}
-Free AI Resume Builder Online | Create ATS-Friendly CV Instantly
-{% endblock %}
-
-{% block og_desc %}
-Create a job-winning resume using AI. Get ATS score, keyword optimization, and download your CV instantly for free.
-{% endblock %}
-
-{% block twitter_title %}
-AI Resume Builder (Free) | ATS Resume Maker Online
-{% endblock %}
-
-{% block twitter_desc %}
-Build your ATS-friendly resume in minutes with AI. Optimize keywords, improve score, and download instantly.
-{% endblock %}
+    <title>AI Resume Builder Online (Free) | Create ATS-Friendly Resume Instantly</title>
+    
+    <meta name="description" content="Build a professional ATS-friendly resume online for free using AI. Get real-time ATS score, smart keyword suggestions, and generate job-ready CV in minutes.">
+    <meta name="keywords" content="AI resume builder, ATS resume builder online, free resume maker, ATS resume checker, smart CV builder, online resume generator, resume for freshers, professional resume creator, AI CV maker">
+    
+    <meta property="og:title" content="Free AI Resume Builder Online | Create ATS-Friendly CV Instantly">
+    <meta property="og:description" content="Create a job-winning resume using AI. Get ATS score, keyword optimization, and download your CV instantly for free.">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Resume Builder (Free) | ATS Resume Maker Online">
+    <meta name="twitter:description" content="Build your ATS-friendly resume in minutes with AI. Optimize keywords, improve score, and download instantly.">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-<script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
-
+    
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="{{ url_for('static', filename='css/builder.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/pdf.css') }}" rel="stylesheet">
-</head>
-     <style>
+
+    <style>
     /* =========================================
        1. ANIMATIONS (Only Visual Effects)
        ========================================= */
@@ -105,8 +95,7 @@ Build your ATS-friendly resume in minutes with AI. Optimize keywords, improve sc
     }
 
     /* NOTE: Layout (Grid/Flex) logic moved to builder.css for mobile fix */
-    
-</style>
+    </style>
 </head>
 <body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 min-h-screen transition-colors duration-500">
     
