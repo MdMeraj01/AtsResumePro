@@ -2244,38 +2244,47 @@ def verify_template_payment():
         
         # 1. Verify Signature (Security check)
         params_dict = {
-            'razorpay_order_id': data['razorpay_order_id'],
-            'razorpay_payment_id': data['razorpay_payment_id'],
-            'razorpay_signature': data['razorpay_signature']
+            'razorpay_order_id': data.get('razorpay_order_id'),
+            'razorpay_payment_id': data.get('razorpay_payment_id'),
+            'razorpay_signature': data.get('razorpay_signature')
         }
         
         razorpay_client.utility.verify_payment_signature(params_dict)
         
-        # 2. Signature Verify ho gaya, ab DB update karo
-        template_name = data.get('template_name')
-        price = float(data.get('price'))
+        # 2. Signature Verify ho gaya, ab data nikaalo
+        template_name = data.get('template_name', 'Premium Template')
+        plan_type = data.get('plan_type', 'single') # 👈 YE NAYA HAI (single ya lifetime)
         user_id = session['user_id']
+        
+        # Handle Missing Price Safely (Previous Fix)
+        raw_price = data.get('price')
+        if raw_price is None or raw_price == '':
+            raw_price = float(data.get('amount', 0)) / 100
+            
+        price = float(raw_price)
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # A. Add to User Purchases (Template unlock ho jayega)
-        cursor.execute("INSERT INTO user_purchases (user_id, template_name, amount) VALUES (%s, %s, %s)", 
-                       (user_id, template_name, price))
+        # ✅ FIX: DB mein 'access_type' column mein plan_type save karein
+        cursor.execute("""
+            INSERT INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
+            VALUES (%s, %s, %s, %s, NOW())
+        """, (user_id, template_name, price, plan_type))
         
-        # B. Add to Transactions table (Taaki admin ko payment history dikhe)
+        # B. Transaction history record karein
         cursor.execute("""
             INSERT INTO transactions (user_id, plan_name, amount, transaction_id, payment_method, status)
             VALUES (%s, %s, %s, %s, 'Razorpay', 'Success')
-        """, (user_id, f"Template: {template_name.title()}", price, data['razorpay_payment_id']))
+        """, (user_id, f"Template ({plan_type.title()}): {template_name.title()}", price, data.get('razorpay_payment_id')))
         
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Template Unlocked Successfully!'})
+        return jsonify({'success': True, 'message': f'Template Unlocked for {plan_type}!'})
         
     except razorpay.errors.SignatureVerificationError:
-        return jsonify({'success': False, 'message': 'Payment verification failed! Fake Signature.'}), 400
+        return jsonify({'success': False, 'message': 'Payment verification failed!'}), 400
     except Exception as e:
         print(f"Template Verification Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
