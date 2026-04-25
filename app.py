@@ -2251,32 +2251,39 @@ def verify_template_payment():
         
         razorpay_client.utility.verify_payment_signature(params_dict)
         
-        # 2. Signature Verify ho gaya, ab data nikaalo
+        # 2. Extract Data
         template_name = data.get('template_name', 'Premium Template')
-        plan_type = data.get('plan_type', 'single') # 👈 YE NAYA HAI (single ya lifetime)
+        plan_type = data.get('plan_type', 'single') # 'single' ya 'lifetime'
         user_id = session['user_id']
         
-        # Handle Missing Price Safely (Previous Fix)
-        raw_price = data.get('price')
-        if raw_price is None or raw_price == '':
-            raw_price = float(data.get('amount', 0)) / 100
-            
-        price = float(raw_price)
-        
         conn = get_db_connection()
-        cursor = conn.cursor()
+        # Dictionary cursor for safe fetching
+        cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
         
-        # ✅ FIX: DB mein 'access_type' column mein plan_type save karein
+        # 🟢 THE FIX: Frontend ki jagah sidha Database se asli Price nikalo!
+        cursor.execute("SELECT price FROM templates WHERE name = %s", (template_name,))
+        template_data = cursor.fetchone()
+        
+        # Agar template DB mein nahi mila to default 99 set karo (Safety net)
+        base_price = 99.0 
+        if template_data:
+            # Check for both Dictionary and Tuple formats
+            base_price = float(template_data['price'] if isinstance(template_data, dict) else template_data[0])
+            
+        # 🟢 NAYA LOGIC: Agar lifetime hai to price 3 guna (3x) kar do
+        final_price = base_price if plan_type == 'single' else (base_price * 3)
+        
+        # 3. Save to User Purchases
         cursor.execute("""
             INSERT INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
             VALUES (%s, %s, %s, %s, NOW())
-        """, (user_id, template_name, price, plan_type))
+        """, (user_id, template_name, final_price, plan_type))
         
-        # B. Transaction history record karein
+        # 4. Save to Transactions (Taki Admin Panel mein sahi amount dikhe)
         cursor.execute("""
             INSERT INTO transactions (user_id, plan_name, amount, transaction_id, payment_method, status)
             VALUES (%s, %s, %s, %s, 'Razorpay', 'Success')
-        """, (user_id, f"Template ({plan_type.title()}): {template_name.title()}", price, data.get('razorpay_payment_id')))
+        """, (user_id, f"Template ({plan_type.title()}): {template_name.title()}", final_price, data.get('razorpay_payment_id')))
         
         conn.commit()
         conn.close()
