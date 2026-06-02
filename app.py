@@ -1803,28 +1803,29 @@ def admin_dashboard():
         print(f"⚠️ Transaction fetch warning: {e}")
         all_transactions = []
     
-    # 7. 🟢 NEW: REVENUE & PREMIUM TEMPLATES STATS
+    # 7. 🟢 NEW: REVENUE & PREMIUM TEMPLATES STATS (FIXED: Counting actual purchases)
     try:
         # 7A: Total Revenue (Sirf Success wale payments ka sum)
         cursor.execute("SELECT SUM(amount) as total FROM transactions WHERE status = 'Success'")
         rev_data = cursor.fetchone()
         total_revenue = rev_data['total'] if rev_data and rev_data['total'] else 0
 
-        # 7B: Top Selling Premium Templates (Jo premium hain aur sabse zyada download/buy hue)
+        # 7B: Top Selling Premium Templates (Asli Sales user_purchases se)
         cursor.execute("""
-            SELECT display_name, downloads 
-            FROM templates 
-            WHERE is_premium = 1 OR is_premium = 'True' OR is_premium = 'true'
-            ORDER BY downloads DESC LIMIT 3
+            SELECT template_name as display_name, COUNT(id) as sold_count 
+            FROM user_purchases 
+            GROUP BY template_name 
+            ORDER BY sold_count DESC 
+            LIMIT 3
         """)
         top_premium = cursor.fetchall()
+        
+        # HTML template ko 'downloads' variable chahiye hota hai, isliye map kar diya
+        for t in top_premium:
+            t['downloads'] = t['sold_count']
 
-        # 7C: Total Premium Templates Sold
-        cursor.execute("""
-            SELECT SUM(downloads) as total 
-            FROM templates 
-            WHERE is_premium = 1 OR is_premium = 'True' OR is_premium = 'true'
-        """)
+        # 7C: Total Premium Templates Sold (Asli Count user_purchases se)
+        cursor.execute("SELECT COUNT(id) as total FROM user_purchases")
         prem_data = cursor.fetchone()
         total_premium_sales = prem_data['total'] if prem_data and prem_data['total'] else 0
 
