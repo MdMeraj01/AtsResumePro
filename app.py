@@ -3273,6 +3273,14 @@ def reset_password():
         conn.close()
 
 
+@app.route('/manifest.json')
+def manifest():
+    return app.send_static_file('manifest.json')
+
+@app.route('/sw.js')
+def sw():
+    return app.send_static_file('sw.js')
+ 
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")
     if API_KEY and API_KEY != 'your-google-api-key-here':

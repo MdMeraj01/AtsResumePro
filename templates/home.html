@@ -21,6 +21,9 @@
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
 <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
 
+<!-- App Install link-->
+<link rel="manifest" href="/manifest.json">
+
 <!-- Performance Boost -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -201,6 +204,19 @@
     </style>
 </head>
 <body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <!-- PWA Install Banner -->
+<div id="install-banner" class="hidden fixed top-0 left-0 w-full bg-indigo-600 text-white p-3 z-[9999] flex justify-between items-center shadow-lg transition-transform transform -translate-y-full duration-300">
+    <div class="flex items-center gap-3">
+        <i class="fas fa-download text-xl"></i>
+        <span class="text-sm md:text-base font-medium">Install ATS Resume Pro for a faster experience!</span>
+    </div>
+    <div class="flex gap-3 items-center">
+        <button id="install-btn" class="bg-white text-indigo-600 px-4 py-1.5 rounded-lg text-sm font-bold shadow hover:bg-gray-100 transition">Install App</button>
+        <button id="close-banner" class="text-white hover:text-gray-200">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+    </div>
+</div>
 
     <div id="preloader" class="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="relative w-24 h-24 mb-4">
@@ -1124,6 +1140,53 @@
             !btn.contains(event.target)) {
             toggleMobileMenu();
         }
+    });
+    
+    // 1. Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker Registered!'))
+                .catch(err => console.log('Service Worker Failed!', err));
+        });
+    }
+
+    // 2. Handle Install Banner Logic
+    let deferredPrompt;
+    const installBanner = document.getElementById('install-banner');
+    const installBtn = document.getElementById('install-btn');
+    const closeBannerBtn = document.getElementById('close-banner');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Chrome का डिफ़ॉल्ट प्रॉम्प्ट रोकें
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // अपना कस्टम बैनर दिखाएँ
+        installBanner.classList.remove('hidden');
+        setTimeout(() => {
+            installBanner.classList.remove('-translate-y-full');
+        }, 100);
+    });
+
+    // जब यूज़र "Install App" पर क्लिक करे
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User interaction: ${outcome}`);
+            deferredPrompt = null;
+            
+            // बैनर छुपा दें
+            installBanner.classList.add('-translate-y-full');
+            setTimeout(() => installBanner.classList.add('hidden'), 300);
+        }
+    });
+
+    // जब यूज़र बैनर क्लोज़ (X) करे
+    closeBannerBtn.addEventListener('click', () => {
+        installBanner.classList.add('-translate-y-full');
+        setTimeout(() => installBanner.classList.add('hidden'), 300);
     });
 </script>
 </body>
