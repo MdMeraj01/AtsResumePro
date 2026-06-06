@@ -196,7 +196,18 @@
                         <span class="strength-text">Password strength</span>
                     </div>
                 </div>
-                
+               
+                <div id="signup-otp-group" class="form-group" style="display: none;">
+                    <label for="signup-otp" class="form-label text-indigo-600 font-bold">
+                        <i class="fas fa-shield-alt"></i> Enter 6-Digit OTP
+                    </label>
+                    <div class="input-container">
+                        <input type="text" id="signup-otp" class="form-input" placeholder="e.g. 123456" maxlength="6" style="letter-spacing: 5px; font-weight: bold; text-align: center; font-size: 1.1rem; background-color: #f8fafc; color: #000000;">
+                        <div class="input-icon"><i class="fas fa-check-circle text-green-500"></i></div>
+                    </div>
+                    <p class="text-xs text-green-600 mt-2 font-semibold"><i class="fas fa-check"></i> OTP has been sent to your email!</p>
+                </div>
+ 
                 <div class="form-options">
                     <label class="checkbox-container">
                         <input type="checkbox" id="terms" required>
@@ -342,36 +353,58 @@
 
         // Step 2: Reset Password
         async function handleResetPassword(e) {
-            e.preventDefault();
-            const email = document.getElementById('resetEmail').value;
-            const otp = document.getElementById('resetOtp').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const btn = document.getElementById('savePasswordBtn');
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            btn.disabled = true;
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value;
+    const otp = document.getElementById('resetOtp').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const btn = document.getElementById('savePasswordBtn');
+    
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
 
-            try {
-                const res = await fetch('/api/user/reset-password', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email, otp, new_password: newPassword })
-                });
-                const data = await res.json();
-                
-                if(data.success) {
-                    alert('🎉 Password reset successful! You can now login.');
-                    closeForgotModal();
-                } else {
-                    alert('❌ ' + data.message);
-                }
-            } catch (err) {
-                alert('Server Error. Please try again.');
-            } finally {
-                btn.innerHTML = 'Save New Password';
-                btn.disabled = false;
+    try {
+        const res = await fetch('/api/user/reset-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, otp, new_password: newPassword })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            alert('🎉 Password reset successful! You can now login.');
+            closeForgotModal();
+            
+            // 🟢 NEW: Lock Khol Do! (Unlock the forms)
+            localStorage.removeItem('failed_login_attempts');
+            
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const loginPasswordInput = document.getElementById('login-password');
+            
+            if(loginForm) {
+                loginForm.style.opacity = '1';
+                loginForm.style.pointerEvents = 'auto';
             }
+            if(signupForm) {
+                signupForm.style.opacity = '1';
+                signupForm.style.pointerEvents = 'auto';
+            }
+            
+            // Password box khali kar do taaki user naya password daal sake
+            if(loginPasswordInput) {
+                loginPasswordInput.value = '';
+            }
+            
+        } else {
+            alert('❌ ' + data.message);
         }
+    } catch (err) {
+        alert('Server Error. Please try again.');
+    } finally {
+        btn.innerHTML = 'Save New Password';
+        btn.disabled = false;
+    }
+}
     </script>
 </body>
 </html>

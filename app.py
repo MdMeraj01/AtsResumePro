@@ -361,12 +361,6 @@ def inject_user():
 # ==========================================
 # 📊 USER DASHBOARD ROUTE (Fixed Count)
 # ==========================================
-# ==========================================
-# 📊 USER DASHBOARD ROUTE (Updated with Limits)
-# ==========================================
-# ==========================================
-# 📊 USER DASHBOARD ROUTE (Error Checking Version)
-# ==========================================
 @app.route('/dashboard')
 def user_dashboard():
     if 'user_id' not in session:
@@ -423,17 +417,34 @@ def user_dashboard():
                 stats.append({'activity_type': act_type, 'count': act_count})
         stats.append({'activity_type': 'created', 'count': real_resume_count})
 
-        # --- LIMIT LOGIC ---
-        # Handle dict or tuple for user_data
-        resume_limit = user_data['resume_limit'] if isinstance(user_data, dict) else user_data[10] # Adjust index if needed
-        plan_type = user_data['plan_type'] if isinstance(user_data, dict) else user_data[11]
+        # --- LIMIT LOGIC (100% Hacker-Proof & Bug-Free) ---
+        raw_limit = user_data['resume_limit'] if isinstance(user_data, dict) else user_data[10] 
+        raw_plan = user_data['plan_type'] if isinstance(user_data, dict) else user_data[11]
         
+        # 1. Clean Plan Name (Agar DB me khali ya chote aksharon me hai to use 'Free' kar do)
+        if not raw_plan or str(raw_plan).strip() == '' or str(raw_plan).lower() == 'none':
+            plan_type = 'Free'
+        else:
+            plan_type = str(raw_plan).strip().capitalize() # e.g., 'free' ban jayega 'Free'
+
+        # 2. Clean Resume Limit (Agar None hai to 3 kar do)
+        if raw_limit is None or str(raw_limit).strip() == '':
+            resume_limit = 3
+        else:
+            resume_limit = int(raw_limit)
+
+        # 3. Calculate Percentage correctly
         limit_percent = 0
         if plan_type == 'Free':
             limit_percent = (resume_limit / 3) * 100
         else:
             limit_percent = 100 
             
+        # Frontend par bhejne ke liye user_data ko update kar do
+        if isinstance(user_data, dict):
+            user_data['plan_type'] = plan_type
+            user_data['resume_limit'] = resume_limit
+
        # 5. 🟢 NEW: Fetch Purchased Premium Templates (Crash-Proof)
         try:
             # Puraani query jisme access_type hai
@@ -467,7 +478,7 @@ def user_dashboard():
         # 🔴 MAIN FIX: Agar error aaya to home page jane ke bajaye screen par bada-bada error dikhega
         return f"<div style='padding:50px; font-family:sans-serif;'><h1>🚨 Dashboard me Error Aa Gaya!</h1><h2 style='color:red;'>{str(e)}</h2><p style='font-size:18px;'>Bhai, is lal rang ke error ko copy karke mujhe bhejo, abhi 1 minute me fix karta hu!</p></div>"
     finally:
-        conn.close()            
+        conn.close()     
             
 # ==========================================
 # UPDATE PROFILE ROUTE
@@ -777,6 +788,77 @@ def logout():
     session.clear()
     return redirect(url_for('login_page'))
 
+# ==========================================
+# 📧 OTP SENDER HELPER FOR SIGNUP
+# ==========================================
+def send_signup_otp_email(user_email, otp):
+    # अपना ईमेल और ऐप पासवर्ड 
+    sender_email = "atsresumepro01@gmail.com"
+    sender_password = "slenoxlcycxwczsh" 
+    
+    msg = MIMEMultipart()
+    msg['From'] = f"ATS Resume Pro <{sender_email}>"
+    msg['To'] = user_email
+    msg['Subject'] = "Verify Your Email - ATS Resume Pro"
+    
+    body = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+        <h2 style="color: #4F46E5;">Email Verification</h2>
+        <p>Welcome to ATS Resume Pro! Your email verification code is:</p>
+        <h1 style="background-color: #f3f4f6; padding: 15px; display: inline-block; letter-spacing: 8px; border-radius: 8px; color: #111827;">{otp}</h1>
+        <p>Please enter this code on the signup page to complete your registration.</p>
+    </div>
+    """
+    msg.attach(MIMEText(body, 'html'))
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Signup Email Error: {e}")
+        return False
+
+# ==========================================
+# 🟢 ROUTE 1: SEND OTP (User details submit karne se pehle)
+# ==========================================
+@app.route('/api/user/send-signup-otp', methods=['POST'])
+def send_signup_otp():
+    data = request.json
+    email = data.get('email')
+    
+    if not email:
+         return jsonify({'success': False, 'message': 'Email is required'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 1. Check karo email pehle se to nahi hai
+    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'success': False, 'message': 'Email already registered. Please login.'}), 409
+    conn.close()
+
+    # 2. Generate 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    
+    # 3. OTP ko session me save karo taaki verify karte time match kar sake
+    session['signup_otp'] = otp
+    session['signup_email'] = email
+    
+    # 4. Email Send Karo
+    if send_signup_otp_email(email, otp):
+        return jsonify({'success': True, 'message': 'OTP sent! Please check your email.'})
+    else:
+        return jsonify({'success': False, 'message': 'Failed to send OTP. Try again.'}), 500
+
+# ==========================================
+# 🟢 ROUTE 2: VERIFY OTP & CREATE ACCOUNT
+# ==========================================
 @app.route('/api/user/signup', methods=['POST'])
 def signup():
     try:
@@ -784,44 +866,40 @@ def signup():
         full_name = data.get('full_name')
         email = data.get('email')
         password = data.get('password')
+        user_otp = data.get('otp') # 👈 User ne jo OTP dala
 
-        if not all([full_name, email, password]):
-            return jsonify({
-                'success': False,
-                'message': 'All fields are required'
-            }), 400
+        if not all([full_name, email, password, user_otp]):
+            return jsonify({'success': False, 'message': 'All fields and OTP are required'}), 400
 
-        # DB CONNECT (PyMySQL)
+        # 1. 🛡️ VERIFY OTP
+        saved_otp = session.get('signup_otp')
+        saved_email = session.get('signup_email')
+
+        if not saved_otp or saved_otp != user_otp or saved_email != email:
+            return jsonify({'success': False, 'message': 'Invalid or Expired OTP!'}), 400
+
+        # 2. OTP Sahi hai -> Ab Database me entry karo
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # Check existing user
-        cursor.execute(
-            "SELECT id FROM users WHERE email = %s",
-            (email,)
-        )
-        if cursor.fetchone():
-            cursor.close()
-            conn.close()
-            return jsonify({
-                'success': False,
-                'message': 'Email already registered. Please login.'
-            }), 409
 
         # Hash password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-        # Insert user
+        # Insert user (Ab hum explicitly 'Free', 3 limit aur 5 AI credits de rahe hain)
         cursor.execute(
-            "INSERT INTO users (full_name, email, password_hash) VALUES (%s, %s, %s)",
+            """INSERT INTO users (full_name, email, password_hash, plan_type, resume_limit, ai_credits) 
+               VALUES (%s, %s, %s, 'Free', 3, 5)""",
             (full_name, email, hashed_password)
         )
         conn.commit()
 
         user_id = cursor.lastrowid
-
         cursor.close()
         conn.close()
+
+        # Session se OTP hata do (Security)
+        session.pop('signup_otp', None)
+        session.pop('signup_email', None)
 
         # Auto login
         session['user_id'] = user_id
@@ -835,10 +913,7 @@ def signup():
 
     except Exception as e:
         print("SIGNUP ERROR:", e)
-        return jsonify({
-            'success': False,
-            'message': 'Server error'
-        }), 500
+        return jsonify({'success': False, 'message': 'Server error'}), 500
 
 @app.route('/api/user/login', methods=['POST'])
 def login():

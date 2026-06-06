@@ -1,8 +1,15 @@
 // Resume Builder Pro - Login/Signup Script
-
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Resume Builder Pro - Login Page Initialized');
+    
+    // 🟢 NEW: Check if user is locked out (Brute Force Protection)
+    const failedAttempts = parseInt(localStorage.getItem('failed_login_attempts') || '0');
+    if (failedAttempts >= 3) {
+        if(typeof lockFormAndForceReset === 'function') {
+            lockFormAndForceReset();
+        }
+    }
     
     // Check URL params for tab
     const urlParams = new URLSearchParams(window.location.search);
@@ -44,6 +51,13 @@ function switchTab(tab) {
             
             switchText.innerHTML = `Don't have an account? <a href="#" onclick="switchTab('signup')">Sign Up</a>`;
             history.pushState(null, null, '?tab=login');
+
+            // Reset Signup Form If Switched
+            signupStep = 1;
+            const otpGroup = document.getElementById('signup-otp-group');
+            if(otpGroup) otpGroup.style.display = 'none';
+            const emailField = document.getElementById('signup-email');
+            if(emailField) { emailField.readOnly = false; emailField.style.opacity = '1'; }
         } else {
             signupForm.classList.remove('fade-out');
             signupForm.classList.add('active-form', 'fade-in');
@@ -135,13 +149,19 @@ function updatePasswordStrength(password) {
 async function handleLogin(e) {
     e.preventDefault();
     
+    // 🟢 NEW: Pehle check karo ki lock to nahi hai
+    let attempts = parseInt(localStorage.getItem('failed_login_attempts') || '0');
+    if (attempts >= 3) {
+        lockFormAndForceReset();
+        return; // 
+    }
+
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const submitBtn = e.target.querySelector('.submit-btn');
     const loader = submitBtn.querySelector('.btn-loader');
     const btnText = submitBtn.querySelector('span');
 
-    // UI Loading
     submitBtn.disabled = true;
     btnText.style.opacity = '0.5';
     loader.style.display = 'block';
@@ -156,38 +176,45 @@ async function handleLogin(e) {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            // LOGIN SUCCESS
-            showToast('Success!', 'Login successful. Redirecting...', 'success');
-            setTimeout(() => {
-                window.location.href = data.redirect_url || '/'; 
-            }, 1000);
-        } else {
-            // ERROR HANDLING
+            // 🟢 NEW: Login Success ho gaya to attempts reset kar do
+            localStorage.removeItem('failed_login_attempts');
             
-            // Logic: Agar User Nahi Mila -> Signup par bhejo
-            if (data.error_type === 'not_found') {
-                showToast('Account Not Found', data.message, 'info');
+            showToast('Success!', 'Login successful. Redirecting...', 'success');
+            setTimeout(() => { window.location.href = data.redirect_url || '/'; }, 1000);
+        } else {
+            // 🟢 NEW: Galat Password par attempts badhao
+            if (data.message === 'Incorrect password') {
+                attempts++;
+                localStorage.setItem('failed_login_attempts', attempts);
                 
-                // 1.5 second baad Signup tab khol do
+                if (attempts >= 3) {
+                    lockFormAndForceReset(); // 3 baar me form lock
+                } else {
+                    showToast('Login Failed', `Wrong password! You have ${3 - attempts} attempt(s) left.`, 'error');
+                }
+                resetButtonState(submitBtn, btnText, loader);
+            } 
+            else if (data.error_type === 'not_found') {
+                showToast('Account Not Found', data.message, 'info');
                 setTimeout(() => {
                     switchTab('signup');
-                    // Signup form me email pre-fill kar do user ki help ke liye
                     document.getElementById('signup-email').value = email; 
                     resetButtonState(submitBtn, btnText, loader);
                 }, 1500);
             } else {
-                // Wrong password or other error
                 showToast('Login Failed', data.message || 'Invalid credentials', 'error');
                 resetButtonState(submitBtn, btnText, loader);
             }
         }
-
     } catch (error) {
         console.error('Error:', error);
-        showToast('System Error', 'Database connection failed. Is MySQL running?', 'error');
+        showToast('System Error', 'Server not responding', 'error');
         resetButtonState(submitBtn, btnText, loader);
     }
 }
+
+// OTP Step Tracker
+let signupStep = 1; // 1 = Send OTP, 2 = Verify & Register
 
 async function handleSignup(e) {
     e.preventDefault();
@@ -196,6 +223,7 @@ async function handleSignup(e) {
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
     const terms = document.getElementById('terms').checked;
+    const otpInput = document.getElementById('signup-otp'); // Naya OTP box
 
     const submitBtn = e.target.querySelector('.submit-btn');
     const loader = submitBtn.querySelector('.btn-loader');
@@ -206,41 +234,93 @@ async function handleSignup(e) {
         return;
     }
 
+    // Button Loading State
     submitBtn.disabled = true;
     btnText.style.opacity = '0.5';
     loader.style.display = 'block';
 
-    try {
-        const response = await fetch('/api/user/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                full_name: name,
-                email: email,
-                password: password
-            })
-        });
+    // 🟢 STEP 1: EMAIL PAR OTP BHEJO
+    if (signupStep === 1) {
+        btnText.innerText = 'Sending OTP...';
+        
+        try {
+            const response = await fetch('/api/user/send-signup-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (response.ok && data.success) {
-            showToast('Account Created!', 'Redirecting...', 'success');
-            setTimeout(() => {
-                window.location.href = data.redirect_url || '/';
-            }, 1000);
-        } else {
-            showToast('Signup Failed', data.message || 'Error', 'error');
+            if (response.ok && data.success) {
+                showToast('OTP Sent!', 'Please check your email for the code.', 'success');
+                
+                // OTP Box dikhao aur Email lock kar do
+                document.getElementById('signup-otp-group').style.display = 'block';
+                document.getElementById('signup-email').readOnly = true;
+                document.getElementById('signup-email').style.opacity = '0.7';
+                otpInput.required = true;
+                
+                // Button Update karo
+                btnText.innerText = 'Verify & Create Account';
+                signupStep = 2; // Ab step 2 par chale gaye
+                resetButtonState(submitBtn, btnText, loader);
+            } else {
+                showToast('Error', data.message || 'Failed to send OTP', 'error');
+                btnText.innerText = 'Create Account';
+                resetButtonState(submitBtn, btnText, loader);
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('System Error', 'Server not responding', 'error');
+            btnText.innerText = 'Create Account';
             resetButtonState(submitBtn, btnText, loader);
         }
+    } 
+    // 🟢 STEP 2: OTP VERIFY KARKE ACCOUNT BANAO
+    else if (signupStep === 2) {
+        const otp = otpInput.value;
+        btnText.innerText = 'Verifying OTP...';
 
-    } catch (error) {
-        console.error(error);
-        showToast('System Error', 'Server not responding', 'error');
-        resetButtonState(submitBtn, btnText, loader);
+        if (!otp || otp.length !== 6) {
+            showToast('Error', 'Please enter a valid 6-digit OTP', 'error');
+            btnText.innerText = 'Verify & Create Account';
+            resetButtonState(submitBtn, btnText, loader);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/user/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: name,
+                    email: email,
+                    password: password,
+                    otp: otp // Backend ko OTP bhejo check karne ke liye
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showToast('Account Created!', 'Registration successful. Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url || '/';
+                }, 1000);
+            } else {
+                showToast('Signup Failed', data.message || 'Invalid OTP', 'error');
+                btnText.innerText = 'Verify & Create Account';
+                resetButtonState(submitBtn, btnText, loader);
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('System Error', 'Server not responding', 'error');
+            btnText.innerText = 'Verify & Create Account';
+            resetButtonState(submitBtn, btnText, loader);
+        }
     }
 }
-
-
 
 // Social Login Handler
 function handleSocialLogin(provider) {
@@ -503,3 +583,27 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// 🟢 NEW FUNCTION: Form lock karne ka logic (Brute Force Protection)
+function lockFormAndForceReset() {
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    
+    // Form ko dhundhla (blur) kar do aur clicks disable kar do
+    if(loginForm) {
+        loginForm.style.opacity = '0.4';
+        loginForm.style.pointerEvents = 'none';
+    }
+    if(signupForm) {
+        signupForm.style.opacity = '0.4';
+        signupForm.style.pointerEvents = 'none';
+    }
+
+    showToast('Security Alert 🚨', 'Too many failed attempts! Form locked. Please reset your password.', 'error');
+    
+    // 1 second baad auto-open Forgot Password Modal
+    setTimeout(() => {
+        if(typeof openForgotModal === 'function') {
+            openForgotModal();
+        }
+    }, 1500);
+}
