@@ -789,19 +789,25 @@ def logout():
     return redirect(url_for('login_page'))
 
 # ==========================================
-# 📧 OTP SENDER HELPER FOR SIGNUP
+# 📧 OTP SENDER HELPER FOR SIGNUP (Using Brevo API - Render Safe)
 # ==========================================
 def send_signup_otp_email(user_email, otp):
-    # अपना ईमेल और ऐप पासवर्ड 
-    sender_email = "atsresumepro01@gmail.com"
-    sender_password = "slenoxlcycxwczsh" 
+
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY") 
     
-    msg = MIMEMultipart()
-    msg['From'] = f"ATS Resume Pro <{sender_email}>"
-    msg['To'] = user_email
-    msg['Subject'] = "Verify Your Email - ATS Resume Pro"
+    if not BREVO_API_KEY:
+        print("🔥 Error: BREVO_API_KEY is missing in .env file!")
+        return False
+
+    url = "https://api.brevo.com/v3/smtp/email"
     
-    body = f"""
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    
+    html_content = f"""
     <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
         <h2 style="color: #4F46E5;">Email Verification</h2>
         <p>Welcome to ATS Resume Pro! Your email verification code is:</p>
@@ -809,17 +815,27 @@ def send_signup_otp_email(user_email, otp):
         <p>Please enter this code on the signup page to complete your registration.</p>
     </div>
     """
-    msg.attach(MIMEText(body, 'html'))
+    
+    payload = {
+        "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
+        "to": [{"email": user_email}],
+        "subject": "Verify Your Email - ATS Resume Pro",
+        "htmlContent": html_content
+    }
     
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        return True
+        # API ko request bhejo (Ye render par block nahi hoga)
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        
+        # Agar status code 200, 201 ya 202 hai matlab email chala gaya
+        if response.status_code in [200, 201, 202]:
+            return True
+        else:
+            print(f"🔥 Brevo API Error (Signup): {response.text}")
+            return False
+            
     except Exception as e:
-        print(f"Signup Email Error: {e}")
+        print(f"🔥 Network Error (Signup): {e}")
         return False
 
 # ==========================================
