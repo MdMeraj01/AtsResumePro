@@ -3236,18 +3236,25 @@ def sitemap_xml():
 # ==========================================
 # 🔑 FORGOT PASSWORD & RESET ROUTES
 # ==========================================
-
-# Helper Function: Password Reset Email
+# Helper Function: Password Reset Email (Using Brevo API - Render Safe & Secure)
 def send_password_reset_email(user_email, otp):
-    sender_email = "atsresumepro01@gmail.com"
-    sender_password = "slenoxlcycxwczsh" 
+    # 👇 API Key ab direct .env file se aayegi
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY") 
     
-    msg = MIMEMultipart()
-    msg['From'] = sender_email
-    msg['To'] = user_email
-    msg['Subject'] = "Reset Your Password - ATS Resume Pro"
+    # Agar galti se .env me key missing hui to server crash nahi hoga
+    if not BREVO_API_KEY:
+        print("🔥 Error: BREVO_API_KEY is missing in .env file!")
+        return False
+
+    url = "https://api.brevo.com/v3/smtp/email"
     
-    body = f"""
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    
+    html_content = f"""
     <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color: #4F46E5;">Password Reset Request</h2>
         <p>You recently requested to reset your password. Here is your 6-digit OTP:</p>
@@ -3255,19 +3262,25 @@ def send_password_reset_email(user_email, otp):
         <p>If you did not request a password reset, please ignore this email.</p>
     </div>
     """
-    msg.attach(MIMEText(body, 'html'))
+    
+    payload = {
+        "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
+        "to": [{"email": user_email}],
+        "subject": "Reset Your Password - ATS Resume Pro",
+        "htmlContent": html_content
+    }
     
     try:
-        # 🟢 THE FIX: timeout=10 lagane se server 502 crash nahi hoga!
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        return True
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        
+        if response.status_code in [200, 201, 202]:
+            return True
+        else:
+            print(f"🔥 Brevo API Error: {response.text}")
+            return False
+            
     except Exception as e:
-        # Render ke logs me asli error print hoga
-        print(f"🔥 SMTP Email Error: {e}")
+        print(f"🔥 Network Error: {e}")
         return False
 
 # 1. Send OTP for Forgot Password
