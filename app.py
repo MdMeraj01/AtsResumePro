@@ -3239,7 +3239,6 @@ def sitemap_xml():
 
 # Helper Function: Password Reset Email
 def send_password_reset_email(user_email, otp):
-    # 👇 यहाँ अपना वो चालू वाला 16-डिजिट का App Password डालें (जो टेस्ट में SUCCESS हुआ था)
     sender_email = "atsresumepro01@gmail.com"
     sender_password = "slenoxlcycxwczsh" 
     
@@ -3259,16 +3258,17 @@ def send_password_reset_email(user_email, otp):
     msg.attach(MIMEText(body, 'html'))
     
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        # 🟢 THE FIX: timeout=10 lagane se server 502 crash nahi hoga!
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
         server.starttls()
         server.login(sender_email, sender_password)
         server.send_message(msg)
         server.quit()
         return True
     except Exception as e:
-        print(f"Email Error: {e}")
+        # Render ke logs me asli error print hoga
+        print(f"🔥 SMTP Email Error: {e}")
         return False
-
 
 # 1. Send OTP for Forgot Password
 @app.route('/api/user/forgot-password', methods=['POST'])
