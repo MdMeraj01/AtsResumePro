@@ -157,23 +157,12 @@ function selectPlan(plan) {
     
     // Simulate API call
     setTimeout(() => {
-        // 👇 FIX: Keys ko HTML ke data-plan attribute se match kiya hai
+        // 👇 UPDATED: Added Lifetime plan
         const plans = {
-            'basic': {
-                name: 'Basic Plan',
-                price: '₹199',
-                period: 'monthly'
-            },
-            'standard': {  // Pehle 'professional' tha, ab 'standard' kar diya
-                name: 'Standard Plan',
-                price: '₹499',
-                period: 'monthly'
-            },
-            'premium': {   // Pehle 'enterprise' tha, ab 'premium' kar diya
-                name: 'Premium Plan',
-                price: '₹999',
-                period: 'monthly'
-            }
+            'basic': { name: 'Basic Plan', price: '₹199', period: 'monthly' },
+            'standard': { name: 'Standard Plan', price: '₹499', period: 'monthly' },
+            'premium': { name: 'Premium Plan', price: '₹999', period: 'monthly' },
+            'lifetime': { name: 'Lifetime Plan', price: '₹2,000', period: 'one-time' }
         };
         
         const selectedPlan = plans[plan];

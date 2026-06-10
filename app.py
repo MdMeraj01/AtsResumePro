@@ -292,44 +292,39 @@ def get_fallback_response(prompt):
         return "Professional experience and contributions demonstrating strong capabilities and commitment to delivering quality results."
 
 # ==========================================
-# 🟢 HELPER: Check & Deduct Credits (FINAL FIX)
-# ==========================================
-# ==========================================
-# 🟢 HELPER: Check & Deduct Credits (DEBUG MODE)
+# 🟢 HELPER: Check & Deduct Credits (LIFETIME FIX)
 # ==========================================
 def check_and_deduct_credits(user_id):
-    print(f"🕵️ DEBUG: Checking credits for User ID: {user_id}")  # <--- SPY 1
-    
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 1. Check Current Credits
-    cursor.execute("SELECT ai_credits FROM users WHERE id = %s", (user_id,))
+    # 1. Check Current Credits & Plan
+    cursor.execute("SELECT ai_credits, plan_type FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     
-    print(f"🕵️ DEBUG: User Data Found: {user}") # <--- SPY 2
-    
-    # Agar user ke paas credits hain (0 se zyada)
-    if user and user['ai_credits'] > 0:
-        new_credits = user['ai_credits'] - 1
-        
-        # 2. Update Credits
-        cursor.execute("UPDATE users SET ai_credits = %s WHERE id = %s", (new_credits, user_id))
-        
-        # 3. Activity Log
-        cursor.execute(
-            "INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, %s, %s)",
-            (user_id, 'ai_usage', 'Credit Used')
-        )
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ SUCCESS: Credit deducted! New Balance: {new_credits}") # <--- SPY 3
-        return True, new_credits  # Success
+    if user:
+        # 🟢 THE FIX: Agar plan Lifetime hai, toh credits kabhi kam nahi honge!
+        if user['plan_type'] == 'Lifetime':
+            conn.close()
+            return True, "Unlimited"
+            
+        if user['ai_credits'] > 0:
+            new_credits = user['ai_credits'] - 1
+            
+            # 2. Update Credits
+            cursor.execute("UPDATE users SET ai_credits = %s WHERE id = %s", (new_credits, user_id))
+            
+            # 3. Activity Log
+            cursor.execute(
+                "INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, %s, %s)",
+                (user_id, 'ai_usage', 'Credit Used')
+            )
+            
+            conn.commit()
+            conn.close()
+            return True, new_credits  # Success
     
     conn.close()
-    print("❌ FAILED: No credits left or User not found") # <--- SPY 4
     return False, 0  # Fail
 
 # ==========================================
@@ -2239,10 +2234,9 @@ def get_templates():
         elif t['name'] in purchased_templates:
             t['user_has_access'] = True
             
-        # 3. Agar User ke Plan mein ye template covered hai
-        elif user_plan in ['Standard', 'Premium']: # Standard/Premium get ALL
+        elif user_plan in ['Standard', 'Premium', 'Lifetime']: # 🟢 FIX: Lifetime added here
             t['user_has_access'] = True
-        elif user_plan == 'Basic' and t['plan_level'] == 'Basic': # Basic gets Basic
+        elif user_plan == 'Basic' and t['plan_level'] == 'Basic':
             t['user_has_access'] = True
             
     return jsonify({
@@ -3028,10 +3022,12 @@ def checkout():
     cycle = request.args.get('cycle')
     
     # Prices Set karo (Backend side validation)
+   # Prices Set karo (Backend side validation)
     prices = {
         'basic': {'monthly': 199, 'yearly': 1990},
         'standard': {'monthly': 499, 'yearly': 4990},
-        'premium': {'monthly': 999, 'yearly': 9990}
+        'premium': {'monthly': 999, 'yearly': 9990},
+        'lifetime': {'monthly': 2000, 'yearly': 2000} 
     }
     
     # Amount nikalo
@@ -3047,25 +3043,29 @@ def process_payment():
     if 'user_id' not in session: return jsonify({'success': False}), 401
     
     data = request.json
-    plan_name = data.get('plan') # basic, standard, premium
+    plan_name = data.get('plan') # basic, standard, premium, lifetime
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
-        # 1. Update User Plan
-        # Plan ka naam Capitalize karo (basic -> Basic)
         new_plan = plan_name.capitalize()
         
-        # Limit set karo (Basic=Unlimited, lekin hum code me logic lagayenge)
-        # Standard/Premium ke liye limit 99999 kar do (Unlimited)
+        # 🟢 NEW: Plan ke hisaab se limits set karo
         new_limit = 99999 
+        new_credits = 5
         
+        if new_plan == 'Basic': new_credits = 10
+        elif new_plan == 'Standard': new_credits = 100
+        elif new_plan == 'Premium': new_credits = 9999
+        elif new_plan == 'Lifetime': new_credits = 99999 # Lifetime ke liye 99999 credits
+        
+        # Update Query (ai_credits bhi update hoga)
         cursor.execute("""
             UPDATE users 
-            SET plan_type = %s, resume_limit = %s 
+            SET plan_type = %s, resume_limit = %s, ai_credits = %s 
             WHERE id = %s
-        """, (new_plan, new_limit, session['user_id']))
+        """, (new_plan, new_limit, new_credits, session['user_id']))
         
         conn.commit()
         return jsonify({'success': True, 'redirect': url_for('user_dashboard')})
@@ -3078,11 +3078,9 @@ def process_payment():
 
 
 # ==========================================
-# 💳 RAZORPAY CONFIGURATION (Test Mode)
+# 💳 RAZORPAY CONFIGURATION 
 # ==========================================
 
-# 👇 Yahan apni Razorpay Dashboard wali Test Keys dalein
-# .env file se keys fetch karo
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
