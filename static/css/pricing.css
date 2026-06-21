@@ -840,3 +840,47 @@ body.light-mode nav .glass-panel {
     border: 1px solid #e2e8f0 !important;
     color: #000 !important;
 }
+/* ========== ADDITIONAL PRICING SEO HOVER STYLES ========== */
+.pricing-seo-card {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.pricing-seo-card:hover {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(59, 130, 246, 0.15);
+    transform: translateY(-3px);
+}
+
+/* Light Mode Core Compliance Overrides */
+body.light-mode .pricing-seo-card {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode .pricing-seo-card:hover {
+    border-color: #4f46e5 !important;
+    box-shadow: 0 12px 24px rgba(79, 70, 229, 0.1) !important;
+}
+
+body.light-mode .pricing-seo-card h3,
+body.light-mode .pricing-seo-card h4,
+body.light-mode .bg-slate-950\/50 h3,
+body.light-mode .bg-slate-950\/30 h4 {
+    color: #0f172a !important;
+}
+
+body.light-mode .pricing-seo-card p,
+body.light-mode .bg-slate-950\/50 p,
+body.light-mode .bg-slate-950\/40 p,
+body.light-mode .bg-slate-950\/30 p {
+    color: #475569 !important;
+}
+
+body.light-mode .bg-slate-950\/30,
+body.light-mode .bg-slate-950\/40,
+body.light-mode .bg-slate-950\/50,
+body.light-mode .bg-slate-900\/40 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}

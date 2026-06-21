@@ -1482,3 +1482,43 @@ body.light-mode .group > button:hover {
     border-color: rgba(59, 130, 246, 0.5) !important; /* Blue border on hover */
 }
 
+/* ========== SEO KNOWLEDGE BASE EXTRA STYLES ========== */
+.seo-card-glow {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seo-card-glow:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 15px 30px rgba(79, 70, 229, 0.08);
+    transform: translateY(-4px);
+}
+
+/* Light Mode Overrides for SEO Section */
+body.light-mode .seo-card-glow {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.light-mode .seo-card-glow h3 {
+    color: #0f172a !important;
+}
+
+body.light-mode .seo-card-glow p {
+    color: #475569 !important;
+}
+
+body.light-mode .bg-slate-950\/30,
+body.light-mode .bg-slate-950\/40,
+body.light-mode .bg-slate-950\/50 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.light-mode .bg-slate-950\/40:hover {
+    border-color: #6366f1 !important;
+}
+
+body.light-mode .bg-slate-950\/30 h4,
+body.light-mode .bg-slate-950\/40 h4 {
+    color: #0f172a !important;
+}

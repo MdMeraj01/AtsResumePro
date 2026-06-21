@@ -1393,3 +1393,48 @@ body.light-mode nav .glass-panel {
     border: 1px solid #e2e8f0 !important;
     color: #000 !important;
 }
+
+/* ========== ADDITIONAL SEO CONTAINER INTERACTIONS ========== */
+.seo-card-glow {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.seo-card-glow:hover {
+    border-color: rgba(6, 182, 212, 0.3) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(6, 182, 212, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Light Mode Core Compliance Overrides */
+body.light-mode .seo-card-glow {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode .seo-card-glow:hover {
+    border-color: #4f46e5 !important;
+    box-shadow: 0 12px 24px rgba(79, 70, 229, 0.1) !important;
+}
+
+body.light-mode .seo-card-glow h3,
+body.light-mode .seo-card-glow h4,
+body.light-mode .bg-slate-950\/50 h3,
+body.light-mode .bg-slate-950\/30 h4 {
+    color: #0f172a !important;
+}
+
+body.light-mode .seo-card-glow p,
+body.light-mode .bg-slate-950\/50 p,
+body.light-mode .bg-slate-950\/40 p,
+body.light-mode .bg-slate-950\/30 p {
+    color: #475569 !important;
+}
+
+body.light-mode .bg-slate-950\/30,
+body.light-mode .bg-slate-950\/40,
+body.light-mode .bg-slate-950\/50,
+body.light-mode .bg-slate-900\/40 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
