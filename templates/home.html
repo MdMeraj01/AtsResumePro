@@ -1,161 +1,137 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Primary Premium SEO Indexing Engine Headers -->
-    <title>{% block title %}Free AI Resume Builder Online (AI-Powered) | Create ATS-Friendly Resume in Minutes{% endblock %}</title>
+<title>{% block title %}Free ATS Resume Builder Online (AI-Powered) | Create Resume in Minutes{% endblock %}</title>
 
-    <meta name="description" content="{% block description %}Build a professional, recruiter-approved resume online in minutes using AI. Choose from 20+ premium ATS-optimized templates, analyze critical keyword gaps, and instantly download your job-ready CV for free.{% endblock %}">
+<meta name="description" content="{% block description %}Create an ATS-friendly resume online in minutes using AI. Choose from 20+ professional templates, optimize for job applications, and download your resume instantly for free.{% endblock %}">
 
-    <meta name="keywords" content="{% block keywords %}ATS resume builder, resume maker online, AI resume builder, free CV builder, professional resume templates, job resume maker, resume for freshers, resume download PDF, ATS friendly CV, bypass screening algorithms, resume keyword optimizer, artificial intelligence cv creator, next-gen portfolio mapping, automatic text parser compliance{% endblock %}">
+<meta name="keywords" content="{% block keywords %}ATS resume builder, resume maker online, AI resume builder, free CV builder, professional resume templates, job resume maker, resume for freshers, resume download PDF, ATS friendly CV{% endblock %}">
 
-    <meta name="author" content="Mohammad Meraj">
-    <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="google-site-verification" content="uA7_6W4NWdv6tzwSA3xN1yebgjYLzc2LpJXD5QACzWk" />
+<meta name="author" content="Mohammad Meraj">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#4f46e5">
+<meta name="google-site-verification" content="uA7_6W4NWdv6tzwSA3xN1yebgjYLzc2LpJXD5QACzWk" />
 
-    <link rel="canonical" href="{{ request.url }}">
+<link rel="canonical" href="{{ request.url }}">
 
-    <!-- Favicon Integration Vector Links -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
 
-    <!-- PWA Application Deployment Link -->
-    <link rel="manifest" href="/manifest.json">
+<!-- App Install link-->
+<link rel="manifest" href="/manifest.json">
 
-    <!-- Global Performance Hardware Accelerators -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Performance Boost -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- Open Graph (Facebook, LinkedIn, WhatsApp Preview Booster) -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:title" content="{% block og_title %}Free ATS Resume Builder Online | AI Resume Creator{% endblock %}">
-    <meta property="og:description" content="{% block og_desc %}Build a professional ATS-friendly resume using custom AI engines. Free responsive formats, instant high-compliance PDF downloads, and job-ready resumes to beat automated bots.{% endblock %}">
-    
-    <!-- 🔥 WHATSAPP & LINKEDIN PREVIEW: Isse link ke sath aapka Favicon automatic pop-up hoga -->
-    <meta property="og:image" content="https://atsresumepro.onrender.com/static/images/favicon.png">
-    <meta property="og:site_name" content="ATS Resume Pro">
+<!-- Open Graph (Facebook, LinkedIn) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.url }}">
+<meta property="og:title" content="{% block og_title %}Free ATS Resume Builder Online | AI Resume Creator{% endblock %}">
+<meta property="og:description" content="{% block og_desc %}Build a professional ATS-friendly resume using AI. Free templates, instant PDF download, and job-ready CV in minutes.{% endblock %}">
+<meta property="og:image" content="https://atsresumepro.onrender.com/static/images/seo-preview.jpg">
+<meta property="og:site_name" content="ATS Resume Pro">
 
-    <!-- Twitter Card Layout Metrics -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:url" content="{{ request.url }}">
-    <meta name="twitter:title" content="{% block twitter_title %}AI Resume Builder Free | Recruiter-Approved ATS Resume Maker{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_desc %}Create structural ATS-optimized resumes online for free with AI. Choose templates and download instantly.{% endblock %}">
-    
-    <!-- 🔥 TWITTER PREVIEW: Isse Twitter/X par bhi image render safe chalegi -->
-    <meta name="twitter:image" content="https://atsresumepro.onrender.com/static/images/favicon.png">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="{{ request.url }}">
+<meta name="twitter:title" content="{% block twitter_title %}AI Resume Builder Free | ATS Resume Maker{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_desc %}Create ATS-friendly resumes online for free with AI. Choose templates and download instantly.{% endblock %}">
+<meta name="twitter:image" content="https://atsresumepro.onrender.com/static/images/seo-preview.jpg">
 
-    <!-- Open Graph Framework / Facebook, LinkedIn & WhatsApp Conversion Boosters -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.url }}">
-    <meta property="og:title" content="{% block og_title %}Free AI Resume Builder Online | Create High-Scoring ATS CVs{% endblock %}">
-    <meta property="og:description" content="{% block og_desc %}Build a professional ATS-friendly resume using custom AI engines. Free responsive formats, instant high-compliance PDF downloads, and job-ready resumes to beat automated bots.{% endblock %}">
-    <meta property="og:image" content="https://atsresumepro.onrender.com/static/images/seo-preview.jpg">
-    <meta property="og:site_name" content="ATS Resume Pro">
+<!-- Software Application Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "ATS Resume Pro",
+  "url": "https://atsresumepro.onrender.com",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web Browser",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "ratingCount": "1540"
+  },
+  "featureList": [
+    "ATS Resume Checker",
+    "AI Resume Writing",
+    "PDF Export",
+    "Professional Templates",
+    "Cover Letter Generator"
+  ],
+  "screenshot": "https://atsresumepro.onrender.com/static/images/template-previews/modern.png",
+  "author": {
+    "@type": "Person",
+    "name": "Mohammad Meraj",
+    "url": "https://meraj.dev"
+  }
+}
+</script>
 
-    <!-- Twitter Card Layout Metrics -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="{{ request.url }}">
-    <meta name="twitter:title" content="{% block twitter_title %}AI Resume Builder Free | Recruiter-Approved ATS Resume Maker{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_desc %}Create structural ATS-optimized resumes online for free with AI. Tailor skills dynamically and compile print-ready profiles instantly.{% endblock %}">
-    <meta name="twitter:image" content="https://atsresumepro.onrender.com/static/images/seo-preview.jpg">
+<!-- Organization Schema -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "ATS Resume Pro",
+  "url": "https://atsresumepro.onrender.com",
+  "logo": "https://atsresumepro.onrender.com/static/images/favicon.png",
+  "founder": {
+    "@type": "Person",
+    "name": "Mohammad Meraj"
+  }
+}
+</script>
 
-    <!-- Software Application Structured Schema -->
-    <script type="application/ld+json">
+<!-- FAQ Schema (Boost Ranking + Rich Results) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "ATS Resume Pro",
-      "url": "https://atsresumepro.onrender.com",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web Browser",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "INR"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "1540"
-      },
-      "featureList": [
-        "ATS Resume Checker",
-        "AI Resume Writing",
-        "PDF Export",
-        "Professional Templates",
-        "Cover Letter Generator",
-        "AI Interview Practice Tool"
-      ],
-      "screenshot": "https://atsresumepro.onrender.com/static/images/template-previews/modern.png",
-      "author": {
-        "@type": "Person",
-        "name": "Mohammad Meraj",
-        "url": "https://meraj.dev"
+      "@type": "Question",
+      "name": "What is an ATS resume?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An ATS resume is optimized to pass Applicant Tracking Systems used by companies to filter job applications."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is ATS Resume Pro free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, ATS Resume Pro allows you to create and download resumes for free."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I download resume in PDF?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, you can instantly download your resume in PDF format after creating it."
       }
     }
-    </script>
-
-    <!-- Organization Schema Matrix -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "ATS Resume Pro",
-      "url": "https://atsresumepro.onrender.com",
-      "logo": "https://atsresumepro.onrender.com/static/images/favicon.png",
-      "founder": {
-        "@type": "Person",
-        "name": "Mohammad Meraj"
-      }
-    }
-    </script>
-
-    <!-- FAQ Search Result Rich Snippet Schema (Enhanced Answers) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "What is an ATS resume?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "An ATS resume is a structurally engineered document designed to flawlessly pass Applicant Tracking Systems used by enterprise employers to algorithmically parse, rank, and filter job applications."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is ATS Resume Pro free to use?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, ATS Resume Pro provides zero-cost baseline access to create, optimize, and instantly compile standard professional resumes without hidden formatting fees or data credit requirements."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I download my optimized resume in PDF format?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, you can instantly export and compile your entire resume layout tree directly into print-ready, high-compliance PDF or structured data object vectors seamlessly."
-          }
-        }
-      ]
-    }
-    </script>
-
-    <!-- Stylesheets & Asset Vectors -->
+  ]
+}
+</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/home.css') }}" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
-    
     <style>
         @keyframes shimmer {
             0% { transform: translateX(-100%); }
@@ -915,95 +891,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ========== HOME PAGE ADVANCED SEO KNOWLEDGE BASE ========== -->
-    <section class="py-16 mt-16 mb-12 fade-in-up" style="animation-delay: 450ms">
-        <div class="glass-panel rounded-2xl p-8 md:p-12 border border-gray-800 bg-slate-900/40 backdrop-blur-md mx-auto max-w-7xl">
-            
-            <!-- Section Header -->
-            <div class="text-center mb-16">
-                <h2 class="text-3xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
-                    The Ultimate <span class="gradient-text">AI ATS Resume Builder</span> Intel
-                </h2>
-                <p class="text-gray-400 text-lg max-w-3xl mx-auto">
-                    Master the mechanics of resume filtering algorithms, keyword optimization layers, and machine parsing architectures.
-                </p>
-            </div>
-
-            <!-- Grid 1: Deep Tech Content -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
-                
-                <!-- What is an ATS Resume Builder -->
-                <div class="p-6 rounded-xl bg-slate-950/50 border border-white/5 hover:border-blue-500/20 transition-all duration-300">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
-                        <i class="fas fa-robot text-blue-400 mr-3"></i>What is an AI ATS Resume Builder?
-                    </h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        An AI ATS resume builder is a highly calibrated digital canvas that utilizes advanced language modeling algorithms and structured database architectures to engineer recruiter-approved profiles. Unlike standard rich-text editors that generate unoptimized document matrices, this software layout automatically parses your technical nodes into standardized token streams. It ensures that system bots read your baseline timelines natively.
-                    </p>
-                    <p class="text-gray-400 text-sm leading-relaxed mt-3">
-                        By deploying semantic layout strategies, the builder organizes critical developer benchmarks, employment histories, and framework capabilities into clean data columns. This prevents visual encoding bugs, multi-layered grid collapses, or font corruption issues from rejecting your application automatically before a human hiring manager interacts with it.
-                    </p>
-                </div>
-
-                <!-- Why Bypassing Algorithms Matters -->
-                <div class="p-6 rounded-xl bg-slate-950/50 border border-white/5 hover:border-purple-500/20 transition-all duration-300">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
-                        <i class="fas fa-bullseye text-purple-400 mr-3"></i>Why Optimizing for ATS Filters Matters
-                    </h3>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        Modern enterprise recruitment frameworks use automated scoring indexes to handle heavy application streams daily. When you submit your profile on global corporate portals, an automated scanning software breaks the document down into raw string values to verify keyword weight compliance against active job definitions. 
-                    </p>
-                    <p class="text-gray-400 text-sm leading-relaxed mt-3">
-                        If your file incorporates non-standard bounding frames, graphic timelines, or hidden text containers, the extraction script drops your profile score immediately. Using a validated, high-compliance template layout ensures your core engineering skills are indexed accurately, helping you clear initial screening hurdles to secure interviews smoothly.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Dynamic Feature Inclusions -->
-            <div class="mb-12 p-6 md:p-8 rounded-xl bg-slate-950/50 border border-white/5">
-                <h3 class="text-2xl font-bold text-white mb-6 text-center flex items-center justify-center">
-                    <i class="fas fa-tools text-cyan-400 mr-3"></i>Advanced Career Automation Toolkit Features
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-400 leading-relaxed">
-                    <div class="p-4 rounded-lg bg-slate-900/40 border border-white/5">
-                        <h4 class="text-white font-bold mb-2 flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>Live Scoring Metrics</h4>
-                        <p class="text-xs">Integrated code metrics monitor text inputs continuously as you compose your profiles, evaluating text density, section counts, and keyword frequencies to provide real-time validation scores up to 100.</p>
-                    </div>
-                    <div class="p-4 rounded-lg bg-slate-900/40 border border-white/5">
-                        <h4 class="text-white font-bold mb-2 flex items-center"><span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>Lexical Keyword Mapping</h4>
-                        <p class="text-xs">Advanced matching technology scans target corporate job details to highlight missing core capabilities and framework terms inside your profile, allowing you to bridge critical vocabulary gaps instantly.</p>
-                    </div>
-                    <div class="p-4 rounded-lg bg-slate-900/40 border border-white/5">
-                        <h4 class="text-white font-bold mb-2 flex items-center"><span class="w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>Multi-Channel Support Asset Generation</h4>
-                        <p class="text-xs">The underlying system logic coordinates smoothly across alternative document pipelines, helping you build highly optimized cover letters and prepare role-specific mock interview responses.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Deep FAQ Segment (Visual Expanded text for indexing) -->
-            <div>
-                <h3 class="text-2xl font-bold text-white mb-8 text-center flex items-center justify-center">
-                    <i class="fas fa-graduation-cap text-orange-400 mr-3"></i>Deep Technical Knowledge Archive
-                </h3>
-                <div class="space-y-6 max-w-4xl mx-auto text-sm">
-                    <div class="p-5 rounded-xl bg-slate-950/30 border border-white/5">
-                        <h4 class="text-white font-bold mb-2 text-base">How does hidden layout structures corrupt resume data extraction loops?</h4>
-                        <p class="text-gray-400 leading-relaxed">
-                            Exotic formatting choices like decorative bounding charts, nested column containers, and vector asset groups complicate character coordinate tracking for scanning software. When an algorithm scans these complex design arrays, it extracts corrupted character lines or scrambles your sentences, resulting in an automatic failure check due to layout breaking.
-                        </p>
-                    </div>
-                    <div class="p-5 rounded-xl bg-slate-950/30 border border-white/5">
-                        <h4 class="text-white font-bold mb-2 text-base">What strategy helps freshers rank high on corporate candidate indexes?</h4>
-                        <p class="text-gray-400 leading-relaxed">
-                            Freshers should focus on structuring high-value vocabulary terms inside clear, unnested text blocks. Group academic projects, core developer skills, and certification parameters using standard chronology layouts and bullet points. This helps search bots scan and index your profile metrics cleanly.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </section>
 
     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
         <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
