@@ -1155,7 +1155,7 @@ def delete_blog(id):
 # ========== API ROUTES =========
 
 # ==========================================
-# 🟢 AI ROUTE: Summary Generator (FIXED - Now Deducts Credits)
+# 🟢 AI ROUTE: Summary Generator (Short 4-5 Lines)
 # ==========================================
 @app.route('/api/ai/summary', methods=['POST'])
 def generate_ai_summary():
@@ -1187,20 +1187,22 @@ def generate_ai_summary():
         if custom_prompt:
             prompt = custom_prompt
         else:
+            # 🟢 UPDATED PROMPT FOR STRICT 4-5 LINES
             prompt = f"""Generate a compelling professional resume summary for {full_name} who is a {job_title}. 
             
             Technical Skills: {technical_skills}. 
             Experience: {experience_count} positions. 
             
             Requirements:
-            - Create a 5-6 line professional summary
-            - Highlight key technical skills
-            - Show experience level
-            - Make it ATS-friendly with relevant keywords
-            - Sound professional and achievement-oriented
-            - Tailor specifically for a {job_title} role
+            - Create a short professional summary of strictly 4 to 5 lines maximum.
+            - Highlight key technical skills.
+            - Show experience level briefly.
+            - Make it ATS-friendly with relevant keywords.
+            - Sound professional and achievement-oriented.
+            - Tailor specifically for a {job_title} role.
+            - Do not exceed 5 lines under any circumstances.
             
-            Return only the summary text without any additional explanations."""
+            Return only the summary text without any additional explanations or intro."""
 
         # Call AI
         summary = call_gemini_ai(prompt, 4096)
@@ -1216,7 +1218,7 @@ def generate_ai_summary():
         return jsonify({'error': str(e)}), 500
 
 # ==========================================
-# 🟢 AI ROUTE: Description Generator (FIXED - Now Deducts Credits)
+# 🟢 AI ROUTE: Description Generator (Strictly 2 Lines)
 # ==========================================
 @app.route('/api/ai/description', methods=['POST'])
 def generate_ai_description():
@@ -1241,23 +1243,33 @@ def generate_ai_description():
         section_type = data.get('section_type')
         content = data.get('content', {})
         
+        # 🟢 UPDATED PROMPTS FOR STRICTLY 2 LINES ONLY
         if section_type == 'education':
             prompt = f"""Generate a professional description for education entry.
             Degree: {content.get('degree')}
             Field: {content.get('field')}
             School: {content.get('school')}
-            Return only the description text."""
+            Requirements:
+            - Strictly limit the entire response to exactly 2 lines/sentences.
+            - Keep it short, clean, and highly impactful.
+            Return only the description text without numbers, bullets, or extra words."""
 
         elif section_type == 'experience':
             prompt = f"""Generate a professional work experience description.
             Position: {content.get('position')}
             Company: {content.get('company')}
-            Return only the description text."""
+            Requirements:
+            - Strictly limit the entire response to exactly 2 lines/sentences.
+            - Highlight core responsibilities and skills in those 2 lines.
+            Return only the description text without numbers, bullets, or extra words."""
 
         elif section_type == 'project':
             prompt = f"""Generate a professional project description.
             Project: {content.get('name')}
-            Return only the description text."""
+            Requirements:
+            - Strictly limit the entire response to exactly 2 lines/sentences.
+            - Explain the goal and technology stack used briefly in those 2 lines.
+            Return only the description text without numbers, bullets, or extra words."""
 
         else:
             return jsonify({'error': 'Invalid section type'}), 400
