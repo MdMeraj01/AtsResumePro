@@ -2627,7 +2627,7 @@ def add_new_admin():
         conn.close()
 
 # ==========================================
-# 📧 ADMIN NEWSLETTER BLAST API (Render Safe)
+# 📧 ADMIN NEWSLETTER BLAST API (Personalized / Privacy Fixed)
 # ==========================================
 @app.route('/api/admin/send-newsletter', methods=['POST'])
 def send_newsletter():
@@ -2649,33 +2649,13 @@ def send_newsletter():
     cursor = conn.cursor()
     
     try:
-        # 1. Fetch all registered users' emails
+        # Fetch all registered users
         cursor.execute("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email != ''")
         users = cursor.fetchall()
         conn.close()
 
         if not users:
             return jsonify({'success': False, 'message': 'No users found in database!'}), 404
-
-        # Brevo API format: list of recipients
-        to_recipients = [{"email": u['email'], "name": u['full_name']} for u in users]
-
-        # Formatting HTML Email Body
-        formatted_html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #4f46e5; margin: 0;">ATS Resume Builder Pro</h2>
-            </div>
-            <div style="color: #374151; font-size: 16px; line-height: 1.6;">
-                {message_body.replace('\n', '<br>')}
-            </div>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
-            <div style="text-align: center; color: #9ca3af; font-size: 12px;">
-                You received this email because you are a registered user of ATS Resume Pro.<br>
-                © {datetime.now().year} ATS Resume Pro. All rights reserved.
-            </div>
-        </div>
-        """
 
         url = "https://api.brevo.com/v3/smtp/email"
         headers = {
@@ -2684,26 +2664,50 @@ def send_newsletter():
             "content-type": "application/json"
         }
 
-        payload = {
-            "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
-            "to": to_recipients,
-            "subject": subject,
-            "htmlContent": formatted_html
-        }
+        sent_count = 0
 
-        # Send API Request
-        response = requests.post(url, json=payload, headers=headers, timeout=20)
+        # Loop through each user so they get an individual email
+        for user in users:
+            user_email = user['email']
+            user_name = user.get('full_name', 'User')
 
-        if response.status_code in [200, 201, 202]:
-            return jsonify({'success': True, 'message': f'Newsletter sent successfully to {len(users)} users!'})
-        else:
-            print(f"🔥 Brevo Blast Error: {response.text}")
-            return jsonify({'success': False, 'message': f'API Error: {response.text}'}), 500
+            formatted_html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #4f46e5; margin: 0;">ATS Resume Builder Pro</h2>
+                </div>
+                <div style="color: #374151; font-size: 16px; line-height: 1.6;">
+                    <p>Hi <b>{user_name}</b>,</p>
+                    {message_body.replace('\n', '<br>')}
+                </div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
+                <div style="text-align: center; color: #9ca3af; font-size: 12px;">
+                    You received this email because you are a registered user of ATS Resume Pro.<br>
+                    © {datetime.now().year} ATS Resume Pro. All rights reserved.
+                </div>
+            </div>
+            """
+
+            payload = {
+                "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
+                "to": [{"email": user_email, "name": user_name}],
+                "subject": subject,
+                "htmlContent": formatted_html
+            }
+
+            try:
+                res = requests.post(url, json=payload, headers=headers, timeout=10)
+                if res.status_code in [200, 201, 202]:
+                    sent_count += 1
+            except Exception as mail_err:
+                print(f"Failed to send to {user_email}: {mail_err}")
+
+        return jsonify({'success': True, 'message': f'Newsletter sent individually to {sent_count} users!'})
 
     except Exception as e:
         print(f"🔥 Newsletter Exception: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-    
+        
     
 # ==========================================
 # 🛑 ADMIN MANAGEMENT APIs (Fix)
