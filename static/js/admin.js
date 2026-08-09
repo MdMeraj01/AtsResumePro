@@ -1028,3 +1028,46 @@ async function deleteAdmin(id) {
         alert("Failed to delete admin.");
     }
 }
+
+// ==========================================
+// 📧 NEWSLETTER SENDER LOGIC
+// ==========================================
+async function handleSendNewsletter(e) {
+    e.preventDefault();
+
+    const subject = document.getElementById('newsletterSubject').value;
+    const message = document.getElementById('newsletterMessage').value;
+    const btn = document.getElementById('sendNewsletterBtn');
+
+    if (!confirm("⚠️ Are you sure you want to send this email to ALL registered users?")) {
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending Mails...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/admin/send-newsletter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject, message })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            alert("✅ " + data.message);
+            document.getElementById('newsletterSubject').value = '';
+            document.getElementById('newsletterMessage').value = '';
+        } else {
+            alert("❌ Error: " + data.message);
+        }
+    } catch (error) {
+        console.error("Newsletter Error:", error);
+        alert("Failed to send newsletter.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}

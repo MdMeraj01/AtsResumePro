@@ -2627,6 +2627,85 @@ def add_new_admin():
         conn.close()
 
 # ==========================================
+# 📧 ADMIN NEWSLETTER BLAST API (Render Safe)
+# ==========================================
+@app.route('/api/admin/send-newsletter', methods=['POST'])
+def send_newsletter():
+    if 'admin_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.json
+    subject = data.get('subject')
+    message_body = data.get('message')
+
+    if not subject or not message_body:
+        return jsonify({'success': False, 'message': 'Subject and message are required'}), 400
+
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+    if not BREVO_API_KEY:
+        return jsonify({'success': False, 'message': 'BREVO_API_KEY missing in .env file!'}), 500
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # 1. Fetch all registered users' emails
+        cursor.execute("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email != ''")
+        users = cursor.fetchall()
+        conn.close()
+
+        if not users:
+            return jsonify({'success': False, 'message': 'No users found in database!'}), 404
+
+        # Brevo API format: list of recipients
+        to_recipients = [{"email": u['email'], "name": u['full_name']} for u in users]
+
+        # Formatting HTML Email Body
+        formatted_html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #4f46e5; margin: 0;">ATS Resume Builder Pro</h2>
+            </div>
+            <div style="color: #374151; font-size: 16px; line-height: 1.6;">
+                {message_body.replace('\n', '<br>')}
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
+            <div style="text-align: center; color: #9ca3af; font-size: 12px;">
+                You received this email because you are a registered user of ATS Resume Pro.<br>
+                © {datetime.now().year} ATS Resume Pro. All rights reserved.
+            </div>
+        </div>
+        """
+
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json"
+        }
+
+        payload = {
+            "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
+            "to": to_recipients,
+            "subject": subject,
+            "htmlContent": formatted_html
+        }
+
+        # Send API Request
+        response = requests.post(url, json=payload, headers=headers, timeout=20)
+
+        if response.status_code in [200, 201, 202]:
+            return jsonify({'success': True, 'message': f'Newsletter sent successfully to {len(users)} users!'})
+        else:
+            print(f"🔥 Brevo Blast Error: {response.text}")
+            return jsonify({'success': False, 'message': f'API Error: {response.text}'}), 500
+
+    except Exception as e:
+        print(f"🔥 Newsletter Exception: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
+# ==========================================
 # 🛑 ADMIN MANAGEMENT APIs (Fix)
 # ==========================================
 
