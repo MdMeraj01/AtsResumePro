@@ -251,13 +251,13 @@
                     <span>Or continue with</span>
                 </div>
                 
-                <div class="social-buttons">
-                    <a href="{{ url_for('login_google') }}" class="social-btn google-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
-                        <i class="fab fa-google"></i>
+                 <div class="social-buttons">
+                    <button onclick="handleSocialRedirect('google')" class="social-btn google-btn" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    <i class="fab fa-google"></i>
                         <span>Google</span>
-                    </a>
+                    </button>
 
-                    <button class="social-btn github-btn" onclick="window.location.href='{{ url_for('login_github') }}'">
+                    <button class="social-btn github-btn" onclick="handleSocialRedirect('github')">
                         <i class="fab fa-github"></i>
                         <span>GitHub</span>
                     </button>

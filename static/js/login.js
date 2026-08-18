@@ -3,38 +3,35 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Resume Builder Pro - Login Page Initialized');
     
+    // 1. URL Parameters Check & Referral Code Capture
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
+    const tabParam = urlParams.get('tab');
+
     if (refCode) {
         sessionStorage.setItem('referral_code', refCode);
         console.log('🎁 Referral code stored:', refCode);
-        switchTab('signup'); // Direct signup tab open karo
     }
 
-    // 🟢 NEW: Check if user is locked out (Brute Force Protection)
+    // 2. Direct Signup Tab Switch (Agar ref code mila ya tab=signup hai)
+    if (tabParam === 'signup' || refCode) {
+        setTimeout(() => {
+            switchTab('signup');
+        }, 150);
+    }
+
+    // 3. Brute Force Protection (Failed Attempts Check)
     const failedAttempts = parseInt(localStorage.getItem('failed_login_attempts') || '0');
     if (failedAttempts >= 3) {
-        if(typeof lockFormAndForceReset === 'function') {
+        if (typeof lockFormAndForceReset === 'function') {
             lockFormAndForceReset();
         }
     }
     
-    // Check URL params for tab
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tab') === 'signup') {
-        switchTab('signup');
-    }
-    
-    // Initialize animations
+    // 4. Initialize Animations & Helper Modules
     initAnimations();
-    
-    // Set up password strength indicator
     setupPasswordStrength();
-    
-    // Load saved credentials if any
     loadSavedCredentials();
-    
-    // Initialize floating labels
     initFloatingLabels();
 });
 
@@ -345,6 +342,11 @@ function handleSocialLogin(provider) {
     const currentBtn = document.querySelector(`.${provider}-btn`);
     currentBtn.classList.add('loading');
     
+    const refCode = sessionStorage.getItem('referral_code') || '';
+    const targetUrl = provider === 'google' 
+        ? `/login/google?ref=${refCode}` 
+        : `/login/github?ref=${refCode}`;
+    window.location.href = targetUrl;
     // Simulate social login process
     setTimeout(() => {
         buttons.forEach(btn => btn.disabled = false);
@@ -485,20 +487,6 @@ function safeElement(id) {
     return element;
 }
 
-// Add CSS for floating labels if not already present
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Login Page Loaded');
-    
-    // Check URL params for tab switching
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tab') === 'signup') {
-        switchTab('signup');
-    }
-    
-    // Setup Helpers
-    initAnimations();
-    setupPasswordStrength();
-});
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
