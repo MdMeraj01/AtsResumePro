@@ -42,6 +42,10 @@ function switchTab(tab) {
     const signupBtn = document.getElementById('tab-signup');
     const switchText = document.getElementById('switch-text');
     
+    // Existing ref code check karo
+    const currentRef = sessionStorage.getItem('referral_code') || new URLSearchParams(window.location.search).get('ref');
+    const refQuery = currentRef ? `&ref=${encodeURIComponent(currentRef)}` : '';
+
     loginForm.classList.add('fade-out');
     signupForm.classList.add('fade-out');
     
@@ -55,7 +59,9 @@ function switchTab(tab) {
             signupBtn.classList.remove('active');
             
             switchText.innerHTML = `Don't have an account? <a href="#" onclick="switchTab('signup')">Sign Up</a>`;
-            history.pushState(null, null, '?tab=login');
+            
+            // 🟢 FIX: Referral code URL me preserve rahega
+            history.pushState(null, null, `?tab=login${refQuery}`);
 
             // Reset Signup Form If Switched
             signupStep = 1;
@@ -72,7 +78,9 @@ function switchTab(tab) {
             loginBtn.classList.remove('active');
             
             switchText.innerHTML = `Already have an account? <a href="#" onclick="switchTab('login')">Log In</a>`;
-            history.pushState(null, null, '?tab=signup');
+            
+            // 🟢 FIX: Referral code URL me preserve rahega
+            history.pushState(null, null, `?tab=signup${refQuery}`);
         }
         setTimeout(() => {
             loginForm.classList.remove('fade-in');
@@ -80,6 +88,7 @@ function switchTab(tab) {
         }, 500);
     }, 300);
 }
+
 // Toggle Password Visibility
 function togglePassword(inputId) {
     const input = document.getElementById(inputId);
