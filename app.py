@@ -364,7 +364,7 @@ def inject_user():
     return dict(current_user=user)
 
 # ==========================================
-# 📊 USER DASHBOARD ROUTE (Fixed Count)
+# 📊 USER DASHBOARD ROUTE (Fixed & Crash-Proof)
 # ==========================================
 @app.route('/dashboard')
 def user_dashboard():
@@ -372,7 +372,6 @@ def user_dashboard():
         return redirect(url_for('login_page'))
     
     conn = get_db_connection()
-    # Try to use Dictionary Cursor automatically
     try:
         import pymysql
         cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -392,6 +391,7 @@ def user_dashboard():
             FROM users WHERE id = %s
         """, (session['user_id'],))
         user_data = cursor.fetchone()
+
         if user_data:
             ref_code = user_data.get('referral_code') if isinstance(user_data, dict) else None
             if not ref_code:
@@ -423,7 +423,6 @@ def user_dashboard():
         # 4. Stats Update
         stats = []
         for s in db_stats:
-            # Handle both dict and tuple safely
             act_type = s['activity_type'] if isinstance(s, dict) else s[0]
             act_count = s['count'] if isinstance(s, dict) else s[1]
             if act_type != 'created':
@@ -434,33 +433,29 @@ def user_dashboard():
         raw_limit = user_data['resume_limit'] if isinstance(user_data, dict) else user_data[10] 
         raw_plan = user_data['plan_type'] if isinstance(user_data, dict) else user_data[11]
         
-        # 1. Clean Plan Name (Agar DB me khali ya chote aksharon me hai to use 'Free' kar do)
         if not raw_plan or str(raw_plan).strip() == '' or str(raw_plan).lower() == 'none':
             plan_type = 'Free'
         else:
-            plan_type = str(raw_plan).strip().capitalize() # e.g., 'free' ban jayega 'Free'
+            plan_type = str(raw_plan).strip().capitalize()
 
-        # 2. Clean Resume Limit (Agar None hai to 3 kar do)
         if raw_limit is None or str(raw_limit).strip() == '':
             resume_limit = 3
         else:
             resume_limit = int(raw_limit)
 
-        # 3. Calculate Percentage correctly
         limit_percent = 0
         if plan_type == 'Free':
             limit_percent = (resume_limit / 3) * 100
         else:
             limit_percent = 100 
             
-        # Frontend par bhejne ke liye user_data ko update kar do
         if isinstance(user_data, dict):
             user_data['plan_type'] = plan_type
             user_data['resume_limit'] = resume_limit
 
-       # 5. 🟢 NEW: Fetch Purchased Premium Templates (Crash-Proof)
+        # 5. Fetch Purchased Premium Templates
+        purchased_templates = []
         try:
-            # Puraani query jisme access_type hai
             cursor.execute("""
                 SELECT template_name, access_type, DATE(purchase_date) as purchase_date 
                 FROM user_purchases 
@@ -469,14 +464,28 @@ def user_dashboard():
             """, (session['user_id'],))
             purchased_templates = cursor.fetchall()
         except:
-            # Agar column missing hai, toh default 'single' maan lega aur crash nahi hoga
-            cursor.execute("""
-                SELECT template_name, 'single' as access_type, DATE(purchase_date) as purchase_date 
-                FROM user_purchases 
-                WHERE user_id = %s 
-                ORDER BY purchase_date DESC
-            """, (session['user_id'],))
-            purchased_templates = cursor.fetchall()
+            try:
+                cursor.execute("""
+                    SELECT template_name, 'single' as access_type, DATE(purchase_date) as purchase_date 
+                    FROM user_purchases 
+                    WHERE user_id = %s 
+                    ORDER BY purchase_date DESC
+                """, (session['user_id'],))
+                purchased_templates = cursor.fetchall()
+            except Exception as pe:
+                print(f"Purchases fetch error: {pe}")
+                purchased_templates = []
+
+        # 6. 🟢 FETCH REFERRAL COUNT (Safe & Crash-Proof)
+        referral_count = 0
+        try:
+            cursor.execute("SELECT COUNT(*) as total_ref FROM referrals WHERE referrer_id = %s", (session['user_id'],))
+            ref_data = cursor.fetchone()
+            if ref_data:
+                referral_count = ref_data['total_ref'] if isinstance(ref_data, dict) else ref_data[0]
+        except Exception as ref_err:
+            print(f"⚠️ Referral fetch warning: {ref_err}")
+            referral_count = 0
 
         return render_template('dashboard.html', 
                                user=user_data, 
@@ -485,14 +494,13 @@ def user_dashboard():
                                resume_limit=resume_limit, 
                                plan_type=plan_type,
                                limit_percent=limit_percent,
-                               purchased_templates=purchased_templates)
+                               purchased_templates=purchased_templates,
+                               referral_count=referral_count)
         
     except Exception as e:
-        # 🔴 MAIN FIX: Agar error aaya to home page jane ke bajaye screen par bada-bada error dikhega
         return f"<div style='padding:50px; font-family:sans-serif;'><h1>🚨 Dashboard me Error Aa Gaya!</h1><h2 style='color:red;'>{str(e)}</h2><p style='font-size:18px;'>Bhai, is lal rang ke error ko copy karke mujhe bhejo, abhi 1 minute me fix karta hu!</p></div>"
     finally:
-        conn.close()     
-            
+        conn.close()            
 # ==========================================
 # UPDATE PROFILE ROUTE
 # ==========================================
@@ -638,9 +646,14 @@ def pricing():
     return render_template('pricing.html')
 
 # --- GOOGLE LOGIN ROUTES ---
+# --- GOOGLE LOGIN ROUTES ---
 @app.route('/login/google')
 def login_google():
-    # Google ke login page par bhejo
+    # URL parameter se referral code pakdo aur session me save karo
+    ref_code = request.args.get('ref')
+    if ref_code:
+        session['pending_ref_code'] = ref_code.strip()
+        
     redirect_uri = url_for('google_auth', _external=True)
     return google.authorize_redirect(redirect_uri)
 
@@ -660,28 +673,57 @@ def google_auth():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Check karo user hai ya nahi
+        # Check karo user pehle se hai ya naya hai
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
 
         if user:
-            # USER EXISTS -> Login
+            # USER PEHLE SE HAI -> Login karo
             session['user_id'] = user['id']
             session['user_name'] = user['full_name']
             conn.close()
-            return redirect(url_for('index')) # Ya dashboard
+            return redirect(url_for('index'))
         else:
-            # NEW USER -> Signup
+            # 🎁 NAYA USER -> Referral Code & Tracking Logic
+            user_ref_code = secrets.token_hex(4).upper()
+            pending_ref = session.get('pending_ref_code')
+            referrer_id = None
+
+            if pending_ref:
+                cursor.execute("SELECT id FROM users WHERE referral_code = %s", (pending_ref,))
+                ref_user = cursor.fetchone()
+                if ref_user:
+                    referrer_id = ref_user['id'] if isinstance(ref_user, dict) else ref_user[0]
+
             random_password = secrets.token_urlsafe(16)
             hashed_password = bcrypt.generate_password_hash(random_password).decode('utf-8')
 
             cursor.execute(
-                "INSERT INTO users (full_name, email, password_hash, profile_pic) VALUES (%s, %s, %s, %s)",
-                (name, email, hashed_password, picture)
+                """INSERT INTO users (full_name, email, password_hash, profile_pic, plan_type, resume_limit, ai_credits, referral_code, referred_by) 
+                   VALUES (%s, %s, %s, %s, 'Free', 3, 5, %s, %s)""",
+                (name, email, hashed_password, picture, user_ref_code, referrer_id)
             )
             conn.commit()
-            
             new_user_id = cursor.lastrowid
+
+            # 🏆 3-Referral Count & Reward Check
+            if referrer_id:
+                try:
+                    cursor.execute("INSERT INTO referrals (referrer_id, referee_id) VALUES (%s, %s)", (referrer_id, new_user_id))
+                    cursor.execute("SELECT COUNT(*) as total FROM referrals WHERE referrer_id = %s", (referrer_id,))
+                    ref_res = cursor.fetchone()
+                    total_referrals = ref_res['total'] if isinstance(ref_res, dict) else ref_res[0]
+
+                    if total_referrals == 3:
+                        cursor.execute("""
+                            INSERT IGNORE INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
+                            VALUES (%s, 'luxury', 0, 'single', NOW())
+                        """, (referrer_id,))
+                    conn.commit()
+                except Exception as ref_err:
+                    print(f"⚠️ Google Referral Reward Error: {ref_err}")
+
+            session.pop('pending_ref_code', None)
             session['user_id'] = new_user_id
             session['user_name'] = name
             conn.close()
@@ -691,6 +733,7 @@ def google_auth():
         print(f"OAuth Error: {e}")
         return f"Login Failed: {e}", 500
     
+        
 # ==========================================
 # 🐙 GITHUB LOGIN CONFIGURATION
 # ==========================================
@@ -711,69 +754,81 @@ oauth.register(
 # 2. Login Route
 @app.route('/login/github')
 def login_github():
-    # Callback URL generate karo
+    ref_code = request.args.get('ref')
+    if ref_code:
+        session['pending_ref_code'] = ref_code.strip()
     redirect_uri = url_for('callback_github', _external=True)
     return oauth.github.authorize_redirect(redirect_uri)
 
-# 3. Callback Route (Jahan GitHub wapas bhejega)
+# 3. Callback Route
 @app.route('/callback/github')
 def callback_github():
     try:
-        # Token access karo
         token = oauth.github.authorize_access_token()
-        
-        # User ki basic info lo
         resp = oauth.github.get('user', token=token)
         user_info = resp.json()
         
-        # GitHub Special: Agar email private hai to 'user/emails' API se nikalo
         email = user_info.get('email')
-        
         if not email:
             resp_emails = oauth.github.get('user/emails', token=token)
-            emails_list = resp_emails.json()
-            # Primary aur Verified email dhundo
-            for e in emails_list:
+            for e in resp_emails.json():
                 if e['primary'] and e['verified']:
                     email = e['email']
                     break
         
-        # Agar abhi bhi email nahi mila to error do
         if not email:
             return redirect(url_for('login_page', error="GitHub Account Email is Private or Not Verified"))
 
-        # Name aur ID nikalo
         name = user_info.get('name') or user_info.get('login')
-        github_id = str(user_info.get('id'))
         
-        # --- DATABASE LOGIC (Register/Login) ---
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Check karo user pehle se hai kya?
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         existing_user = cursor.fetchone()
 
         if existing_user:
-            # LOGIN USER
             session['user_id'] = existing_user['id']
             session['user_name'] = existing_user['full_name']
             session['user_email'] = existing_user['email']
             session['logged_in'] = True
-            
-            # Provider update kar sakte ho (Optional)
-            cursor.execute("UPDATE users SET auth_provider = 'github' WHERE id = %s", (existing_user['id'],))
-            conn.commit()
-            
         else:
-            # REGISTER NEW USER
+            # 🎁 NAYA USER GITHUB SE -> Referral Code & Reward Check
+            user_ref_code = secrets.token_hex(4).upper()
+            pending_ref = session.get('pending_ref_code')
+            referrer_id = None
+
+            if pending_ref:
+                cursor.execute("SELECT id FROM users WHERE referral_code = %s", (pending_ref,))
+                ref_user = cursor.fetchone()
+                if ref_user:
+                    referrer_id = ref_user['id'] if isinstance(ref_user, dict) else ref_user[0]
+
             cursor.execute("""
-                INSERT INTO users (full_name, email, password, auth_provider, created_at)
-                VALUES (%s, %s, '', 'github', NOW())
-            """, (name, email))
+                INSERT INTO users (full_name, email, password_hash, auth_provider, plan_type, resume_limit, ai_credits, referral_code, referred_by, created_at)
+                VALUES (%s, %s, '', 'github', 'Free', 3, 5, %s, %s, NOW())
+            """, (name, email, user_ref_code, referrer_id))
             conn.commit()
             
             user_id = cursor.lastrowid
+            
+            if referrer_id:
+                try:
+                    cursor.execute("INSERT INTO referrals (referrer_id, referee_id) VALUES (%s, %s)", (referrer_id, user_id))
+                    cursor.execute("SELECT COUNT(*) as total FROM referrals WHERE referrer_id = %s", (referrer_id,))
+                    ref_res = cursor.fetchone()
+                    total_referrals = ref_res['total'] if isinstance(ref_res, dict) else ref_res[0]
+
+                    if total_referrals == 3:
+                        cursor.execute("""
+                            INSERT IGNORE INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
+                            VALUES (%s, 'luxury', 0, 'single', NOW())
+                        """, (referrer_id,))
+                    conn.commit()
+                except Exception as ref_err:
+                    print(f"⚠️ GitHub Referral Reward Error: {ref_err}")
+
+            session.pop('pending_ref_code', None)
             session['user_id'] = user_id
             session['user_name'] = name
             session['user_email'] = email
@@ -784,8 +839,8 @@ def callback_github():
 
     except Exception as e:
         print(f"GitHub Error: {e}")
-        return redirect(url_for('login_page', error="GitHub Login Failed"))    
-    
+        return redirect(url_for('login_page', error="GitHub Login Failed"))
+        
 # ==========================================
 # AUTHENTICATION ROUTES (LOGIC VERIFIED)
 # ==========================================
