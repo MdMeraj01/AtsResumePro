@@ -24,6 +24,7 @@ from email.mime.multipart import MIMEMultipart
 import hashlib
 import base64
 import json
+import string
 
 
 pymysql.install_as_MySQLdb()
@@ -34,6 +35,15 @@ load_dotenv()
 app = Flask(__name__)
 
 # app.py
+
+def generate_unique_referral_code():
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.choices(chars, k=7))
+
+def is_pro_reward_active(user_data):
+    if user_data.get('pro_reward_until'):
+        return datetime.now() <= user_data['pro_reward_until']
+    return False
 
 def get_db_connection():
     # .env se variables load karo
@@ -382,7 +392,15 @@ def user_dashboard():
             FROM users WHERE id = %s
         """, (session['user_id'],))
         user_data = cursor.fetchone()
-        
+        if user_data:
+            ref_code = user_data.get('referral_code') if isinstance(user_data, dict) else None
+            if not ref_code:
+                new_code = secrets.token_hex(4).upper()
+                cursor.execute("UPDATE users SET referral_code = %s WHERE id = %s", (new_code, session['user_id']))
+                conn.commit()
+                if isinstance(user_data, dict):
+                    user_data['referral_code'] = new_code
+                    
         # 2. My Resumes Fetch
         cursor.execute("""
             SELECT * FROM saved_resumes 
@@ -868,7 +886,7 @@ def send_signup_otp():
         return jsonify({'success': False, 'message': 'Failed to send OTP. Try again.'}), 500
 
 # ==========================================
-# 🟢 ROUTE 2: VERIFY OTP & CREATE ACCOUNT
+# 🟢 ROUTE 2: VERIFY OTP & CREATE ACCOUNT (With Referral System)
 # ==========================================
 @app.route('/api/user/signup', methods=['POST'])
 def signup():
@@ -877,7 +895,8 @@ def signup():
         full_name = data.get('full_name')
         email = data.get('email')
         password = data.get('password')
-        user_otp = data.get('otp') # 👈 User ne jo OTP dala
+        user_otp = data.get('otp')
+        ref_code = data.get('ref_code') or session.get('pending_ref_code') # 👈 Frontend ya session se aaya hua referral code
 
         if not all([full_name, email, password, user_otp]):
             return jsonify({'success': False, 'message': 'All fields and OTP are required'}), 400
@@ -889,28 +908,62 @@ def signup():
         if not saved_otp or saved_otp != user_otp or saved_email != email:
             return jsonify({'success': False, 'message': 'Invalid or Expired OTP!'}), 400
 
-        # 2. OTP Sahi hai -> Ab Database me entry karo
+        # 2. OTP Sahi hai -> Database Connection
         conn = get_db_connection()
         cursor = conn.cursor()
 
         # Hash password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-        # Insert user (Ab hum explicitly 'Free', 3 limit aur 5 AI credits de rahe hain)
+        # 3. 🎁 Naye User ke liye Unique Referral Code generate karo
+        user_referral_code = secrets.token_hex(4).upper() # e.g. "A7F3B92D"
+
+        # 4. Check karo ki Referrer exist karta hai ya nahi
+        referrer_id = None
+        if ref_code:
+            cursor.execute("SELECT id FROM users WHERE referral_code = %s", (str(ref_code).strip(),))
+            ref_user = cursor.fetchone()
+            if ref_user:
+                referrer_id = ref_user['id'] if isinstance(ref_user, dict) else ref_user[0]
+
+        # 5. Insert New User
         cursor.execute(
-            """INSERT INTO users (full_name, email, password_hash, plan_type, resume_limit, ai_credits) 
-               VALUES (%s, %s, %s, 'Free', 3, 5)""",
-            (full_name, email, hashed_password)
+            """INSERT INTO users (full_name, email, password_hash, plan_type, resume_limit, ai_credits, referral_code, referred_by) 
+               VALUES (%s, %s, %s, 'Free', 3, 5, %s, %s)""",
+            (full_name, email, hashed_password, user_referral_code, referrer_id)
         )
         conn.commit()
-
         user_id = cursor.lastrowid
+
+        # 6. 🏆 REFERRAL TRACKING & 3-FRIEND REWARD CHECK
+        if referrer_id:
+            try:
+                # Referrals table me log entry
+                cursor.execute("INSERT INTO referrals (referrer_id, referee_id) VALUES (%s, %s)", (referrer_id, user_id))
+                
+                # Check karo referrer ke total kitne friends ho gaye
+                cursor.execute("SELECT COUNT(*) as total FROM referrals WHERE referrer_id = %s", (referrer_id,))
+                ref_res = cursor.fetchone()
+                total_referrals = ref_res['total'] if isinstance(ref_res, dict) else ref_res[0]
+
+                # Agar exactly 3 friends complete ho gaye -> 1 Premium Template Free Unlock
+                if total_referrals == 3:
+                    cursor.execute("""
+                        INSERT IGNORE INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
+                        VALUES (%s, 'luxury', 0, 'single', NOW())
+                    """, (referrer_id,))
+                    
+                conn.commit()
+            except Exception as ref_err:
+                print(f"⚠️ Referral reward error: {ref_err}")
+
         cursor.close()
         conn.close()
 
-        # Session se OTP hata do (Security)
+        # Session cleanup
         session.pop('signup_otp', None)
         session.pop('signup_email', None)
+        session.pop('pending_ref_code', None)
 
         # Auto login
         session['user_id'] = user_id
@@ -3226,10 +3279,10 @@ def create_razorpay_order():
         print(f"Razorpay Order Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-
 @app.route('/api/verify-razorpay-payment', methods=['POST'])
 def verify_razorpay_payment():
-    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    if 'user_id' not in session: 
+        return jsonify({'error': 'Unauthorized'}), 401
     
     try:
         data = request.json
@@ -3251,6 +3304,7 @@ def verify_razorpay_payment():
         if plan_name == 'Basic': credits = 10
         elif plan_name == 'Standard': credits = 100
         elif plan_name == 'Premium': credits = 9999
+        elif plan_name == 'Lifetime': credits = 99999
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -3266,7 +3320,45 @@ def verify_razorpay_payment():
             INSERT INTO transactions (user_id, plan_name, amount, transaction_id, payment_method, status)
             VALUES (%s, %s, %s, %s, 'Razorpay', 'Success')
         """, (user_id, plan_name, float(data['amount'])/100, data['razorpay_payment_id']))
-        
+
+        # ========================================================
+        # 🎁 3. REFERRAL REWARD LOGIC: 15 Days Pro Reward to Referrer
+        # ========================================================
+        try:
+            cursor.execute("SELECT referred_by FROM users WHERE id = %s", (user_id,))
+            u = cursor.fetchone()
+            
+            referrer_id = u['referred_by'] if isinstance(u, dict) else (u[0] if u else None)
+            
+            if referrer_id:
+                # A. Mark referral as purchased
+                cursor.execute("""
+                    UPDATE referrals 
+                    SET has_purchased = 1 
+                    WHERE referrer_id = %s AND referee_id = %s
+                """, (referrer_id, user_id))
+                
+                # B. Referrer ko 15 Days Booster + Credits + Resume Limit
+                cursor.execute("""
+                    UPDATE users 
+                    SET pro_reward_until = DATE_ADD(NOW(), INTERVAL 15 DAY),
+                        ai_credits = COALESCE(ai_credits, 0) + 50,
+                        resume_limit = 9999
+                    WHERE id = %s
+                """, (referrer_id,))
+                
+                # C. Referrer ko 3 Popular Premium Templates Free Unlock kar do
+                bonus_templates = ['luxury', 'creative', 'timeline']
+                for tpl in bonus_templates:
+                    cursor.execute("""
+                        INSERT IGNORE INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
+                        VALUES (%s, %s, 0, 'single', NOW())
+                    """, (referrer_id, tpl))
+                    
+                print(f"🎉 Referral Reward Activated: 15-day boost & 3 templates granted to user ID {referrer_id}")
+        except Exception as ref_reward_err:
+            print(f"⚠️ Referral bonus error: {ref_reward_err}")
+
         conn.commit()
         conn.close()
         
@@ -3278,6 +3370,7 @@ def verify_razorpay_payment():
     except Exception as e:
         print(f"Verification Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
+    
     
 # ==========================================
 # 🔍 SEO ROUTES (Dynamic Sitemap for Render)

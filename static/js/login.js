@@ -3,6 +3,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Resume Builder Pro - Login Page Initialized');
     
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+        sessionStorage.setItem('referral_code', refCode);
+        console.log('🎁 Referral code stored:', refCode);
+        switchTab('signup'); // Direct signup tab open karo
+    }
+
     // 🟢 NEW: Check if user is locked out (Brute Force Protection)
     const failedAttempts = parseInt(localStorage.getItem('failed_login_attempts') || '0');
     if (failedAttempts >= 3) {
@@ -297,13 +305,17 @@ async function handleSignup(e) {
                     full_name: name,
                     email: email,
                     password: password,
-                    otp: otp // Backend ko OTP bhejo check karne ke liye
+                    otp: otp,
+                    ref_code: sessionStorage.getItem('referral_code') || '' // ✅ Referral code captured
                 })
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
+                // 🧹 Storage se referral code clean karo
+                sessionStorage.removeItem('referral_code');
+
                 showToast('Account Created!', 'Registration successful. Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = data.redirect_url || '/';
