@@ -332,27 +332,38 @@ async function handleSignup(e) {
 }
 
 // Social Login Handler
-function handleSocialLogin(provider) {
-    showToast(`Signing in with ${provider}`, 'Redirecting to authentication...', 'info');
+// ==========================================
+// 🌐 SOCIAL LOGIN / OAUTH REDIRECT HANDLER
+// ==========================================
+function handleSocialRedirect(provider) {
+    showToast(`Connecting to ${provider.toUpperCase()}...`, 'Redirecting to secure login...', 'info');
     
-    // Add provider-specific styling
+    // 1. Buttons ko disable karo aur clicked button par loading state lagao
     const buttons = document.querySelectorAll('.social-btn');
     buttons.forEach(btn => btn.disabled = true);
     
     const currentBtn = document.querySelector(`.${provider}-btn`);
-    currentBtn.classList.add('loading');
+    if (currentBtn) {
+        currentBtn.classList.add('loading');
+    }
     
+    // 2. Storage se referral code fetch karo
     const refCode = sessionStorage.getItem('referral_code') || '';
+    
+    // 3. Provider ke hisaab se endpoint create karo
     const targetUrl = provider === 'google' 
-        ? `/login/google?ref=${refCode}` 
-        : `/login/github?ref=${refCode}`;
-    window.location.href = targetUrl;
-    // Simulate social login process
+        ? `/login/google?ref=${encodeURIComponent(refCode)}` 
+        : `/login/github?ref=${encodeURIComponent(refCode)}`;
+    
+    // 4. Smooth user redirect
     setTimeout(() => {
-        buttons.forEach(btn => btn.disabled = false);
-        currentBtn.classList.remove('loading');
-        showToast('Authentication Successful', `Logged in with ${provider}`, 'success');
-    }, 1500);
+        window.location.href = targetUrl;
+    }, 400);
+}
+
+// Backup compatibility alias
+function handleSocialLogin(provider) {
+    handleSocialRedirect(provider);
 }
 
 // Demo Account Filler
