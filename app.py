@@ -646,7 +646,6 @@ def pricing():
     return render_template('pricing.html')
 
 # --- GOOGLE LOGIN ROUTES ---
-# --- GOOGLE LOGIN ROUTES ---
 @app.route('/login/google')
 def login_google():
     # URL parameter se referral code pakdo aur session me save karo
@@ -657,6 +656,9 @@ def login_google():
     redirect_uri = url_for('google_auth', _external=True)
     return google.authorize_redirect(redirect_uri)
 
+# ==========================================
+# 🌐 GOOGLE AUTH CALLBACK ROUTE
+# ==========================================
 @app.route('/auth/google/callback')
 def google_auth():
     try:
@@ -667,24 +669,25 @@ def google_auth():
             return "Failed to fetch user info from Google", 400
             
         email = user_info['email']
-        name = user_info['name']
+        name = user_info.get('name', 'Google User')
         picture = user_info.get('picture', '')
 
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Check karo user pehle se hai ya naya hai
+        # Check existing user
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
 
         if user:
-            # USER PEHLE SE HAI -> Login karo
+            # 🟢 EXISTING USER LOGIN
             session['user_id'] = user['id']
             session['user_name'] = user['full_name']
+            session['logged_in'] = True
             conn.close()
             return redirect(url_for('index'))
         else:
-            # 🎁 NAYA USER -> Referral Code & Tracking Logic
+            # 🎁 NEW USER SIGNUP VIA GOOGLE
             user_ref_code = secrets.token_hex(4).upper()
             pending_ref = session.get('pending_ref_code')
             referrer_id = None
@@ -699,14 +702,20 @@ def google_auth():
             hashed_password = bcrypt.generate_password_hash(random_password).decode('utf-8')
 
             cursor.execute(
-                """INSERT INTO users (full_name, email, password_hash, profile_pic, plan_type, resume_limit, ai_credits, referral_code, referred_by) 
-                   VALUES (%s, %s, %s, %s, 'Free', 3, 5, %s, %s)""",
+                """INSERT INTO users (full_name, email, password_hash, profile_pic, auth_provider, plan_type, resume_limit, ai_credits, referral_code, referred_by, created_at) 
+                   VALUES (%s, %s, %s, %s, 'google', 'Free', 3, 5, %s, %s, NOW())""",
                 (name, email, hashed_password, picture, user_ref_code, referrer_id)
             )
             conn.commit()
             new_user_id = cursor.lastrowid
 
-            # 🏆 3-Referral Count & Reward Check
+            # 📧 SEND WELCOME EMAIL
+            try:
+                send_welcome_email(name, email)
+            except Exception as wel_err:
+                print(f"Google Welcome email warning: {wel_err}")
+
+            # 🏆 3-REFERRAL CHECK & REWARD
             if referrer_id:
                 try:
                     cursor.execute("INSERT INTO referrals (referrer_id, referee_id) VALUES (%s, %s)", (referrer_id, new_user_id))
@@ -726,13 +735,14 @@ def google_auth():
             session.pop('pending_ref_code', None)
             session['user_id'] = new_user_id
             session['user_name'] = name
+            session['logged_in'] = True
+            
             conn.close()
             return redirect(url_for('user_dashboard'))
 
     except Exception as e:
         print(f"OAuth Error: {e}")
-        return f"Login Failed: {e}", 500
-    
+        return f"Login Failed: {e}", 500    
         
 # ==========================================
 # 🐙 GITHUB LOGIN CONFIGURATION
@@ -761,6 +771,9 @@ def login_github():
     return oauth.github.authorize_redirect(redirect_uri)
 
 # 3. Callback Route
+# ==========================================
+# 🐙 GITHUB AUTH CALLBACK ROUTE
+# ==========================================
 @app.route('/callback/github')
 def callback_github():
     try:
@@ -772,14 +785,15 @@ def callback_github():
         if not email:
             resp_emails = oauth.github.get('user/emails', token=token)
             for e in resp_emails.json():
-                if e['primary'] and e['verified']:
+                if e.get('primary') and e.get('verified'):
                     email = e['email']
                     break
         
         if not email:
             return redirect(url_for('login_page', error="GitHub Account Email is Private or Not Verified"))
 
-        name = user_info.get('name') or user_info.get('login')
+        name = user_info.get('name') or user_info.get('login') or 'GitHub User'
+        picture = user_info.get('avatar_url', '')
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -788,12 +802,15 @@ def callback_github():
         existing_user = cursor.fetchone()
 
         if existing_user:
+            # 🟢 EXISTING USER LOGIN
             session['user_id'] = existing_user['id']
             session['user_name'] = existing_user['full_name']
             session['user_email'] = existing_user['email']
             session['logged_in'] = True
+            conn.close()
+            return redirect(url_for('index'))
         else:
-            # 🎁 NAYA USER GITHUB SE -> Referral Code & Reward Check
+            # 🎁 NEW USER SIGNUP VIA GITHUB
             user_ref_code = secrets.token_hex(4).upper()
             pending_ref = session.get('pending_ref_code')
             referrer_id = None
@@ -805,13 +822,20 @@ def callback_github():
                     referrer_id = ref_user['id'] if isinstance(ref_user, dict) else ref_user[0]
 
             cursor.execute("""
-                INSERT INTO users (full_name, email, password_hash, auth_provider, plan_type, resume_limit, ai_credits, referral_code, referred_by, created_at)
-                VALUES (%s, %s, '', 'github', 'Free', 3, 5, %s, %s, NOW())
-            """, (name, email, user_ref_code, referrer_id))
+                INSERT INTO users (full_name, email, password_hash, profile_pic, auth_provider, plan_type, resume_limit, ai_credits, referral_code, referred_by, created_at)
+                VALUES (%s, %s, '', %s, 'github', 'Free', 3, 5, %s, %s, NOW())
+            """, (name, email, picture, user_ref_code, referrer_id))
             conn.commit()
             
             user_id = cursor.lastrowid
             
+            # 📧 SEND WELCOME EMAIL
+            try:
+                send_welcome_email(name, email)
+            except Exception as wel_err:
+                print(f"GitHub Welcome email warning: {wel_err}")
+
+            # 🏆 3-REFERRAL CHECK & REWARD
             if referrer_id:
                 try:
                     cursor.execute("INSERT INTO referrals (referrer_id, referee_id) VALUES (%s, %s)", (referrer_id, user_id))
@@ -833,9 +857,9 @@ def callback_github():
             session['user_name'] = name
             session['user_email'] = email
             session['logged_in'] = True
-        
-        conn.close()
-        return redirect(url_for('user_dashboard'))
+            
+            conn.close()
+            return redirect(url_for('user_dashboard'))
 
     except Exception as e:
         print(f"GitHub Error: {e}")
@@ -940,8 +964,9 @@ def send_signup_otp():
     else:
         return jsonify({'success': False, 'message': 'Failed to send OTP. Try again.'}), 500
 
+
 # ==========================================
-# 🟢 ROUTE 2: VERIFY OTP & CREATE ACCOUNT (With Referral System)
+# 🟢 ROUTE: VERIFY OTP & CREATE ACCOUNT (Clean & Single Insert)
 # ==========================================
 @app.route('/api/user/signup', methods=['POST'])
 def signup():
@@ -951,7 +976,7 @@ def signup():
         email = data.get('email')
         password = data.get('password')
         user_otp = data.get('otp')
-        ref_code = data.get('ref_code') or session.get('pending_ref_code') # 👈 Frontend ya session se aaya hua referral code
+        ref_code = data.get('ref_code') or session.get('pending_ref_code')
 
         if not all([full_name, email, password, user_otp]):
             return jsonify({'success': False, 'message': 'All fields and OTP are required'}), 400
@@ -963,17 +988,14 @@ def signup():
         if not saved_otp or saved_otp != user_otp or saved_email != email:
             return jsonify({'success': False, 'message': 'Invalid or Expired OTP!'}), 400
 
-        # 2. OTP Sahi hai -> Database Connection
+        # 2. Database Connection
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Hash password
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        user_referral_code = secrets.token_hex(4).upper()
 
-        # 3. 🎁 Naye User ke liye Unique Referral Code generate karo
-        user_referral_code = secrets.token_hex(4).upper() # e.g. "A7F3B92D"
-
-        # 4. Check karo ki Referrer exist karta hai ya nahi
+        # 3. Referrer Verification
         referrer_id = None
         if ref_code:
             cursor.execute("SELECT id FROM users WHERE referral_code = %s", (str(ref_code).strip(),))
@@ -981,33 +1003,34 @@ def signup():
             if ref_user:
                 referrer_id = ref_user['id'] if isinstance(ref_user, dict) else ref_user[0]
 
-        # 5. Insert New User
+        # 4. SINGLE USER INSERT
         cursor.execute(
-            """INSERT INTO users (full_name, email, password_hash, plan_type, resume_limit, ai_credits, referral_code, referred_by) 
-               VALUES (%s, %s, %s, 'Free', 3, 5, %s, %s)""",
+            """INSERT INTO users (full_name, email, password_hash, plan_type, resume_limit, ai_credits, referral_code, referred_by, created_at) 
+               VALUES (%s, %s, %s, 'Free', 3, 5, %s, %s, NOW())""",
             (full_name, email, hashed_password, user_referral_code, referrer_id)
         )
         conn.commit()
         user_id = cursor.lastrowid
 
+        # 5. 📧 SEND WELCOME EMAIL
+        try:
+            send_welcome_email(full_name, email)
+        except Exception as wel_err:
+            print(f"Welcome email trigger warning: {wel_err}")
+
         # 6. 🏆 REFERRAL TRACKING & 3-FRIEND REWARD CHECK
         if referrer_id:
             try:
-                # Referrals table me log entry
                 cursor.execute("INSERT INTO referrals (referrer_id, referee_id) VALUES (%s, %s)", (referrer_id, user_id))
-                
-                # Check karo referrer ke total kitne friends ho gaye
                 cursor.execute("SELECT COUNT(*) as total FROM referrals WHERE referrer_id = %s", (referrer_id,))
                 ref_res = cursor.fetchone()
                 total_referrals = ref_res['total'] if isinstance(ref_res, dict) else ref_res[0]
 
-                # Agar exactly 3 friends complete ho gaye -> 1 Premium Template Free Unlock
                 if total_referrals == 3:
                     cursor.execute("""
                         INSERT IGNORE INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
                         VALUES (%s, 'luxury', 0, 'single', NOW())
                     """, (referrer_id,))
-                    
                 conn.commit()
             except Exception as ref_err:
                 print(f"⚠️ Referral reward error: {ref_err}")
@@ -1015,14 +1038,14 @@ def signup():
         cursor.close()
         conn.close()
 
-        # Session cleanup
+        # Cleanup & Auto-login
         session.pop('signup_otp', None)
         session.pop('signup_email', None)
         session.pop('pending_ref_code', None)
 
-        # Auto login
         session['user_id'] = user_id
         session['user_name'] = full_name
+        session['logged_in'] = True
 
         return jsonify({
             'success': True,
@@ -2734,87 +2757,187 @@ def add_new_admin():
     finally:
         conn.close()
 
+
 # ==========================================
-# 📧 ADMIN NEWSLETTER BLAST API (Personalized / Privacy Fixed)
+# 📧 HELPER: Build Rich HTML Newsletter Template
+# ==========================================
+def build_newsletter_html(user_name, subject, intro_text, banner_image_url, action_btn_text, action_btn_url, footer_note):
+    display_name = user_name if user_name else "Valued Member"
+    
+    # Optional Banner Image
+    banner_html = ""
+    if banner_image_url and str(banner_image_url).strip():
+        banner_html = f"""
+        <div style="margin: 0 0 24px 0; text-align: center;">
+            <img src="{str(banner_image_url).strip()}" alt="Announcement" style="width: 100%; max-height: 280px; object-fit: cover; border-radius: 10px; display: block;" onerror="this.style.display='none';">
+        </div>
+        """
+
+    # Optional Action Button
+    button_html = ""
+    if action_btn_url and str(action_btn_url).strip():
+        btn_label = str(action_btn_text).strip() if action_btn_text and str(action_btn_text).strip() else "Explore Now →"
+        button_html = f"""
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{str(action_btn_url).strip()}" target="_blank" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
+                {btn_label}
+            </a>
+        </div>
+        """
+
+    formatted_content = (intro_text or "").replace('\n', '<br>')
+
+    return f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1e293b;">
+        <!-- Header with Logo & Brand -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 26px 24px; text-align: center; border-bottom: 3px solid #4f46e5;">
+            <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: auto;">
+                <tr>
+                    <td style="vertical-align: middle; padding-right: 10px;">
+                        <img src="https://atsresumepro.onrender.com/static/images/favicon.png" alt="Logo" width="34" height="34" style="display: block; border-radius: 8px;">
+                    </td>
+                    <td style="vertical-align: middle;">
+                        <h2 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">ATS Resume <span style="color: #00d4ff;">Pro</span></h2>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Main Body -->
+        <div style="padding: 32px 28px;">
+            {banner_html}
+
+            <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">
+                {subject}
+            </h2>
+
+            <p style="font-size: 15px; font-weight: 600; color: #334155; margin-bottom: 12px;">Hi {display_name},</p>
+            
+            <div style="font-size: 15px; line-height: 1.7; color: #475569; margin-bottom: 24px;">
+                {formatted_content}
+            </div>
+
+            {button_html}
+
+            <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-top: 24px; padding-top: 16px; border-top: 1px dashed #e2e8f0;">
+                {footer_note or "Need any assistance? Reply directly to this email or reach out to our team anytime."}
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #0f172a; padding: 22px; text-align: center; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+            <p style="margin: 0 0 6px 0; color: #cbd5e1; font-weight: 600;">ATS Resume Builder Pro</p>
+            <p style="margin: 0 0 8px 0;">Build ATS-Proof Resumes, Cover Letters & Prepare with AI Mock Interviews.</p>
+            <p style="margin: 0; color: #64748b;">© {datetime.now().year} ATS Resume Pro. All rights reserved.</p>
+        </div>
+    </div>
+    """
+
+
+# ==========================================
+# 📧 ADMIN NEWSLETTER & TEST SENDER API
 # ==========================================
 @app.route('/api/admin/send-newsletter', methods=['POST'])
 def send_newsletter():
     if 'admin_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
-    data = request.json
-    subject = data.get('subject')
-    message_body = data.get('message')
+    data = request.json or {}
+    send_type = data.get('send_type', 'blast')
+    test_email = data.get('test_email', '').strip()
+    
+    subject = data.get('subject', '').strip()
+    message_body = data.get('message', '').strip()
+    banner_image = data.get('banner_image', '').strip()
+    action_btn_text = data.get('action_btn_text', '').strip()
+    action_btn_url = data.get('action_btn_url', '').strip()
+    footer_note = data.get('footer_note', '').strip()
 
     if not subject or not message_body:
-        return jsonify({'success': False, 'message': 'Subject and message are required'}), 400
+        return jsonify({'success': False, 'message': 'Subject and message are required!'}), 400
 
     BREVO_API_KEY = os.getenv("BREVO_API_KEY")
     if not BREVO_API_KEY:
         return jsonify({'success': False, 'message': 'BREVO_API_KEY missing in .env file!'}), 500
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        # Fetch all registered users
-        cursor.execute("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email != ''")
-        users = cursor.fetchall()
-        conn.close()
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
 
-        if not users:
-            return jsonify({'success': False, 'message': 'No users found in database!'}), 404
+    # --- MODE 1: SINGLE TEST EMAIL ---
+    if send_type == 'test':
+        if not test_email:
+            return jsonify({'success': False, 'message': 'Please provide a test email address!'}), 400
 
-        url = "https://api.brevo.com/v3/smtp/email"
-        headers = {
-            "accept": "application/json",
-            "api-key": BREVO_API_KEY,
-            "content-type": "application/json"
+        test_html = build_newsletter_html("Admin Tester", subject, message_body, banner_image, action_btn_text, action_btn_url, footer_note)
+        payload = {
+            "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
+            "to": [{"email": test_email, "name": "Admin Tester"}],
+            "subject": f"[TEST] {subject}",
+            "htmlContent": test_html
         }
 
+        try:
+            res = requests.post(url, json=payload, headers=headers, timeout=15)
+            if res.status_code in [200, 201, 202]:
+                return jsonify({'success': True, 'message': f'✅ Test email sent successfully to {test_email}!'})
+            else:
+                return jsonify({'success': False, 'message': f'Brevo API Error ({res.status_code}): {res.text}'}), 500
+        except Exception as e:
+            return jsonify({'success': False, 'message': f"Request Error: {str(e)}"}), 500
+
+    # --- MODE 2: BLAST TO ALL REGISTERED USERS ---
+    conn = get_db_connection()
+    try:
+        try:
+            import pymysql
+            cursor = conn.cursor(pymysql.cursors.DictCursor)
+        except Exception:
+            cursor = conn.cursor()
+
+        cursor.execute("SELECT email, full_name FROM users WHERE email IS NOT NULL AND email != ''")
+        users = cursor.fetchall()
+
+        if not users:
+            return jsonify({'success': False, 'message': 'No registered users found!'}), 404
+
         sent_count = 0
+        for u in users:
+            if isinstance(u, dict):
+                u_email = u.get('email')
+                u_name = u.get('full_name') or 'User'
+            else:
+                u_email = u[0]
+                u_name = u[1] if len(u) > 1 and u[1] else 'User'
 
-        # Loop through each user so they get an individual email
-        for user in users:
-            user_email = user['email']
-            user_name = user.get('full_name', 'User')
+            if not u_email:
+                continue
 
-            formatted_html = f"""
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; background-color: #ffffff;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: #4f46e5; margin: 0;">ATS Resume Builder Pro</h2>
-                </div>
-                <div style="color: #374151; font-size: 16px; line-height: 1.6;">
-                    <p>Hi <b>{user_name}</b>,</p>
-                    {message_body.replace('\n', '<br>')}
-                </div>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0 20px 0;">
-                <div style="text-align: center; color: #9ca3af; font-size: 12px;">
-                    You received this email because you are a registered user of ATS Resume Pro.<br>
-                    © {datetime.now().year} ATS Resume Pro. All rights reserved.
-                </div>
-            </div>
-            """
-
+            user_html = build_newsletter_html(u_name, subject, message_body, banner_image, action_btn_text, action_btn_url, footer_note)
             payload = {
                 "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
-                "to": [{"email": user_email, "name": user_name}],
+                "to": [{"email": u_email, "name": u_name}],
                 "subject": subject,
-                "htmlContent": formatted_html
+                "htmlContent": user_html
             }
-
             try:
                 res = requests.post(url, json=payload, headers=headers, timeout=10)
                 if res.status_code in [200, 201, 202]:
                     sent_count += 1
             except Exception as mail_err:
-                print(f"Failed to send to {user_email}: {mail_err}")
+                print(f"Failed sending to {u_email}: {mail_err}")
 
-        return jsonify({'success': True, 'message': f'Newsletter sent individually to {sent_count} users!'})
+        return jsonify({'success': True, 'message': f'🎉 Newsletter successfully blasted to {sent_count} users!'})
 
     except Exception as e:
-        print(f"🔥 Newsletter Exception: {e}")
+        print(f"🔥 Newsletter DB Exception: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
         
     
 # ==========================================
@@ -3538,6 +3661,93 @@ def send_password_reset_email(user_email, otp):
             
     except Exception as e:
         print(f"🔥 Network Error: {e}")
+        return False
+    
+# ==========================================
+# 📧 WELCOME EMAIL SENDER (Brevo API - Render Safe)
+# ==========================================
+def send_welcome_email(user_name, user_email):
+    BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+    if not BREVO_API_KEY:
+        print("🔥 Error: BREVO_API_KEY is missing in .env file!")
+        return False
+
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+
+    # Clean Name Fallback
+    display_name = user_name if user_name else "Professional"
+
+    html_content = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background-color: #ffffff; color: #1e293b;">
+        <!-- Header Banner -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 36px 24px; text-align: center; color: #ffffff;">
+            <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">ATS Resume Pro</h1>
+            <p style="margin: 8px 0 0 0; font-size: 15px; opacity: 0.9;">Welcome to the next chapter of your career journey! 🚀</p>
+        </div>
+
+        <!-- Body Content -->
+        <div style="padding: 32px 28px;">
+            <p style="font-size: 17px; font-weight: 600; margin-top: 0; color: #0f172a;">Hi {display_name},</p>
+            
+            <p style="font-size: 15px; line-height: 1.6; color: #475569;">
+                Welcome aboard! We’re thrilled to have you with us. Your account is now fully active, and you have instant access to our AI-powered career optimization tools designed to get you noticed by top recruiters.
+            </p>
+
+            <!-- Features Grid -->
+            <div style="background-color: #f8fafc; border: 1px solid #edf2f7; border-radius: 12px; padding: 20px; margin: 24px 0;">
+                <h3 style="margin-top: 0; font-size: 15px; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px;">What You Can Do Today:</h3>
+                
+                <div style="margin-bottom: 12px; font-size: 14px; line-height: 1.5;">
+                    📄 <b>High-ATS Templates:</b> Pick clean, recruiter-approved formats that pass automated screening with ease.
+                </div>
+                <div style="margin-bottom: 12px; font-size: 14px; line-height: 1.5;">
+                    🤖 <b>AI Resume Generator:</b> Craft tailored professional summaries and impact bullet points in seconds.
+                </div>
+                <div style="margin-bottom: 12px; font-size: 14px; line-height: 1.5;">
+                    ⚡ <b>Cover Letter Creator:</b> Generate customized cover letters matched directly to your target role.
+                </div>
+                <div style="font-size: 14px; line-height: 1.5;">
+                    🎁 <b>Refer & Earn:</b> Invite friends from your dashboard to unlock premium templates for free!
+                </div>
+            </div>
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="https://atsresumepro.onrender.com/builder" target="_blank" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: #ffffff; padding: 15px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; display: inline-block; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
+                    Build Your Resume Now →
+                </a>
+            </div>
+
+            <p style="font-size: 14px; line-height: 1.6; color: #64748b; margin-bottom: 0;">
+                Need help or have questions? Simply reply to this email or visit our <a href="https://atsresumepro.onrender.com/help-center" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Help Center</a>. We're here to help you land your dream job!
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0 0 4px 0;">© {datetime.now().year} ATS Resume Builder Pro. All rights reserved.</p>
+            <p style="margin: 0;">Empowering professionals to build interview-winning resumes.</p>
+        </div>
+    </div>
+    """
+
+    payload = {
+        "sender": {"name": "ATS Resume Pro", "email": "atsresumepro01@gmail.com"},
+        "to": [{"email": user_email, "name": display_name}],
+        "subject": "🎉 Welcome to ATS Resume Pro – Start Building Your Dream Resume!",
+        "htmlContent": html_content
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        return response.status_code in [200, 201, 202]
+    except Exception as e:
+        print(f"🔥 Welcome Email Error: {e}")
         return False
 
 # 1. Send OTP for Forgot Password

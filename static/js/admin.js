@@ -1030,44 +1030,71 @@ async function deleteAdmin(id) {
 }
 
 // ==========================================
-// 📧 NEWSLETTER SENDER LOGIC
+// 📧 ADVANCED NEWSLETTER & TEST HANDLER
 // ==========================================
-async function handleSendNewsletter(e) {
-    e.preventDefault();
+async function triggerNewsletter(mode) {
+    const subject = document.getElementById('nlSubject').value.trim();
+    const message = document.getElementById('nlMessage').value.trim();
+    const bannerImage = document.getElementById('nlBannerImage').value.trim();
+    const btnText = document.getElementById('nlBtnText').value.trim();
+    const btnUrl = document.getElementById('nlBtnUrl').value.trim();
+    const footerNote = document.getElementById('nlFooterNote').value.trim();
+    const testEmail = document.getElementById('testEmailInput').value.trim();
 
-    const subject = document.getElementById('newsletterSubject').value;
-    const message = document.getElementById('newsletterMessage').value;
-    const btn = document.getElementById('sendNewsletterBtn');
-
-    if (!confirm("⚠️ Are you sure you want to send this email to ALL registered users?")) {
+    if (!subject || !message) {
+        alert("⚠️ Please enter at least a Subject and Message body!");
         return;
     }
 
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending Mails...';
-    btn.disabled = true;
+    if (mode === 'test') {
+        if (!testEmail) {
+            alert("⚠️ Please enter an email address in the 'Test Single Email' box!");
+            document.getElementById('testEmailInput').focus();
+            return;
+        }
+    } else if (mode === 'blast') {
+        if (!confirm("🚨 ARE YOU SURE?\n\nThis will send this newsletter email to ALL registered users in your database!")) {
+            return;
+        }
+    }
+
+    // Button loading animation
+    const targetBtn = mode === 'test' ? document.getElementById('sendTestBtn') : document.getElementById('sendBlastBtn');
+    const originalText = targetBtn.innerHTML;
+    targetBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
+    targetBtn.disabled = true;
 
     try {
-        const res = await fetch('/api/admin/send-newsletter', {
+        const response = await fetch('/api/admin/send-newsletter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subject, message })
+            body: JSON.stringify({
+                send_type: mode,
+                test_email: testEmail,
+                subject: subject,
+                message: message,
+                banner_image: bannerImage,
+                action_btn_text: btnText,
+                action_btn_url: btnUrl,
+                footer_note: footerNote
+            })
         });
 
-        const data = await res.json();
+        const data = await response.json();
 
         if (data.success) {
-            alert("✅ " + data.message);
-            document.getElementById('newsletterSubject').value = '';
-            document.getElementById('newsletterMessage').value = '';
+            alert(data.message);
+            if (mode === 'blast') {
+                document.getElementById('newsletterMainForm').reset();
+            }
         } else {
             alert("❌ Error: " + data.message);
         }
     } catch (error) {
-        console.error("Newsletter Error:", error);
-        alert("Failed to send newsletter.");
+        console.error("Newsletter error:", error);
+        alert("❌ Failed to send. Please check your network and Brevo API key.");
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        targetBtn.innerHTML = originalText;
+        targetBtn.disabled = false;
     }
 }
