@@ -1438,3 +1438,83 @@ body.light-mode .bg-slate-900\/40 {
     background-color: #ffffff !important;
     border-color: #e2e8f0 !important;
 }
+
+/* ====================================================
+   LIGHT / DARK THEME OVERRIDES (100% FORCED FIX)
+   ==================================================== */
+
+/* --- LIGHT MODE RULES --- */
+html.light body,
+body.light-mode {
+    background-color: #f8fafc !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode .text-white {
+    color: #0f172a !important;
+}
+
+body.light-mode p,
+body.light-mode span.text-gray-400,
+body.light-mode .text-gray-400 {
+    color: #475569 !important;
+}
+
+body.light-mode nav.nav-glass {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode .nav-link {
+    color: #334155 !important;
+}
+
+body.light-mode .nav-link:hover {
+    color: #2563eb !important;
+}
+
+body.light-mode .glass-panel,
+body.light-mode .stats-card,
+body.light-mode .feature-card,
+body.light-mode .seo-card-glow {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode #templateSearch {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+body.light-mode .template-card {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .template-card > div:first-child {
+    background-color: #f1f5f9 !important;
+}
+
+body.light-mode .template-card .p-4 {
+    background-color: #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+body.light-mode #bottomNav {
+    background-color: rgba(255, 255, 255, 0.96) !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode footer {
+    background-color: #f1f5f9 !important;
+    border-top: 1px solid #e2e8f0 !important;
+}

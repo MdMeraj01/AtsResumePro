@@ -34,6 +34,18 @@
     
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="{{ url_for('static', filename='css/template-section.css') }}" rel="stylesheet">
+
+    <!-- CDN & Script Asset Vectors -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="antialiased font-sans min-h-screen">
     <!-- Animated Background -->
@@ -281,8 +293,10 @@
                     </div>
               </div>
                   
-            <div id="templatesGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <div id="noResults" class="hidden col-span-full text-center py-20">
+            <!-- Templates Grid Container -->
+          <div id="templatesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 w-full min-h-[400px]">
+
+         <div id="noResults" class="hidden col-span-full text-center py-20">
             <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-800 mb-6 relative">
                 <i class="fas fa-search text-4xl text-gray-600"></i>
                 <div class="absolute top-0 right-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-bounce">?</div>
@@ -984,7 +998,7 @@
             <span class="text-[10px] font-medium">Interview</span>
         </a>
 
-        <button id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
+        <button type="button" id="bottomThemeToggle" class="bottom-nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-yellow-400 transition-colors">
             <i class="fas fa-sun text-lg mb-1"></i>
             <span class="text-[10px] font-medium">Theme</span>
         </button>

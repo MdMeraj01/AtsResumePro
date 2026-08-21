@@ -622,18 +622,21 @@ async function handleAddTemplate(e) {
     try {
         const formData = new FormData();
         
-        formData.append('name', document.getElementById('newTempId').value);
-        formData.append('display_name', document.getElementById('newTempName').value);
+        formData.append('name', document.getElementById('newTempId').value.trim());
+        formData.append('display_name', document.getElementById('newTempName').value.trim());
         formData.append('category', document.getElementById('newTempCat').value);
-        formData.append('description', document.getElementById('newTempDesc').value);
+        formData.append('description', document.getElementById('newTempDesc').value.trim());
         formData.append('position', document.getElementById('newTempPosition').value);
         formData.append('badge', document.getElementById('newTempBadge').value);
         formData.append('is_premium', document.getElementById('newTempPremium').checked);
         formData.append('html_content', document.getElementById('newTempHtml').value);
         formData.append('css_content', document.getElementById('newTempCss').value);
         
-        // Direct Image URL send ho rahi hai
-        formData.append('image_url', document.getElementById('newTempImageUrl').value.trim());
+        // 🟢 FIX: .files hatakar direct URL value uthayega
+        const imgUrlInput = document.getElementById('newTempImageUrl');
+        if (imgUrlInput && imgUrlInput.value.trim() !== '') {
+            formData.append('image_url', imgUrlInput.value.trim());
+        }
 
         const res = await fetch('/api/admin/add-template', {
             method: 'POST',
@@ -649,8 +652,8 @@ async function handleAddTemplate(e) {
             alert("Error: " + data.message);
         }
     } catch (error) {
-        console.error(error);
-        alert("Something went wrong!");
+        console.error("Template Submit Error:", error);
+        alert("Something went wrong while adding the template!");
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
