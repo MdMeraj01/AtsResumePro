@@ -12,7 +12,7 @@ import random
 from fpdf import FPDF
 from docx import Document
 from flask_bcrypt import Bcrypt
-import pymysql  # <--- NEW IMPORT 
+import pymysql  
 from authlib.integrations.flask_client import OAuth
 import secrets
 import csv
@@ -25,6 +25,8 @@ import hashlib
 import base64
 import json
 import string
+import cloudinary
+import cloudinary.uploader
 
 
 pymysql.install_as_MySQLdb()
@@ -1229,7 +1231,7 @@ def blog_post(id):
         
     return render_template('company/blog_post.html', post=post)
 
-# 3. Admin API: Add New Blog Post
+# 3. Admin API: Add New Blog Post (Direct Image URL)
 @app.route('/api/admin/add-blog', methods=['POST'])
 def add_blog():
     if 'admin_id' not in session: 
@@ -1241,35 +1243,24 @@ def add_blog():
         content = request.form.get('content')
         author = session.get('admin_name', 'Admin')
         
-        # Image Upload Handle
-        image_filename = 'default_blog.jpg'
-        if 'image_file' in request.files:
-            file = request.files['image_file']
-            if file.filename != '':
-                filename = secure_filename(f"blog_{int(time.time())}_{file.filename}")
-                save_path = os.path.join(app.root_path, 'static/images/blog', filename)
-                
-                # Folder nahi hai to banao
-                os.makedirs(os.path.dirname(save_path), exist_ok=True)
-                
-                file.save(save_path)
-                image_filename = filename
+        # Direct URL Form se aayega
+        image_url = request.form.get('image_url') or 'https://placehold.co/600x400/1e293b/FFF?text=Blog+Post'
 
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO blog_posts (title, summary, content, image_file, author) 
             VALUES (%s, %s, %s, %s, %s)
-        """, (title, summary, content, image_filename, author))
+        """, (title, summary, content, image_url, author))
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Blog Post Published!'})
+        return jsonify({'success': True, 'message': 'Blog Post Published Successfully!'})
 
     except Exception as e:
         print(f"Blog Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
+    
 # 4. Admin API: Delete Blog Post
 @app.route('/api/admin/delete-blog/<int:id>', methods=['DELETE'])
 def delete_blog(id):
@@ -2530,75 +2521,61 @@ def verify_template_payment():
 # ==========================================
 @app.route('/api/admin/add-template', methods=['POST'])
 def add_template():
-    if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    if 'admin_id' not in session: 
+        return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        # 1. Get Data form FormData
         name = request.form.get('name')
         display_name = request.form.get('display_name')
         category = request.form.get('category')
         description = request.form.get('description')
         badge = request.form.get('badge')
         is_premium = request.form.get('is_premium') == 'true'
-        position = request.form.get('position') # 'start' or 'end'
+        position = request.form.get('position')
         
         html_content = request.form.get('html_content')
         css_content = request.form.get('css_content')
         
-        # 2. Handle Image Upload
-        image_filename = 'default.png'
-        if 'image_file' in request.files:
-            file = request.files['image_file']
-            if file.filename != '':
-                filename = secure_filename(f"{name}_{file.filename}")
-                # Save path
-                save_path = os.path.join(app.root_path, 'static/images/template-previews', filename)
-                file.save(save_path)
-                image_filename = filename
+        # Direct URL fetch from Form
+        image_url = request.form.get('image_url') or f"{name}.png"
 
-        # 3. Create HTML File
+        # Create HTML File
         if html_content:
             html_path = os.path.join(app.root_path, 'templates/resume_templates', f"{name}.html")
             with open(html_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
         
-        # 4. Create CSS File
+        # Create CSS File
         if css_content:
             css_path = os.path.join(app.root_path, 'static/css/templates', f"{name}.css")
             with open(css_path, "w", encoding="utf-8") as f:
                 f.write(css_content)
 
-        # 5. Database Logic (Sorting)
+        # Database Insertion
         conn = get_db_connection()
         cursor = conn.cursor()
         
         sort_order = 0
         if position == 'start':
-            # Get current max sort order and add 1 (to be on top)
             cursor.execute("SELECT MAX(sort_order) as max_val FROM templates")
             result = cursor.fetchone()
-            max_val = result['max_val'] if result['max_val'] else 0
+            max_val = result['max_val'] if result and result['max_val'] else 0
             sort_order = max_val + 10
-        else:
-            # For end, keep it 0 or negative (or create logic based on ID)
-            sort_order = 0
 
-        # 6. Insert into DB
         cursor.execute("""
             INSERT INTO templates 
             (name, display_name, category, description, image_file, badge, is_premium, sort_order)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (name, display_name, category, description, image_filename, badge, is_premium, sort_order))
+        """, (name, display_name, category, description, image_url, badge, is_premium, sort_order))
         
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Template created and files saved!'})
+        return jsonify({'success': True, 'message': 'Template created with Image URL successfully!'})
 
     except Exception as e:
         print(f"Add Template Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-    
+        return jsonify({'success': False, 'message': str(e)}), 500        
     
 # 3. Toggle Premium / Edit Template
 @app.route('/api/admin/update-template', methods=['POST'])
@@ -3828,6 +3805,14 @@ def reset_password():
     finally:
         conn.close()
 
+
+# Cloudinary Configuration
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 @app.route('/manifest.json')
 def manifest():

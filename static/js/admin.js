@@ -632,10 +632,8 @@ async function handleAddTemplate(e) {
         formData.append('html_content', document.getElementById('newTempHtml').value);
         formData.append('css_content', document.getElementById('newTempCss').value);
         
-        const fileInput = document.getElementById('newTempImageFile');
-        if(fileInput.files.length > 0) {
-            formData.append('image_file', fileInput.files[0]);
-        }
+        // Direct Image URL send ho rahi hai
+        formData.append('image_url', document.getElementById('newTempImageUrl').value.trim());
 
         const res = await fetch('/api/admin/add-template', {
             method: 'POST',
