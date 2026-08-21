@@ -1056,17 +1056,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-xl transform translate-x-full transition-transform duration-500 z-50">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle text-xl mr-3"></i>
-            <div>
-                <div class="font-semibold">Success!</div>
-                <div id="toastMessage" class="text-sm">Resume saved successfully</div>
-            </div>
-        </div>
-    </div>
-
     <!-- AI ATS Score Modal -->
     <div id="aiScoreModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
         <div class="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl p-8 max-w-md w-full mx-4 border border-gray-800 shadow-2xl">
@@ -1203,9 +1192,7 @@ function closeUpgradeModal() {
     document.getElementById('upgradeModal').classList.add('hidden');
 }
 </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+     
     <script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
     
     <script src="{{ url_for('static', filename='js/builder.js') }}"></script>

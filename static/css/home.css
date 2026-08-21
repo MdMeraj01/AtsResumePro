@@ -147,7 +147,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Light mode gradient fix */
 body.light-mode .gradient-text {
     background: linear-gradient(135deg, #4338ca 0%, #7c3aed 50%, #0891b2 100%);
-    -webkit-background-clip: text;
+    
     -webkit-text-fill-color: transparent;
 }
 
@@ -691,7 +691,7 @@ body.light-mode .glass-panel div.text-gray-400 p {
     background-size: 0% 100%;
     background-image: linear-gradient(90deg, #4f46e5, #06b6d4);
     background-repeat: no-repeat;
-    -webkit-background-clip: text;
+
     -webkit-text-fill-color: transparent;
     animation: revealText 2s ease-out forwards;
 }
