@@ -581,10 +581,7 @@ def change_password():
         return jsonify({'success': False, 'message': str(e)}), 500
     
 # ==========================================
-# TRACK ACTIVITY ROUTE (Live Stats ke liye)
-# ==========================================
-# ==========================================
-# TRACK ACTIVITY ROUTE (Updated: Increments Count)
+# TRACK ACTIVITY ROUTE (Exact Template Count Increment)
 # ==========================================
 @app.route('/api/track-activity', methods=['POST'])
 def track_activity():
@@ -592,9 +589,9 @@ def track_activity():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
     try:
-        data = request.json
+        data = request.json or {}
         activity_type = data.get('activity_type') # e.g. 'downloaded_pdf'
-        details = data.get('details', '') # Template Name (e.g. 'modern')
+        details = str(data.get('details', '')).strip().lower() # e.g. 'emerald', 'executive'
 
         valid_types = ['created', 'downloaded_pdf', 'downloaded_docx', 'ai_summary', 'ats_check', 'cover_letter_created']
         
@@ -604,16 +601,19 @@ def track_activity():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # 1. Activity Log Karo (Graph ke liye)
+        # 1. Activity Log Table Entry
         cursor.execute(
             "INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, %s, %s)",
             (session['user_id'], activity_type, details)
         )
         
-        # 2. 👇 NEW: Template Download Count Badhao (Admin Cards ke liye)
-        if activity_type in ['downloaded_pdf', 'downloaded_docx']:
-            # Hum check karte hain ki kya ye template exist karta hai, phir +1 karte hain
-            cursor.execute("UPDATE templates SET downloads = downloads + 1 WHERE name = %s", (details,))
+        # 2. 🟢 Exact Template Download Count +1 (Case-Insensitive Match)
+        if activity_type in ['downloaded_pdf', 'downloaded_docx'] and details:
+            cursor.execute("""
+                UPDATE templates 
+                SET downloads = downloads + 1 
+                WHERE LOWER(name) = %s OR LOWER(display_name) = %s
+            """, (details, details))
             
         conn.commit()
         conn.close()
@@ -623,7 +623,6 @@ def track_activity():
     except Exception as e:
         print(f"Tracking Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
-
 
 
 # ========== MAIN ROUTES ==========
@@ -1624,83 +1623,54 @@ def get_resume(resume_id):
 # ==========================================
 # 📄 PDF EXPORT ROUTE (Fixed Version)
 # ==========================================
+# ==========================================
+# 📄 PDF EXPORT & DOWNLOAD COUNT FIX
+# ==========================================
 @app.route('/api/export/pdf', methods=['POST'])
 def export_pdf():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    print(f"\n🚀 START: Export PDF Request received from User ID: {session['user_id']}") 
-
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
-        # 1. Fetch User Data
-        cursor.execute("""
-            SELECT 
-                COALESCE(plan_type, 'Free') as plan_type, 
-                COALESCE(resume_limit, 3) as resume_limit 
-            FROM users WHERE id = %s
-        """, (session['user_id'],))
+        cursor.execute("SELECT COALESCE(plan_type, 'Free') as plan_type, COALESCE(resume_limit, 3) as resume_limit FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
 
-        # 2. Data Cleaning
         current_plan = str(user['plan_type']).strip().capitalize() 
         current_limit = int(user['resume_limit'])
 
-        print(f"👤 DEBUG: Plan='{current_plan}' | Limit Remaining={current_limit}") 
-
-        # 🛑 3. LIMIT CHECK LOGIC
         if current_plan == 'Free' and current_limit <= 0:
-            print("🚫 STOP: Free limit is 0. Blocking download.")
             return jsonify({
                 'success': False, 
                 'error': 'LIMIT_REACHED', 
                 'message': 'Your free download limit is over! Please upgrade to continue.'
             }), 403
 
-        # ---------------------------------------------------------
-        # 👇 YAHAN APNA PURANA PDF CODE PASTE KARO 👇
-        # ---------------------------------------------------------
-        # data = request.json (Example)
-        # pdf = FPDF() ... (Tumhara code yahan aayega)
-        # ...
-        # ...
+        # 🟢 FIX: Extract exact template name from request
+        data = request.json or {}
+        template_name = data.get('template_name') or 'modern'
+        template_name = str(template_name).strip().lower()
+
+        # Deduct Free limit
+        new_limit = current_limit
+        if current_plan == 'Free':
+            new_limit = current_limit - 1
+            cursor.execute("UPDATE users SET resume_limit = %s WHERE id = %s", (new_limit, session['user_id']))
+
+        # 🟢 FIX: Increment count in templates table AND log in resume_activity
+        cursor.execute("UPDATE templates SET downloads = downloads + 1 WHERE LOWER(name) = %s", (template_name,))
+        cursor.execute("INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, 'downloaded_pdf', %s)", (session['user_id'], template_name))
         
-        # Maan lo PDF ban gayi (Tumhare code ke baad ye flag true hona chahiye)
-        pdf_generated_successfully = True 
-        
-        if pdf_generated_successfully:
-            new_limit = current_limit 
-
-            # ✅ 4. SUCCESS: Limit Minus Karo (Sirf Free Plan ke liye)
-            if current_plan == 'Free':
-                new_limit = current_limit - 1
-                
-                # Database Update
-                cursor.execute("UPDATE users SET resume_limit = %s WHERE id = %s", (new_limit, session['user_id']))
-                conn.commit()
-                print(f"✅ SUCCESS: Database Updated! Old={current_limit} -> New={new_limit}") 
-            else:
-                print(f"ℹ️ INFO: Plan is '{current_plan}', No deduction needed.")
-
-            # 5. Log Activity
-            # ✅ YE SAHI HAI: Frontend se template ka naam lo aur wahi save karo
-            data = request.json
-            template_name = data.get('template_name', 'Modern') # Default 'Modern' agar naam na mile
-
-            cursor.execute("INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, 'downloaded_pdf', %s)", (session['user_id'], template_name))
-            conn.commit()
-
-            # 6. Return Success (Yahan File URL ya Success Message bhejo)
-            return jsonify({'success': True, 'message': 'Download started', 'new_limit': new_limit})
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Download logged successfully', 'new_limit': new_limit})
 
     except Exception as e:
-        print(f"❌ ERROR in Export: {e}") 
+        print(f"❌ Error in Export Track: {e}") 
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
-        conn.close()
-        
+        conn.close()        
  
 
 @app.route('/api/export/docx', methods=['POST'])
@@ -2228,7 +2198,7 @@ def admin_analytics():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # 1. USER GROWTH (Same as before)
+    # 1. User Growth
     cursor.execute("""
         SELECT DATE_FORMAT(created_at, '%d %b') as date_label, COUNT(*) as count 
         FROM users 
@@ -2238,7 +2208,7 @@ def admin_analytics():
     """)
     growth_data = cursor.fetchall()
     
-    # 2. DOWNLOAD TRENDS (Same as before)
+    # 2. Downloads Trend
     cursor.execute("""
         SELECT DATE_FORMAT(created_at, '%d %b') as date_label, COUNT(*) as count 
         FROM resume_activity 
@@ -2249,61 +2219,18 @@ def admin_analytics():
     """)
     download_data = cursor.fetchall()
 
-    # 👇 3. TEMPLATE USAGE (FIXED LOGIC FOR ALL TEMPLATES)
-    
-    # Step A: Pehle DB se SARE Templates ke naam nikalo (Master List)
-    # Taaki jo templates kabhi use nahi huye wo bhi list me aa jayein
-    cursor.execute("SELECT display_name FROM templates")
-    all_templates_list = cursor.fetchall()
-    
-    # Sabka count 0 set kar do shuru me
-    # Example: {'Modern': 0, 'Luxury': 0, 'Gold': 0 ...}
-    cleaned_stats = {t['display_name']: 0 for t in all_templates_list}
-    
-    # Step B: Ab Activity Data nikalo (Jo use huye hain)
-    cursor.execute("""
-        SELECT details as template_name, COUNT(*) as count 
-        FROM resume_activity 
-        WHERE activity_type IN ('downloaded_pdf', 'created') 
-        AND details NOT IN ('PDF Export', 'Resume PDF', 'Credit Used', 'New Resume') 
-        AND details IS NOT NULL 
-        AND details != ''
-        GROUP BY details
-    """)
-    raw_data = cursor.fetchall()
+    # 3. Template Usage (Direct DB Template Count)
+    cursor.execute("SELECT display_name, downloads FROM templates ORDER BY downloads DESC")
+    templates_data = cursor.fetchall()
     conn.close()
 
-    # Step C: Counts ko Master List me update karo
-    for row in raw_data:
-        raw_name = row['template_name']
-        count = row['count']
-        
-        # Name Clean karo (Spaces aur '?' hatao)
-        clean_name = raw_name.replace('?', '').strip().title()
-        
-        # Match Logic: Case-insensitive check
-        # Agar 'luxury' database me 'Luxury' naam se hai to count badha do
-        matched = False
-        for db_name in cleaned_stats.keys():
-            if db_name.lower() == clean_name.lower():
-                cleaned_stats[db_name] += count
-                matched = True
-                break
-        
-        # Agar koi purana template hai jo ab delete ho gaya par history me hai, use bhi dikhao
-        if not matched:
-            cleaned_stats[clean_name] = count
+    labels = [t['display_name'] for t in templates_data if t['downloads'] > 0]
+    counts = [t['downloads'] for t in templates_data if t['downloads'] > 0]
 
-    # Step D: Final List Banao
-    final_template_data = [
-        {'template_name': name, 'count': count} 
-        for name, count in cleaned_stats.items()
-    ]
-    
-    # Sort karo (Zyaada download wale upar)
-    final_template_data.sort(key=lambda x: x['count'], reverse=True)
-
-    # -----------------------------------------------
+    # Agar kisi template ka download abhi 0 ho toh default list handle karo
+    if not labels:
+        labels = [t['display_name'] for t in templates_data]
+        counts = [0 for _ in templates_data]
 
     return jsonify({
         'user_growth': {
@@ -2315,11 +2242,10 @@ def admin_analytics():
             'data': [row['count'] for row in download_data]
         },
         'template_usage': {
-            'labels': [row['template_name'] for row in final_template_data],
-            'data': [row['count'] for row in final_template_data]
+            'labels': labels,
+            'data': counts
         }
-    })
-    
+    })    
  
 
 # 1. Get All Templates (Public - For Website & Admin)

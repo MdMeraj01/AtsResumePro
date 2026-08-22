@@ -1,7 +1,6 @@
-/* ================= PDF DOWNLOAD FIX (100% MOBILE FRIENDLY) ================= */
+/* ================= PDF DOWNLOAD FIX (100% ACCURATE TEMPLATE TRACKING) ================= */
 
 let pdfLock = false;
-let isPdfGenerating = false;
 
 /* 🔘 BUTTON CLICK HANDLER */
 function handlePdfClick(e) {
@@ -32,18 +31,34 @@ function handlePdfClick(e) {
     }, 4000);
 }
 
-function getActiveTemplateName() {
-    const dropdown = document.getElementById('templateSelector');
-    if (dropdown && dropdown.value) return dropdown.options[dropdown.selectedIndex].text;
+// 🟢 100% ACCURATE CURRENT TEMPLATE DETECTOR
+function getCurrentTemplateId() {
+    // 1. Check URL param (?template=emerald)
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromUrl = urlParams.get('template');
+    if (fromUrl && fromUrl.trim() !== '') return fromUrl.trim().toLowerCase();
 
-    const preview = document.getElementById('template-render-area');
-    if (preview) {
-        if (preview.classList.contains('modern-template')) return 'Modern Professional';
-        if (preview.classList.contains('creative-template')) return 'Creative Designer';
-        if (preview.classList.contains('simple-template')) return 'Minimalist';
+    // 2. Check Dropdown selector
+    const dropdown = document.getElementById('templateSelector');
+    if (dropdown && dropdown.value) return dropdown.value.trim().toLowerCase();
+
+    // 3. Check Global Window Variable
+    if (window.currentTemplate && window.currentTemplate.trim() !== '') {
+        return window.currentTemplate.trim().toLowerCase();
     }
 
-    return document.body.getAttribute('data-template') || 'Unknown Template';
+    // 4. Check Render Area class
+    const preview = document.getElementById('template-render-area');
+    if (preview) {
+        const classes = Array.from(preview.classList);
+        for (let c of classes) {
+            if (c.endsWith('-template')) {
+                return c.replace('-template', '').toLowerCase();
+            }
+        }
+    }
+
+    return 'modern';
 }
 
 async function downloadPDF() {
@@ -52,6 +67,7 @@ async function downloadPDF() {
 
     const btn = document.getElementById('downloadPdfBtn');
     const originalText = btn ? btn.innerHTML : '';
+    const actualTemplateId = getCurrentTemplateId(); // 👈 Exact template ID
     
     if (btn) {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking Limit...';
@@ -59,7 +75,7 @@ async function downloadPDF() {
     }
 
     try {
-        // 🛑 STEP 1: Limit Check
+        // 🛑 STEP 1: Limit Check & Auto-Deduct
         const checkResponse = await fetch('/api/check-download-limit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
@@ -86,17 +102,16 @@ async function downloadPDF() {
         if (!element) throw new Error('Preview not found');
 
         element.classList.add('pdf-mode');
-        await new Promise(r => setTimeout(r, 500)); // Render wait
+        await new Promise(r => setTimeout(r, 400));
 
-        // 🟢 THE ULTIMATE MOBILE FIX: html2canvas settings updated
         const canvas = await html2canvas(element, { 
             scale: 2, 
             useCORS: true,
             logging: false,
-            scrollX: 0,            // 👈 Scroll shift ko zero karo
-            scrollY: 0,            // 👈 Scroll shift ko zero karo
-            windowWidth: 1200,     // 👈 Force Desktop Width background me taaki columns stack na ho
-            windowHeight: element.scrollHeight // 👈 Poori height automatically capture karega
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 1200,
+            windowHeight: element.scrollHeight
         });
         
         const imgData = canvas.toDataURL("image/jpeg", 0.9);
@@ -122,15 +137,18 @@ async function downloadPDF() {
         const fileName = (document.getElementById('fullName')?.value || 'Resume').replace(/\s+/g, '_');
         pdf.save(`${fileName}.pdf`);
 
-        const templateName = window.currentTemplate || 'modern';
+        // 🟢 STEP 3: Log Activity with EXACT TEMPLATE ID
         await fetch('/api/track-activity', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ activity_type: 'downloaded_pdf', details: templateName })
+            body: JSON.stringify({ 
+                activity_type: 'downloaded_pdf', 
+                details: actualTemplateId // 👈 Emerald, Executive, etc.
+            })
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("PDF Download Error:", err);
         alert("Download failed: " + err.message);
     } finally {
         const element = document.getElementById('template-render-area');
@@ -140,7 +158,7 @@ async function downloadPDF() {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
-        setTimeout(() => { pdfLock = false; }, 2000);
+        setTimeout(() => { pdfLock = false; }, 1500);
     }
 }
 
@@ -149,8 +167,7 @@ async function saveResumeSilent() {
         if (typeof collectFormData !== 'function') return;
         
         const resumeData = collectFormData();
-        const templateDropdown = document.getElementById('templateSelector');
-        const selectedTemplate = templateDropdown ? templateDropdown.value : 'modern';
+        const selectedTemplate = getCurrentTemplateId();
 
         const payload = {
             data: resumeData,
@@ -168,9 +185,10 @@ async function saveResumeSilent() {
         const result = await res.json();
         if (result.success) {
             window.currentResumeId = result.resume_id;
-            console.log("Auto-saved (Silent) as:", selectedTemplate);
         }
-    } catch(e) { console.error("Auto-save failed", e); }
+    } catch(e) { 
+        console.error("Auto-save failed", e); 
+    }
 }
 
 /* 📝 WORD DOWNLOAD FUNCTION */
@@ -180,6 +198,8 @@ async function downloadWord() {
 
     const btn = document.getElementById('downloadWordBtn');
     const originalText = btn ? btn.innerHTML : '';
+    const actualTemplateId = getCurrentTemplateId();
+
     if (btn) {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Word...';
         btn.disabled = true;
@@ -210,7 +230,9 @@ async function downloadWord() {
                 const response = await fetch(templateLink.href);
                 if (response.ok) cssRules += await response.text();
             }
-        } catch (e) { console.warn("Using default CSS for Word"); }
+        } catch (e) { 
+            console.warn("Using default CSS for Word"); 
+        }
 
         const htmlContent = `
             <!DOCTYPE html>
@@ -230,13 +252,15 @@ async function downloadWord() {
         const fileName = (document.getElementById('fullName')?.value || 'Resume').replace(/\s+/g, '_');
         saveAs(converted, `${fileName}.docx`);
 
-        const templateName = window.currentTemplate || 'modern';
+        // 🟢 Track Word Download
         await fetch('/api/track-activity', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ activity_type: 'downloaded_docx', details: templateName })
+            body: JSON.stringify({ 
+                activity_type: 'downloaded_docx', 
+                details: actualTemplateId 
+            })
         });
-        console.log("Word Download Tracked");
 
     } catch(err) {
         console.error(err);
@@ -246,7 +270,7 @@ async function downloadWord() {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
-        setTimeout(() => { pdfLock = false; }, 2000);
+        setTimeout(() => { pdfLock = false; }, 1500);
     }
 }
 
@@ -254,3 +278,4 @@ async function downloadWord() {
 window.handlePdfClick = handlePdfClick;
 window.downloadPDF = downloadPDF;
 window.downloadWord = downloadWord;
+window.getCurrentTemplateId = getCurrentTemplateId;

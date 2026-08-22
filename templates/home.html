@@ -201,6 +201,54 @@
             from, to { border-color: transparent }
             50% { border-color: #667eea; }
         }
+
+        /* ====================================================
+   🔥 GRADIENT & BLUE TEXT RECTANGLE BUG FIX (LIGHT MODE)
+   ==================================================== */
+
+/* 1. Sare gradient / clip-text elements se solid color force hatana */
+body.light-mode span.bg-clip-text,
+body.light-mode [class*="bg-clip-text"],
+body.light-mode .gradient-text,
+html.light span.bg-clip-text,
+html.light [class*="bg-clip-text"],
+html.light .gradient-text {
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important;
+    display: inline-block;
+}
+
+/* 2. Jin text elements par sirf blue text hai (bina gradient ke), unka background remove karo */
+body.light-mode .text-blue-400,
+body.light-mode .text-blue-500,
+body.light-mode .text-blue-600,
+body.light-mode .text-indigo-400,
+body.light-mode .text-indigo-500,
+body.light-mode .text-indigo-600,
+body.light-mode .text-cyan-400 {
+    background: transparent !important;
+    background-color: transparent !important;
+    -webkit-text-fill-color: initial !important;
+}
+
+/* 3. Blue accents ko readable dark blue color dena */
+body.light-mode .text-blue-400 {
+    color: #2563eb !important; /* Proper Royal Blue in Light Mode */
+}
+
+body.light-mode .text-indigo-400 {
+    color: #4f46e5 !important;
+}
+
+body.light-mode .text-cyan-400 {
+    color: #0891b2 !important;
+}
+
+body.light-mode .text-purple-400 {
+    color: #7c3aed !important;
+}
     </style>
 </head>
 <body class="antialiased font-sans bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
