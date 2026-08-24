@@ -340,7 +340,7 @@ def check_and_deduct_credits(user_id):
     return False, 0  # Fail
 
 # ==========================================
-# 2. GLOBAL CONTEXT PROCESSOR (Inject User Data everywhere)
+# 2. GLOBAL CONTEXT PROCESSOR (Inject User Data with Referral Code)
 # ==========================================
 @app.context_processor
 def inject_user():
@@ -348,20 +348,26 @@ def inject_user():
     if 'user_id' in session:
         conn = None
         try:
-            # Direct PyMySQL Connection
             conn = get_db_connection()
             cursor = conn.cursor()
             
-            # Fetch user info for Navbar
-            cursor.execute("SELECT id, full_name, email, plan_type, profile_pic FROM users WHERE id = %s", (session['user_id'],))
+            # 🟢 FIX: Added 'referral_code' to the SELECT query
+            cursor.execute("SELECT id, full_name, email, plan_type, profile_pic, referral_code FROM users WHERE id = %s", (session['user_id'],))
             user = cursor.fetchone()
             
+            # Agar referral_code null ho toh dynamically generate karke update karo
+            if user and not user.get('referral_code'):
+                new_code = secrets.token_hex(4).upper()
+                cursor.execute("UPDATE users SET referral_code = %s WHERE id = %s", (new_code, session['user_id']))
+                conn.commit()
+                user['referral_code'] = new_code
+                
             cursor.close()
         except Exception as e:
             print(f"Context Processor Error: {e}")
         finally:
             if conn:
-                conn.close() # Connection close karna zaroori hai
+                conn.close()
                 
     return dict(current_user=user)
 

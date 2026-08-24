@@ -399,8 +399,11 @@
             </div>
             {% endif %}
         </section>
-            <!-- Refer & Earn Card -->
- <!-- Refer & Earn Card (With Live Tracker) -->
+         
+        <!-- Refer & Earn Card (With Live Dynamic User Link) -->
+{% set ref_code = user.referral_code or current_user.referral_code %}
+{% set user_referral_url = "https://atsresumepro.onrender.com/login?tab=signup&ref=" ~ ref_code %}
+
 <div class="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 rounded-3xl p-6 text-white shadow-2xl mt-8 border border-purple-500/30 relative overflow-hidden">
     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
         
@@ -436,32 +439,73 @@
             </div>
         </div>
 
-        <!-- Right Side: Referral Link Box -->
-        <div class="bg-black/40 p-5 rounded-2xl border border-white/10 w-full lg:w-96 backdrop-blur-md shadow-lg">
-            <p class="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
-                <span>Your Referral Link:</span>
-                <span class="text-[10px] text-yellow-400 font-mono">100% Tracked</span>
-            </p>
-            <div class="flex items-center gap-2">
-                <input type="text" readonly id="refLinkInput" 
-                       value="https://atsresumepro.onrender.com/login?tab=signup&ref={{ user.referral_code or current_user.referral_code }}" 
-                       class="bg-black/60 text-yellow-300 text-xs px-3.5 py-2.5 rounded-xl font-mono outline-none border border-purple-500/40 w-full select-all focus:border-yellow-400 transition-colors">
-                <button onclick="copyRefLink()" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 flex-shrink-0">
-                    <i class="fas fa-copy"></i> Copy
-                </button>
+        <!-- Right Side: Referral Link & WhatsApp Share Box -->
+        <div class="bg-black/40 p-5 rounded-2xl border border-white/10 w-full lg:w-96 backdrop-blur-md shadow-lg space-y-3">
+            <div>
+                <p class="text-xs font-bold text-gray-300 mb-2 flex items-center justify-between">
+                    <span>Your Referral Link:</span>
+                    <span class="text-[10px] text-yellow-400 font-mono">100% Tracked</span>
+                </p>
+                <div class="flex items-center gap-2">
+                    <input type="text" readonly id="refLinkInput" 
+                           value="{{ user_referral_url }}" 
+                           class="bg-black/60 text-yellow-300 text-xs px-3.5 py-2.5 rounded-xl font-mono outline-none border border-purple-500/40 w-full select-all focus:border-yellow-400 transition-colors">
+                    <button onclick="copyRefLink(this)" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5 flex-shrink-0">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
             </div>
+
+            <!-- 🟢 Direct WhatsApp Send Button -->
+            <button onclick="shareUserReferralOnWhatsApp()" 
+                    class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-95">
+                <i class="fab fa-whatsapp text-lg"></i>
+                <span>Send on WhatsApp</span>
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-function copyRefLink() {
+function copyRefLink(btn) {
     const input = document.getElementById('refLinkInput');
+    if (!input) return;
     input.select();
     navigator.clipboard.writeText(input.value);
-    alert('🎉 Referral link copied! Share with your friends.');
+
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check text-green-300"></i> Copied!';
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+    }, 2000);
+}
+
+function shareUserReferralOnWhatsApp() {
+    const inputField = document.getElementById('refLinkInput');
+    const userReferralLink = inputField ? inputField.value.trim() : window.location.origin + '/login?tab=signup';
+    const userCode = "{{ user.referral_code or current_user.referral_code }}";
+
+     const customMessage = `🎯 *Tired of Job Rejections? Beat the ATS Screening Bots Today!*
+
+I am using *ATS Resume Pro* to craft recruiter-tested, high-scoring resumes and tailored cover letters in under 5 minutes with Next-Gen AI.
+
+✨ *Key Platform Features:*
+✅ *20+ Recruiter-Approved Formats* (Single-column, Chronological & Hybrid designs)
+✅ *AI Bullet & Summary Writer* (Instant action-driven phrasing)
+✅ *Live ATS Keyword Matcher* (Identifies missing skill gaps against job descriptions)
+✅ *Instant PDF & Word Exports* (Zero formatting glitches)
+
+🎁 *Exclusive Joining Perk:*
+Sign up with my personal invite code *${userCode}* to unlock the *Luxury Pro Template* and get *50 Free AI Credits* instantly!
+
+👉 *Claim your free perks and build your CV here:*
+${userReferralLink}`;
+
+    const encodedURL = "https://api.whatsapp.com/send?text=" + encodeURIComponent(customMessage);
+    window.open(encodedURL, '_blank');
 }
 </script>
+
         <!-- Dashboard Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column -->

@@ -1184,6 +1184,74 @@
     </div>
 </div>
 
+<!-- 🎁 CENTER REFERRAL PROMO MODAL -->
+{% set user_ref_code = current_user.referral_code if current_user and current_user.referral_code else '' %}
+{% set share_url = "https://atsresumepro.onrender.com/login?tab=signup&ref=" ~ user_ref_code %}
+
+<div id="referralCenterModal" class="fixed inset-0 z-[120] hidden bg-black/75 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300">
+    <div class="relative w-full max-w-lg bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border border-purple-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden animate-fade-in text-center">
+        
+        <!-- Glow Orbs -->
+        <div class="absolute -top-16 -left-16 w-36 h-36 bg-purple-600/30 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-blue-600/30 rounded-full blur-2xl pointer-events-none"></div>
+
+        <!-- Close Button (X) -->
+        <button onclick="closeReferralModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white flex items-center justify-center transition-colors">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+
+        <!-- Big Gift Icon -->
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-xl shadow-orange-500/20 mb-5 transform hover:scale-105 transition-transform">
+            <i class="fas fa-gift text-3xl animate-bounce"></i>
+        </div>
+
+        <span class="inline-block text-xs font-extrabold uppercase px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white tracking-wider mb-2">
+            Limited Time Reward 🚀
+        </span>
+
+        <h3 class="text-2xl sm:text-3xl font-extrabold text-white mb-2 leading-tight">
+            Unlock <span class="text-amber-400">Luxury Pro Template</span> For Free!
+        </h3>
+
+        <p class="text-sm text-gray-300 leading-relaxed mb-6 max-w-sm mx-auto">
+            Invite 3 friends to ATS Resume Pro. When they register, you instantly unlock VIP Templates and get 50 AI credits.
+        </p>
+
+        {% if current_user %}
+            <!-- 🟢 LOGGED-IN VIEW: Direct WhatsApp Send Button -->
+            <div class="space-y-3">
+                <input type="hidden" id="builderRefLinkHidden" value="{{ share_url }}">
+                <button onclick="shareBuilderWhatsApp()" 
+                        class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-base font-extrabold flex items-center justify-center gap-3 shadow-xl shadow-green-500/30 transition-all hover:scale-[1.02] active:scale-95">
+                    <i class="fab fa-whatsapp text-2xl"></i> 
+                    <span>Send Invite on WhatsApp</span>
+                </button>
+                <p class="text-[11px] text-gray-400 font-mono">Invite Code: <span class="text-amber-400 font-bold">{{ user_ref_code }}</span></p>
+            </div>
+
+        {% else %}
+            <!-- 🟡 GUEST VIEW (Not Logged In): Promo + Redirect to Sign Up -->
+            <div class="space-y-3">
+                <a href="{{ url_for('login_page', tab='signup') }}" 
+                   class="w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-base shadow-xl flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-95">
+                    <i class="fas fa-bolt"></i> 
+                    <span>Sign Up to Get Invite Link</span>
+                </a>
+                <p class="text-xs text-gray-400">
+                    Already have an account? <a href="{{ url_for('login_page') }}" class="text-blue-400 hover:underline font-bold">Log in</a>
+                </p>
+            </div>
+        {% endif %}
+
+        <div class="mt-5 pt-3 border-t border-white/10">
+            <button onclick="closeReferralModal()" class="text-xs text-gray-400 hover:text-gray-200 transition-colors">
+                No thanks, continue to builder →
+            </button>
+        </div>
+
+    </div>
+</div>
+
 <script>
 function showUpgradeModal() {
     document.getElementById('upgradeModal').classList.remove('hidden');
@@ -1192,112 +1260,56 @@ function closeUpgradeModal() {
     document.getElementById('upgradeModal').classList.add('hidden');
 }
 </script>
-     
-    <script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
-    
-    <script src="{{ url_for('static', filename='js/builder.js') }}"></script>
 
-    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
+<script src="{{ url_for('static', filename='js/builder.js') }}"></script>
+<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Check Login Status from Jinja2
-    const isLoggedIn = {{ 'true' if current_user else 'false' }};
+// ==========================================
+// 🚀 BUILDER CORE INITIALIZATION (CLEANED & UNIFIED)
+// ==========================================
 
-    // 2. Global Click Listener (Capture Phase)
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Auth Status Check (Jinja2)
+    const isLoggedIn = {{ 'true' if current_user else 'false' }};
+    const currentUserId = "{{ current_user.id if current_user else 'guest' }}";
+
+    // 2. Protected Buttons Interceptor (Guest Auth Lock)
     document.body.addEventListener('click', function(e) {
-        
-        // Check karo agar click kiya gaya element (ya uska parent) Protected hai
         const targetBtn = e.target.closest('.auth-lock, #downloadPdfBtn, #downloadWordBtn, #saveResumeBtn, #saveResumeFinalBtn, #generateCoverLetterBtn');
         
         if (targetBtn && !isLoggedIn) {
-            // STOP EVERYTHING 🛑
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
 
-            // Show Notification
             showLoginToast();
 
-            // Redirect to Signup Page after 2 seconds
             setTimeout(() => {
-                // 👇 FIX: Seedha Signup Tab par bhejo
                 window.location.href = "/login?tab=signup"; 
             }, 2000);
         }
-    }, true); 
+    }, true);
 
-    // Custom Toast Function (Theme Aware)
-    function showLoginToast() {
-        const existing = document.querySelector('.auth-toast');
-        if(existing) existing.remove();
-
-        const toast = document.createElement('div');
-        
-        // Check Current Theme
-        const isLight = document.body.classList.contains('light-mode');
-
-        // Colors based on Theme
-        const bgClass = isLight ? "bg-white border-red-200 text-slate-900" : "bg-slate-900 border-red-500/50 text-white";
-        const textClass = isLight ? "text-slate-600" : "text-gray-400";
-        const iconBg = isLight ? "bg-red-100 text-red-600" : "bg-red-500/20 text-red-500";
-
-        toast.className = `auth-toast fixed top-24 right-5 z-[9999] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-bounce border ${bgClass}`;
-        
-        toast.innerHTML = `
-            <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center">
-                <i class="fas fa-lock text-xl"></i>
-            </div>
-            <div>
-                <h4 class="font-bold text-lg">Access Restricted</h4>
-                <p class="text-sm ${textClass}">Please Sign Up to use this feature.</p>
-            </div>
-        `;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            if(toast) toast.remove();
-        }, 3000);
-    }
-});
-
-// ==========================================
-// 🧠 SMART LOAD LOGIC (Paste this inside script tag)
-// ==========================================
-
-document.addEventListener('DOMContentLoaded', async () => {
-    // 1. URL se ID nikalo (Example: /builder?id=12)
+    // 3. Smart Resume Load from URL Param (/builder?id=12)
     const urlParams = new URLSearchParams(window.location.search);
     const resumeId = urlParams.get('id');
 
     if (resumeId) {
-        console.log("Found Resume ID:", resumeId);
-        
-        // 2. Server se Data mangwao
         try {
             const res = await fetch(`/api/get-resume/${resumeId}`);
             const data = await res.json();
             
             if (data.success) {
-                // 3. Global ID set karo taaki Save karte waqt pata rahe ki update karna hai
                 window.currentResumeId = resumeId; 
-                
-                // 4. Form Bharo (Ye function tumhare builder me hona chahiye)
-                // Note: Agar tumhara function alag naam ka hai to yahan change kar lena
                 if (typeof populateResumeForm === "function") {
                     populateResumeForm(data.resume.resume_data);
-                    
-                    // Template bhi wahi select karo jo save tha
-                    if(data.resume.template_name) {
-                        // Agar tumhara variable 'currentTemplate' hai
+                    if (data.resume.template_name) {
                         window.currentTemplate = data.resume.template_name;
-                        console.log("Template set to:", data.resume.template_name);
                     }
-                } else {
-                    console.error("Error: populateResumeForm function not found!");
                 }
-                
-                console.log("✅ Resume Loaded Successfully");
             } else {
                 alert("Could not load resume: " + data.message);
             }
@@ -1305,41 +1317,156 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error("Failed to load resume", e);
         }
     }
+
+    // 4. Bind Download Event Listeners (Single Registration)
+    const pdfBtn = document.getElementById('downloadPdfBtn');
+    if (pdfBtn) {
+        pdfBtn.replaceWith(pdfBtn.cloneNode(true));
+        document.getElementById('downloadPdfBtn').addEventListener('click', window.downloadPDF);
+    }
+
+    const wordBtn = document.getElementById('downloadWordBtn');
+    if (wordBtn) {
+        wordBtn.replaceWith(wordBtn.cloneNode(true));
+        document.getElementById('downloadWordBtn').addEventListener('click', window.downloadWord);
+    }
+    
+    const finalPdf = document.getElementById('downloadPdfFinalBtn');
+    if (finalPdf) {
+        finalPdf.replaceWith(finalPdf.cloneNode(true));
+        document.getElementById('downloadPdfFinalBtn').addEventListener('click', window.downloadPDF);
+    }
+    
+    const finalWord = document.getElementById('downloadDocxFinalBtn');
+    if (finalWord) {
+        finalWord.replaceWith(finalWord.cloneNode(true));
+        document.getElementById('downloadDocxFinalBtn').addEventListener('click', window.downloadWord);
+    }
+
+    // 5. Intelligent Referral Modal Auto-Open
+    const modal = document.getElementById('referralCenterModal');
+    if (modal) {
+        const guestDismissed = localStorage.getItem('referralGuestDismissed');
+        const userDismissed = localStorage.getItem('referralUserDismissed_' + currentUserId);
+
+        let shouldShowModal = false;
+
+        if (!isLoggedIn && !guestDismissed) {
+            shouldShowModal = true;
+        } else if (isLoggedIn && !userDismissed) {
+            shouldShowModal = true;
+        }
+
+        if (shouldShowModal) {
+            setTimeout(() => {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }, 1000);
+        }
+    }
 });
 
 // ==========================================
-// 💾 SAVE RESUME (FINAL FIX - Template Selection)
+// 🛠️ HELPER FUNCTIONS
 // ==========================================
+
+function closeReferralModal() {
+    const modal = document.getElementById('referralCenterModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        const isLoggedIn = {{ 'true' if current_user else 'false' }};
+        const currentUserId = "{{ current_user.id if current_user else 'guest' }}";
+
+        if (isLoggedIn) {
+            localStorage.setItem('referralUserDismissed_' + currentUserId, 'true');
+        } else {
+            localStorage.setItem('referralGuestDismissed', 'true');
+        }
+    }
+}
+
+function shareBuilderWhatsApp() {
+    // 1. Referral Code Fetch (Backend fallback if missing)
+    const rawCode = "{{ current_user.referral_code if current_user and current_user.referral_code else '' }}".trim();
+    const fallbackCode = "{{ session.get('user_id') ~ 'PRO' if session.get('user_id') else 'ATS2026' }}";
+    const userCode = rawCode !== "" ? rawCode : fallbackCode;
+
+    const baseHost = window.location.origin;
+    const userReferralLink = `${baseHost}/login?tab=signup&ref=${userCode}`;
+
+    const customMessage = `🎯 *Tired of Job Rejections? Beat the ATS Screening Bots Today!*
+
+I am using *ATS Resume Pro* to craft recruiter-tested, high-scoring resumes and tailored cover letters in under 5 minutes with Next-Gen AI.
+
+✨ *Key Platform Features:*
+✅ *20+ Recruiter-Approved Formats* (Single-column, Chronological & Hybrid designs)
+✅ *AI Bullet & Summary Writer* (Instant action-driven phrasing)
+✅ *Live ATS Keyword Matcher* (Identifies missing skill gaps against job descriptions)
+✅ *Instant PDF & Word Exports* (Zero formatting glitches)
+
+🎁 *Exclusive Joining Perk:*
+Sign up with my personal invite code *${userCode}* to unlock the *Luxury Pro Template* and get *50 Free AI Credits* instantly!
+
+👉 *Claim your free perks and build your CV here:*
+${userReferralLink}`;
+
+    const encodedURL = "https://api.whatsapp.com/send?text=" + encodeURIComponent(customMessage);
+    window.open(encodedURL, '_blank');
+}
+
+function showLoginToast() {
+    const existing = document.querySelector('.auth-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    const isLight = document.body.classList.contains('light-mode');
+
+    const bgClass = isLight ? "bg-white border-red-200 text-slate-900" : "bg-slate-900 border-red-500/50 text-white";
+    const textClass = isLight ? "text-slate-600" : "text-gray-400";
+    const iconBg = isLight ? "bg-red-100 text-red-600" : "bg-red-500/20 text-red-500";
+
+    toast.className = `auth-toast fixed top-24 right-5 z-[9999] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-bounce border ${bgClass}`;
+    toast.innerHTML = `
+        <div class="w-10 h-10 rounded-full ${iconBg} flex items-center justify-center">
+            <i class="fas fa-lock text-xl"></i>
+        </div>
+        <div>
+            <h4 class="font-bold text-lg">Access Restricted</h4>
+            <p class="text-sm ${textClass}">Please Sign Up to use this feature.</p>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        if (toast) toast.remove();
+    }, 3000);
+}
+
 async function saveResume() {
-    const saveBtn = document.getElementById('saveBtn');
-    const originalText = saveBtn.innerHTML;
+    const saveBtn = document.getElementById('saveResumeBtn') || document.getElementById('saveResumeFinalBtn');
+    if (!saveBtn) return;
     
-    // 1. Loading Start
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
     saveBtn.disabled = true;
 
     try {
-        // 2. Data Collect karo
         if (typeof collectFormData !== 'function') {
             alert("Error: collectFormData function missing!");
             return;
         }
         const resumeData = collectFormData(); 
-        
-        // 👇 MAIN FIX: Dropdown se sahi naam uthao
         const templateDropdown = document.getElementById('templateSelector');
         const selectedTemplate = templateDropdown ? templateDropdown.value : 'modern';
 
-        // 3. Payload Banao
         const payload = {
             data: resumeData,
-            template_name: selectedTemplate, // Ab ye 'classic', 'creative' etc. bhejega
+            template_name: selectedTemplate,
             resume_id: window.currentResumeId || null 
         };
 
-        console.log("Saving Template:", selectedTemplate); // Console me check karna
-
-        // 4. API Call
         const res = await fetch('/api/save-resume', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1359,41 +1486,10 @@ async function saveResume() {
         console.error("Save Error:", error);
         alert("System Error during save.");
     } finally {
-        // Reset Button
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Manual Event Listeners to prevent double counting
-    
-    const pdfBtn = document.getElementById('downloadPdfBtn');
-    // Check if listener already exists to be safe
-    if(pdfBtn) {
-        pdfBtn.replaceWith(pdfBtn.cloneNode(true)); // Clears old listeners
-        document.getElementById('downloadPdfBtn').addEventListener('click', window.downloadPDF);
-    }
-
-    const wordBtn = document.getElementById('downloadWordBtn');
-    if(wordBtn) {
-        wordBtn.replaceWith(wordBtn.cloneNode(true)); // Clears old listeners
-        document.getElementById('downloadWordBtn').addEventListener('click', window.downloadWord);
-    }
-    
-    // Final Step Buttons
-    const finalPdf = document.getElementById('downloadPdfFinalBtn');
-    if(finalPdf) {
-        finalPdf.replaceWith(finalPdf.cloneNode(true));
-        document.getElementById('downloadPdfFinalBtn').addEventListener('click', window.downloadPDF);
-    }
-    
-    const finalWord = document.getElementById('downloadDocxFinalBtn');
-    if(finalWord) {
-        finalWord.replaceWith(finalWord.cloneNode(true));
-        document.getElementById('downloadDocxFinalBtn').addEventListener('click', window.downloadWord);
-    }
-});
 </script>
 </body>
 </html>
