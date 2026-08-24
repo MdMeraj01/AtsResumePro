@@ -2251,3 +2251,71 @@ fetch('/api/export/pdf', {
         template_name: currentTemplateName // <--- YE BHEJNA ZAROORI HAI (e.g., 'Modern', 'Creative')
     })
 })
+// ==========================================
+// 🛡️ STRICT TEMPLATE ACCESS GUARD (
+// ==========================================
+
+function showAuthLockToast(title, message) {
+    const existing = document.querySelector('.auth-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    const isLight = document.body.classList.contains('light-mode');
+
+    // Screenshot styling classes
+    const bgClass = isLight ? "bg-white border-red-300 text-slate-900 shadow-xl" : "bg-[#0b0f19]/90 border-red-500/40 text-white shadow-2xl backdrop-blur-md";
+    const textClass = isLight ? "text-slate-600" : "text-gray-400";
+    const iconBg = isLight ? "bg-red-100 text-red-600" : "bg-red-500/20 text-red-500";
+
+    toast.className = `auth-toast fixed top-24 right-5 z-[9999] px-6 py-4 rounded-2xl flex items-center gap-4 animate-bounce border ${bgClass} transition-all duration-300`;
+    
+    toast.innerHTML = `
+        <div class="w-11 h-11 rounded-2xl ${iconBg} flex items-center justify-center shrink-0">
+            <i class="fas fa-lock text-xl"></i>
+        </div>
+        <div class="text-left">
+            <h4 class="font-bold text-base leading-tight">${title}</h4>
+            <p class="text-xs ${textClass} mt-0.5">${message}</p>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        if (toast) toast.remove();
+    }, 3000);
+}
+
+// ==========================================
+// 🛡️ STRICT TEMPLATE ACCESS GUARD (USING AUTH TOAST)
+// ==========================================
+async function verifyTemplatePermission(targetTemplate) {
+    try {
+        const res = await fetch('/api/check-template-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template_name: targetTemplate })
+        });
+        const data = await res.json();
+
+        if (!data.has_access) {
+            // 🛑 Browser Alert Hatakar Screenshot Wala Toast Trigger
+            if (data.reason === 'LOGIN_REQUIRED') {
+                showAuthLockToast('Access Restricted', 'Please Sign Up to unlock this template.');
+                setTimeout(() => {
+                    window.location.href = `/login?tab=signup&redirect=/builder?template=${targetTemplate}`;
+                }, 2000);
+            } else {
+                showAuthLockToast('Access Restricted', `"${data.template_name || targetTemplate}" is a Premium Template.`);
+                setTimeout(() => {
+                    window.location.href = `/templates`;
+                }, 2000);
+            }
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error("Permission check failed", e);
+        return false;
+    }
+}

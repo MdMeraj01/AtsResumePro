@@ -3199,49 +3199,60 @@ def contact_us():
 # ==========================================
 # 🛑 CHECK & DEDUCT LIMIT (For JS Download)
 # ==========================================
+# app.py -> /api/check-download-limit
 @app.route('/api/check-download-limit', methods=['POST'])
 def check_download_limit():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
+    data = request.json or {}
+    template_name = str(data.get('template_name', 'modern')).strip().lower()
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
-        # 1. User Data Fetch
+        # Check template premium status
+        cursor.execute("SELECT is_premium FROM templates WHERE LOWER(name) = %s", (template_name,))
+        tpl = cursor.fetchone()
+
         cursor.execute("SELECT plan_type, resume_limit FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
-        
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        plan = str(user['plan_type'] or 'Free').strip().capitalize()
-        limit = int(user['resume_limit'] or 0)
+        plan = str(user.get('plan_type') or 'Free').strip().capitalize()
+        limit = int(user.get('resume_limit') or 0)
 
-        # 2. Check Logic
+        # 🛑 Block if Premium Template is not owned by user
+        if tpl and tpl.get('is_premium') and plan not in ['Standard', 'Premium', 'Pro', 'Lifetime']:
+            cursor.execute("SELECT id FROM user_purchases WHERE user_id = %s AND LOWER(template_name) = %s", 
+                           (session['user_id'], template_name))
+            if not cursor.fetchone():
+                return jsonify({
+                    'success': False, 
+                    'error': 'PREMIUM_LOCKED', 
+                    'message': 'This is a premium template. Please unlock it to download.'
+                }), 403
+
+        # Standard Free limit check
         if plan == 'Free':
             if limit > 0:
-                # ✅ ALLOWED: Deduct 1
                 new_limit = limit - 1
                 cursor.execute("UPDATE users SET resume_limit = %s WHERE id = %s", (new_limit, session['user_id']))
                 conn.commit()
                 return jsonify({'success': True, 'remaining': new_limit})
             else:
-                # 🚫 BLOCKED
                 return jsonify({
                     'success': False, 
                     'error': 'LIMIT_REACHED',
                     'message': 'Free limit exceeded! Upgrade plan.'
                 }), 403
         else:
-            # ✅ PREMIUM USER: Always Allowed (No deduction)
-            return jsonify({'success': True, 'message': 'Premium User'})
+            return jsonify({'success': True, 'message': 'Premium Plan Active'})
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
-        conn.close()
-       
+        conn.close()       
 
 # ==========================================
 # 💳 PAYMENT & CHECKOUT ROUTES
@@ -3745,6 +3756,63 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET"),
     secure=True
 )
+
+# ==========================================
+# 🔒 VERIFY SINGLE TEMPLATE ACCESS (SECURITY)
+# ==========================================
+@app.route('/api/check-template-access', methods=['POST'])
+def check_template_access():
+    data = request.json or {}
+    template_name = str(data.get('template_name', '')).strip().lower()
+
+    if not template_name:
+        return jsonify({'has_access': True})
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # 1. Check if template is Premium
+        cursor.execute("SELECT is_premium, display_name FROM templates WHERE LOWER(name) = %s", (template_name,))
+        tpl = cursor.fetchone()
+
+        # Agar template free hai ya DB me exist nahi karta
+        if not tpl or not tpl.get('is_premium'):
+            return jsonify({'has_access': True, 'is_premium': False})
+
+        # 2. Agar user login nahi hai aur template premium hai -> Block
+        if 'user_id' not in session:
+            return jsonify({'has_access': False, 'is_premium': True, 'reason': 'LOGIN_REQUIRED'})
+
+        # 3. Check User Plan (Pro / Standard / Lifetime gets all)
+        cursor.execute("SELECT plan_type FROM users WHERE id = %s", (session['user_id'],))
+        user = cursor.fetchone()
+        plan = str(user.get('plan_type', 'Free')).strip().capitalize()
+
+        if plan in ['Standard', 'Premium', 'Pro', 'Lifetime']:
+            return jsonify({'has_access': True, 'is_premium': True})
+
+        # 4. Check if user purchased this single template
+        cursor.execute("SELECT id FROM user_purchases WHERE user_id = %s AND LOWER(template_name) = %s", 
+                       (session['user_id'], template_name))
+        purchase = cursor.fetchone()
+
+        if purchase:
+            return jsonify({'has_access': True, 'is_premium': True})
+
+        # User is Free & has not purchased -> Block
+        return jsonify({
+            'has_access': False, 
+            'is_premium': True, 
+            'template_name': tpl.get('display_name', template_name).title(),
+            'reason': 'PAYMENT_REQUIRED'
+        })
+
+    except Exception as e:
+        print(f"Access Check Error: {e}")
+        return jsonify({'has_access': False, 'error': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/manifest.json')
 def manifest():

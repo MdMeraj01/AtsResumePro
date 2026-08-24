@@ -1490,6 +1490,52 @@ async function saveResume() {
         saveBtn.disabled = false;
     }
 }
+
+
+// 1. Check on Page Load from URL Query (?template=luxury)
+document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedTemplate = urlParams.get('template');
+
+    if (requestedTemplate) {
+        const allowed = await verifyTemplatePermission(requestedTemplate);
+        if (!allowed) {
+            // Agar allow nahi hai toh URL se parameter hata kar default 'modern' par reset karo
+            const selector = document.getElementById('templateSelector');
+            if (selector) selector.value = 'modern';
+            window.history.replaceState({}, document.title, window.location.pathname);
+            if (typeof changeTemplate === 'function') changeTemplate('modern');
+        }
+    }
+});
+
+// 2. Check on Dropdown Option Change
+const templateSelector = document.getElementById('templateSelector');
+if (templateSelector) {
+    let previousValidTemplate = templateSelector.value || 'modern';
+
+    templateSelector.addEventListener('focus', function() {
+        previousValidTemplate = this.value;
+    });
+
+    templateSelector.addEventListener('change', async function(e) {
+        const selected = this.value;
+        const allowed = await verifyTemplatePermission(selected);
+
+        if (!allowed) {
+            // Revert dropdown back to the previous allowed template
+            this.value = previousValidTemplate;
+            e.preventDefault();
+        } else {
+            previousValidTemplate = selected;
+            // Agar allowed hai tabhi render/template change trigger karo
+            if (typeof changeTemplate === 'function') {
+                changeTemplate(selected);
+            }
+        }
+    });
+}
+
 </script>
 </body>
 </html>
