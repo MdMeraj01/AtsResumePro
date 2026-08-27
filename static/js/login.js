@@ -228,16 +228,21 @@ async function handleLogin(e) {
 }
 
 // OTP Step Tracker
+// OTP Step Tracker
 let signupStep = 1; // 1 = Send OTP, 2 = Verify & Register
 
 async function handleSignup(e) {
     e.preventDefault();
 
-    const name = document.getElementById('signup-name').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
+    const nameInput = document.getElementById('signup-name');
+    const emailInput = document.getElementById('signup-email');
+    const passwordInput = document.getElementById('signup-password');
     const terms = document.getElementById('terms').checked;
-    const otpInput = document.getElementById('signup-otp'); // Naya OTP box
+    const otpInput = document.getElementById('signup-otp');
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
 
     const submitBtn = e.target.querySelector('.submit-btn');
     const loader = submitBtn.querySelector('.btn-loader');
@@ -248,12 +253,27 @@ async function handleSignup(e) {
         return;
     }
 
+    // 🛑 1. Client-Side Strict Validations
+    const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+    if (!nameRegex.test(name)) {
+        showToast('Invalid Name', 'Name must contain only English letters and spaces (No emojis/numbers).', 'error');
+        nameInput.focus();
+        return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        showToast('Invalid Email', 'Please enter a valid email address.', 'error');
+        emailInput.focus();
+        return;
+    }
+
     // Button Loading State
     submitBtn.disabled = true;
     btnText.style.opacity = '0.5';
     loader.style.display = 'block';
 
-    // 🟢 STEP 1: EMAIL PAR OTP BHEJO
+    // 🟢 STEP 1: VALIDATE NAME & SEND OTP TO EMAIL
     if (signupStep === 1) {
         btnText.innerText = 'Sending OTP...';
         
@@ -261,45 +281,52 @@ async function handleSignup(e) {
             const response = await fetch('/api/user/send-signup-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email })
+                body: JSON.stringify({ 
+                    full_name: name,
+                    email: email 
+                })
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
-                showToast('OTP Sent!', 'Please check your email for the code.', 'success');
+                showToast('OTP Sent!', 'Please check your email for the verification code.', 'success');
                 
-                // OTP Box dikhao aur Email lock kar do
+                // Show OTP field and lock inputs
                 document.getElementById('signup-otp-group').style.display = 'block';
-                document.getElementById('signup-email').readOnly = true;
-                document.getElementById('signup-email').style.opacity = '0.7';
+                nameInput.readOnly = true;
+                nameInput.style.opacity = '0.7';
+                emailInput.readOnly = true;
+                emailInput.style.opacity = '0.7';
                 otpInput.required = true;
+                otpInput.focus();
                 
-                // Button Update karo
+                // Switch button mode to verification
                 btnText.innerText = 'Verify & Create Account';
-                signupStep = 2; // Ab step 2 par chale gaye
+                signupStep = 2;
                 resetButtonState(submitBtn, btnText, loader);
             } else {
-                showToast('Error', data.message || 'Failed to send OTP', 'error');
+                showToast('Validation Error', data.message || 'Failed to send OTP', 'error');
                 btnText.innerText = 'Create Account';
                 resetButtonState(submitBtn, btnText, loader);
             }
         } catch (error) {
-            console.error(error);
-            showToast('System Error', 'Server not responding', 'error');
+            console.error('Send OTP Error:', error);
+            showToast('System Error', 'Server not responding. Please try again.', 'error');
             btnText.innerText = 'Create Account';
             resetButtonState(submitBtn, btnText, loader);
         }
     } 
-    // 🟢 STEP 2: OTP VERIFY KARKE ACCOUNT BANAO
+    // 🟢 STEP 2: VERIFY OTP & COMPLETE REGISTRATION
     else if (signupStep === 2) {
-        const otp = otpInput.value;
+        const otp = otpInput.value.trim();
         btnText.innerText = 'Verifying OTP...';
 
-        if (!otp || otp.length !== 6) {
-            showToast('Error', 'Please enter a valid 6-digit OTP', 'error');
+        if (!otp || otp.length !== 6 || isNaN(otp)) {
+            showToast('Invalid Code', 'Please enter a valid 6-digit numeric OTP', 'error');
             btnText.innerText = 'Verify & Create Account';
             resetButtonState(submitBtn, btnText, loader);
+            otpInput.focus();
             return;
         }
 
@@ -312,28 +339,26 @@ async function handleSignup(e) {
                     email: email,
                     password: password,
                     otp: otp,
-                    ref_code: sessionStorage.getItem('referral_code') || '' // ✅ Referral code captured
+                    ref_code: sessionStorage.getItem('referral_code') || ''
                 })
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // 🧹 Storage se referral code clean karo
                 sessionStorage.removeItem('referral_code');
-
                 showToast('Account Created!', 'Registration successful. Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = data.redirect_url || '/';
                 }, 1000);
             } else {
-                showToast('Signup Failed', data.message || 'Invalid OTP', 'error');
+                showToast('Signup Failed', data.message || 'Invalid OTP code', 'error');
                 btnText.innerText = 'Verify & Create Account';
                 resetButtonState(submitBtn, btnText, loader);
             }
         } catch (error) {
-            console.error(error);
-            showToast('System Error', 'Server not responding', 'error');
+            console.error('Signup Error:', error);
+            showToast('System Error', 'Server not responding. Please try again.', 'error');
             btnText.innerText = 'Verify & Create Account';
             resetButtonState(submitBtn, btnText, loader);
         }

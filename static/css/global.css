@@ -1,0 +1,82 @@
+/* 🛠️ Fix 1: PWA Install Button Visibility in Light Mode */
+body.light-mode #pwaInstallBtn,
+body.light-mode .pwa-install-btn {
+    background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+    color: #ffffff !important;
+    border: 1px solid #e0e7ff !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25) !important;
+}
+
+body.light-mode #pwaInstallBtn:hover,
+body.light-mode .pwa-install-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
+    color: #ffffff !important;
+}
+
+/* 🛠️ Fix 2: Template Render Area & Resume Light Mode Contrast Fix */
+body.light-mode .resume-preview-wrapper {
+    background-color: #f1f5f9 !important; /* Soft gray contrast background */
+    border-color: #cbd5e1 !important;
+}
+
+/* Resume sheet hamesha clean white sheet with dark readable text */
+body.light-mode #template-render-area,
+body.light-mode #template-render-area .resume-template {
+    background-color: #ffffff !important;
+    color: #0f172a !important; /* Dark charcoal text */
+}
+
+body.light-mode #template-render-area h1,
+body.light-mode #template-render-area h2,
+body.light-mode #template-render-area h3,
+body.light-mode #template-render-area p,
+body.light-mode #template-render-area span,
+body.light-mode #template-render-area li {
+    color: inherit;
+}
+
+/* ==========================================================
+   🔥 ULTIMATE FIX: TEMPLATE CARD HOVER OVERLAY FOR BOTH THEMES
+   ========================================================== */
+
+/* 1. Dark Theme Hover Overlay (Sleek Dark Frosted Glass) */
+[class*="group"]:hover > div[class*="absolute"][class*="inset-0"],
+.group:hover .absolute.inset-0,
+[class*="template"]:hover [class*="absolute"][class*="inset-0"] {
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* 2. Light Theme Hover Overlay (Translucent Soft Glass - NEVER SOLID WHITE) */
+body.light-mode [class*="group"]:hover > div[class*="absolute"][class*="inset-0"],
+body.light-mode .group:hover .absolute.inset-0,
+body.light-mode [class*="template"]:hover [class*="absolute"][class*="inset-0"],
+body.light-mode div[class*="bg-slate-900/80"],
+body.light-mode div[class*="bg-black/75"],
+body.light-mode div[class*="bg-white/80"] {
+    background-color: rgba(241, 245, 249, 0.65) !important; /* Semi-transparent Slate 100 */
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* 3. Force Card Image & Inner Containers to NOT turn solid white */
+body.light-mode .group:hover img,
+body.light-mode [class*="template"]:hover img {
+    filter: blur(2px) brightness(0.95) !important;
+    transition: filter 0.3s ease !important;
+}
+
+/* 4. Eye Icon & Text contrast in Light Mode Hover */
+body.light-mode .group:hover i.fa-eye,
+body.light-mode [class*="template"]:hover i.fa-eye {
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 5. "Use Template" Button Glow in Light Mode */
+body.light-mode .group:hover button,
+body.light-mode .group:hover a {
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.5) !important;
+}

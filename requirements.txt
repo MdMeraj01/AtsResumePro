@@ -28,3 +28,6 @@ Werkzeug==3.0.3
 razorpay
 
 cloudinary
+
+dnspython>=2.6.1
+psycopg2-binary

@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, redirect, url_for, session, Response, make_response, flash
 from werkzeug.utils import secure_filename
+from security import validate_full_name, validate_real_email, check_user_template_access
 import os
 from flask_cors import CORS  
 import json
@@ -27,6 +28,7 @@ import json
 import string
 import cloudinary
 import cloudinary.uploader
+from flask import abort
 
 
 pymysql.install_as_MySQLdb()
@@ -937,40 +939,94 @@ def send_signup_otp_email(user_email, otp):
         print(f"🔥 Network Error (Signup): {e}")
         return False
 
+import re
+import random
+import dns.resolver
+
+# 🚫 Common Disposable Email Domains Blocklist
+DISPOSABLE_DOMAINS = {
+    'tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com',
+    'trashmail.com', 'yopmail.com', 'sharklasers.com', 'dispostable.com',
+    'getnada.com', 'crazymailing.com', 'fakemailgenerator.com', 'dropmail.me'
+}
+
 # ==========================================
-# 🟢 ROUTE 1: SEND OTP (User details submit karne se pehle)
+# 🟢 ROUTE 1: SEND OTP (Strict Validations Added)
 # ==========================================
 @app.route('/api/user/send-signup-otp', methods=['POST'])
 def send_signup_otp():
-    data = request.json
-    email = data.get('email')
+    data = request.json or {}
+    full_name = str(data.get('full_name', '')).strip()
+    email = str(data.get('email', '')).strip().lower()
     
+    # 🔒 Security.py se validation check
+    is_name_valid, name_err = validate_full_name(full_name)
+    if not is_name_valid:
+        return jsonify({'success': False, 'message': name_err}), 400
+
+    is_email_valid, email_err = validate_real_email(email)
+    if not is_email_valid:
+        return jsonify({'success': False, 'message': email_err}), 400
+
+    # 1. Basic Empty Check
     if not email:
-         return jsonify({'success': False, 'message': 'Email is required'}), 400
+        return jsonify({'success': False, 'message': 'Email address is required.'}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 1. Check karo email pehle se to nahi hai
-    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-    if cursor.fetchone():
-        conn.close()
-        return jsonify({'success': False, 'message': 'Email already registered. Please login.'}), 409
-    conn.close()
+    # 2. Full Name Validation (No emojis, numbers, or special characters)
+    if full_name:
+        if len(full_name) < 2:
+            return jsonify({'success': False, 'message': 'Name must be at least 2 characters long.'}), 400
+        if not re.match(r'^[a-zA-Z\s]{2,50}$', full_name):
+            return jsonify({'success': False, 'message': 'Name cannot contain emojis, numbers, or special characters.'}), 400
 
-    # 2. Generate 6-digit OTP
+    # 3. Email Regex Format Validation
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        return jsonify({'success': False, 'message': 'Invalid email format. Please check your email.'}), 400
+
+    # 4. Disposable/Temp Email Provider Block
+    domain = email.split('@')[1]
+    if domain in DISPOSABLE_DOMAINS:
+        return jsonify({'success': False, 'message': 'Temporary/Disposable emails are not allowed.'}), 400
+
+    # 5. Live DNS MX Record Validation (Domain exists & can receive emails)
+    try:
+        mx_records = dns.resolver.resolve(domain, 'MX')
+        if not mx_records:
+            return jsonify({'success': False, 'message': f'Domain "@{domain}" cannot receive emails.'}), 400
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.LifetimeTimeout, Exception):
+        return jsonify({'success': False, 'message': f'Invalid email domain "@{domain}". Mail server not found.'}), 400
+
+    # 6. Database Check (Duplicate Email Check)
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM users WHERE LOWER(email) = %s", (email,))
+        if cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Email is already registered. Please login.'}), 409
+    except Exception as e:
+        print(f"DB Error: {e}")
+        return jsonify({'success': False, 'message': 'Database connection error.'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+    # 7. Generate 6-digit Secure OTP
     otp = str(random.randint(100000, 999999))
-    
-    # 3. OTP ko session me save karo taaki verify karte time match kar sake
+
+    # 8. Save Data to Session
     session['signup_otp'] = otp
     session['signup_email'] = email
-    
-    # 4. Email Send Karo
-    if send_signup_otp_email(email, otp):
-        return jsonify({'success': True, 'message': 'OTP sent! Please check your email.'})
-    else:
-        return jsonify({'success': False, 'message': 'Failed to send OTP. Try again.'}), 500
+    if full_name:
+        session['signup_name'] = full_name
 
+    # 9. Send OTP Email
+    if send_signup_otp_email(email, otp):
+        return jsonify({'success': True, 'message': 'OTP sent! Please check your email inbox.'})
+    else:
+        return jsonify({'success': False, 'message': 'Failed to send OTP. Please check your email address and try again.'}), 500
 
 # ==========================================
 # 🟢 ROUTE: VERIFY OTP & CREATE ACCOUNT (Clean & Single Insert)
@@ -1789,7 +1845,7 @@ def generate_ai_content():
 # ==========================================
 
 # 1. Login Page
-@app.route('/admin/login')
+@app.route('/furqan/login')
 def admin_login_page():
     # Agar Admin pehle se logged in hai (admin_id check karo)
     if 'admin_id' in session:
@@ -1922,7 +1978,7 @@ def admin_login():
 # ==========================================
 # 👑 ADMIN DASHBOARD ROUTE (Updated with Transactions)
 # ==========================================
-@app.route('/admin')
+@app.route('/furqan')
 def admin_dashboard():
     if 'admin_id' not in session:
         return redirect(url_for('admin_login_page'))
@@ -2606,13 +2662,58 @@ def admin_export_pdf(): # <--- 🔴 NAME CHANGED HERE (Error Solved)
     return response
    
 # 4. Admin Logout Route
-@app.route('/admin/logout')
+@app.route('/furqan/logout')
 def admin_logout():
     session.pop('admin_id', None)
     session.pop('admin_name', None)
     session.pop('is_admin_logged_in', None)
     return redirect(url_for('admin_login_page'))
     
+from flask import render_template_string
+
+@app.route('/admin')
+@app.route('/admin-login')
+@app.route('/admin/<path:subpath>')
+def trap_admin_route(subpath=None):
+    custom_html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Access Denied</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full text-center bg-slate-900/90 backdrop-blur-xl border border-red-500/40 p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+            
+            <!-- Glow background -->
+            <div class="absolute -top-12 -left-12 w-36 h-36 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-12 -right-12 w-36 h-36 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Full Meme Image Box (No Cropping) -->
+            <div class="w-full rounded-2xl overflow-hidden mb-6 border border-white/10 shadow-lg bg-black flex items-center justify-center">
+                <img src="https://res.cloudinary.com/lvdqyicr/image/upload/v1787843362/Gemini_Generated_Image_h0kw0qh0kw0qh0kw.png" 
+                     alt="Chala Ja" 
+                     class="w-full h-auto max-h-[380px] object-contain block">
+            </div>
+
+            <h1 class="text-2xl font-black text-white mb-2 tracking-wide flex items-center justify-center gap-2">
+                <span>Looking For Something?</span> 😉
+            </h1>
+            <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                Yahan kuch nahi hai bhai! Galat raste par aa gaye ho.
+            </p>
+
+            <a href="/" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-95 w-full">
+                <i class="fas fa-arrow-left"></i> Chala ja home pag par BSDK 🫵🏻😂
+            </a>
+        </div>
+    </body>
+    </html>
+    """
+    return render_template_string(custom_html), 403
     
 # ==========================================
 # 🔐 SECURITY & ADMIN APIs
@@ -3760,54 +3861,27 @@ cloudinary.config(
 # ==========================================
 # 🔒 VERIFY SINGLE TEMPLATE ACCESS (SECURITY)
 # ==========================================
+from flask import request, jsonify
+from security import check_user_template_access
+
 @app.route('/api/check-template-access', methods=['POST'])
 def check_template_access():
     data = request.json or {}
     template_name = str(data.get('template_name', '')).strip().lower()
 
     if not template_name:
-        return jsonify({'has_access': True})
+        return jsonify({'has_access': True, 'is_premium': False})
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-
     try:
-        # 1. Check if template is Premium
-        cursor.execute("SELECT is_premium, display_name FROM templates WHERE LOWER(name) = %s", (template_name,))
-        tpl = cursor.fetchone()
-
-        # Agar template free hai ya DB me exist nahi karta
-        if not tpl or not tpl.get('is_premium'):
-            return jsonify({'has_access': True, 'is_premium': False})
-
-        # 2. Agar user login nahi hai aur template premium hai -> Block
-        if 'user_id' not in session:
-            return jsonify({'has_access': False, 'is_premium': True, 'reason': 'LOGIN_REQUIRED'})
-
-        # 3. Check User Plan (Pro / Standard / Lifetime gets all)
-        cursor.execute("SELECT plan_type FROM users WHERE id = %s", (session['user_id'],))
-        user = cursor.fetchone()
-        plan = str(user.get('plan_type', 'Free')).strip().capitalize()
-
-        if plan in ['Standard', 'Premium', 'Pro', 'Lifetime']:
-            return jsonify({'has_access': True, 'is_premium': True})
-
-        # 4. Check if user purchased this single template
-        cursor.execute("SELECT id FROM user_purchases WHERE user_id = %s AND LOWER(template_name) = %s", 
-                       (session['user_id'], template_name))
-        purchase = cursor.fetchone()
-
-        if purchase:
-            return jsonify({'has_access': True, 'is_premium': True})
-
-        # User is Free & has not purchased -> Block
+        has_access, is_premium, reason, display_name = check_user_template_access(conn, template_name)
+        
         return jsonify({
-            'has_access': False, 
-            'is_premium': True, 
-            'template_name': tpl.get('display_name', template_name).title(),
-            'reason': 'PAYMENT_REQUIRED'
+            'has_access': has_access,
+            'is_premium': is_premium,
+            'reason': reason,
+            'template_name': display_name
         })
-
     except Exception as e:
         print(f"Access Check Error: {e}")
         return jsonify({'has_access': False, 'error': str(e)}), 500
