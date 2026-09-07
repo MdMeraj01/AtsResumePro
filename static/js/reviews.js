@@ -1,16 +1,18 @@
-// static/js/home_reviews.js
+// static/js/reviews.js
 document.addEventListener('DOMContentLoaded', async () => {
-    const grid = document.getElementById('homeReviewsGrid');
+    // 🟢 Sahi element ID dhoondo jo reviews.html me hai
+    const grid = document.getElementById('allReviewsGrid');
     if (!grid) return;
 
     try {
-        const res = await fetch('/api/reviews/recent');
+        // 🟢 All reviews API endpoint
+        const res = await fetch('/api/reviews/all');
         const data = await res.json();
 
         if (data.success && data.reviews && data.reviews.length > 0) {
             grid.innerHTML = data.reviews.map(rev => {
                 const ratingCount = parseInt(rev.rating) || 5;
-                
+
                 let starHtml = '';
                 for (let i = 1; i <= 5; i++) {
                     if (i <= ratingCount) {
@@ -23,7 +25,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const userName = rev.user_name || 'Verified User';
                 const commentText = rev.comment || '';
                 const reviewDate = rev.date || 'Recent';
-                // Fallback smart avatar agar photo null ho
                 const userPhoto = rev.user_photo && rev.user_photo.trim() !== '' 
                     ? rev.user_photo 
                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=4f46e5&color=fff&bold=true`;
@@ -31,11 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return `
                     <div class="relative group bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/80 hover:border-indigo-500/50 p-6 rounded-3xl backdrop-blur-xl transition-all duration-500 hover:-translate-y-1.5 shadow-2xl hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden">
                         
-                        <!-- Top Accent Glow -->
                         <div class="absolute -top-10 -right-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500 pointer-events-none"></div>
 
                         <div>
-                            <!-- Header: Stars + Quote Icon -->
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-1.5 bg-slate-950/60 px-3 py-1 rounded-full border border-slate-800">
                                     ${starHtml}
@@ -44,13 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <i class="fas fa-quote-right text-slate-700/60 group-hover:text-indigo-500/40 text-xl transition-colors duration-300"></i>
                             </div>
 
-                            <!-- Review Text -->
                             <p class="text-slate-300 text-sm leading-relaxed mb-6 font-normal">
                                 "${commentText}"
                             </p>
                         </div>
 
-                        <!-- User Profile Info Footer -->
                         <div class="flex items-center justify-between border-t border-slate-800/70 pt-4 mt-auto">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
@@ -72,10 +69,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `;
             }).join('');
         } else {
-            grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6">No reviews yet. Be the first to leave one!</p>`;
+            grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-12">No reviews found yet.</p>`;
         }
     } catch (e) {
-        console.error("Home reviews fetch error:", e);
-        grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-6">Unable to load reviews right now.</p>`;
+        console.error("All reviews fetch error:", e);
+        grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-12">Unable to load reviews right now.</p>`;
     }
 });

@@ -3915,48 +3915,44 @@ from flask import request, jsonify, session, render_template
 # 🟢 1. Review Submit Route (User Dashboard & Download Modal dono yahi call karenge)
 @app.route('/api/reviews/submit', methods=['POST'])
 def submit_review():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login to leave a review'}), 401
+    if not session.get('user_id'):
+        return jsonify({'success': False, 'message': 'Please login first'}), 401
 
-    data = request.json or {}
+    data = request.get_json(force=True) or {}
     rating = int(data.get('rating', 5))
     comment = str(data.get('comment', '')).strip()
-    user_id = session['user_id']
-    user_name = session.get('user_name', 'Verified User')
+    user_id = session.get('user_id')
+    user_name = session.get('user_name') or 'Verified Candidate'
 
     if not comment:
-        return jsonify({'success': False, 'message': 'Comment cannot be empty'}), 400
+        return jsonify({'success': False, 'message': 'Comment is required'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        # PostgreSQL UPSERT
-        cursor.execute("""
-            INSERT INTO reviews (user_id, user_name, rating, comment, is_approved)
-            VALUES (%s, %s, %s, %s, TRUE)
-            ON CONFLICT (user_id) DO UPDATE 
-                SET rating = EXCLUDED.rating,
-                    comment = EXCLUDED.comment,
-                    created_at = CURRENT_TIMESTAMP;
-        """, (user_id, user_name, rating, comment))
-        conn.commit()
-        return jsonify({'success': True, 'message': 'Review submitted successfully!'})
-    except Exception as e:
-        conn.rollback()
-        # MySQL Fallback (agar MySQL use ho raha ho)
-        try:
+        # User already reviewed check
+        cursor.execute("SELECT id FROM reviews WHERE user_id = %s", (user_id,))
+        existing = cursor.fetchone()
+
+        if existing:
             cursor.execute("""
-                INSERT INTO reviews (user_id, user_name, rating, comment, is_approved)
-                VALUES (%s, %s, %s, %s, TRUE)
-                ON DUPLICATE KEY UPDATE 
-                    rating = VALUES(rating), 
-                    comment = VALUES(comment),
-                    created_at = CURRENT_TIMESTAMP
+                UPDATE reviews 
+                SET rating = %s, comment = %s, is_approved = 1, created_at = NOW() 
+                WHERE user_id = %s
+            """, (rating, comment, user_id))
+        else:
+            cursor.execute("""
+                INSERT INTO reviews (user_id, user_name, rating, comment, is_approved, created_at)
+                VALUES (%s, %s, %s, %s, 1, NOW())
             """, (user_id, user_name, rating, comment))
-            conn.commit()
-            return jsonify({'success': True, 'message': 'Review submitted successfully!'})
-        except Exception as inner_e:
-            return jsonify({'success': False, 'message': str(inner_e)}), 500
+
+        conn.commit()  # 🔴 Yeh commit hona compulsory hai!
+        return jsonify({'success': True, 'message': 'Review live ho gaya!'})
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Review submit error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         cursor.close()
         conn.close()
@@ -3970,27 +3966,39 @@ def get_recent_reviews():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # ⚡ users table se profile_pic uthane ke liye JOIN
         query = """
-            SELECT r.user_name, r.rating, r.comment, r.created_at, u.profile_pic
+            SELECT 
+                r.user_name, 
+                r.rating, 
+                r.comment, 
+                r.created_at, 
+                u.profile_pic
             FROM reviews r
             LEFT JOIN users u ON r.user_id = u.id
-            WHERE r.is_approved = TRUE
+            WHERE r.is_approved = 1 OR r.is_approved IS TRUE
             ORDER BY r.id DESC
             LIMIT 6
         """
         cursor.execute(query)
         rows = cursor.fetchall()
-
+        
         reviews = []
         for row in rows:
-            user_name = row[0] or 'Verified User'
-            rating_val = int(row[1]) if row[1] else 5
-            comment_val = row[2] or ''
-            created_val = row[3]
-            pic_val = row[4]
+            # Safe row extraction: Dict Cursor ya Tuple Cursor dono chalenge
+            if isinstance(row, dict):
+                u_name = row.get('user_name') or 'Verified User'
+                u_rating = int(row.get('rating') or 5)
+                u_comment = row.get('comment') or ''
+                created_val = row.get('created_at')
+                pic_val = row.get('profile_pic')
+            else:
+                u_name = row[0] or 'Verified User'
+                u_rating = int(row[1]) if row[1] else 5
+                u_comment = row[2] or ''
+                created_val = row[3]
+                pic_val = row[4]
 
-            # Date format safely
+            # Date Formatting
             if hasattr(created_val, 'strftime'):
                 formatted_date = created_val.strftime('%d %b %Y')
             elif created_val:
@@ -3998,29 +4006,29 @@ def get_recent_reviews():
             else:
                 formatted_date = 'Recent'
 
-            # 📸 Google Photo Fallback Handler:
-            # Agar profile_pic empty ho ya 'default.png' ho to UI Avatars laga do
-            if pic_val and pic_val.startswith('http'):
-                final_photo = pic_val
+            # Profile Picture Fallback
+            if pic_val and str(pic_val).startswith('http'):
+                final_pic = pic_val
             else:
-                final_photo = f"https://ui-avatars.com/api/?name={user_name.replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
+                final_pic = f"https://ui-avatars.com/api/?name={str(u_name).replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
 
             reviews.append({
-                'user_name': user_name,
-                'rating': rating_val,
-                'comment': comment_val,
+                'user_name': u_name,
+                'rating': u_rating,
+                'comment': u_comment,
                 'date': formatted_date,
-                'user_photo': final_photo
+                'user_photo': final_pic
             })
-
+            
         return jsonify({'success': True, 'reviews': reviews})
+        
     except Exception as e:
-        print(f"Error fetching recent reviews: {e}")
-        return jsonify({'success': True, 'reviews': []})
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'reviews': [], 'error': str(e)}), 500
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
-
 
 # 🟢 2. All Reviews Page Route with Google Profile Pictures
 @app.route('/api/reviews/all', methods=['GET'])
@@ -4030,12 +4038,17 @@ def get_all_reviews():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         query = """
-            SELECT r.user_name, r.rating, r.comment, r.created_at, u.profile_pic
+            SELECT 
+                r.user_name, 
+                r.rating, 
+                r.comment, 
+                r.created_at, 
+                u.profile_pic
             FROM reviews r
             LEFT JOIN users u ON r.user_id = u.id
-            WHERE r.is_approved = TRUE
+            WHERE r.is_approved = 1 OR r.is_approved IS TRUE
             ORDER BY r.id DESC
         """
         cursor.execute(query)
@@ -4043,11 +4056,18 @@ def get_all_reviews():
 
         reviews = []
         for row in rows:
-            user_name = row[0] or 'Verified User'
-            rating_val = int(row[1]) if row[1] else 5
-            comment_val = row[2] or ''
-            created_val = row[3]
-            pic_val = row[4]
+            if isinstance(row, dict):
+                u_name = row.get('user_name') or 'Verified User'
+                u_rating = int(row.get('rating') or 5)
+                u_comment = row.get('comment') or ''
+                created_val = row.get('created_at')
+                pic_val = row.get('profile_pic')
+            else:
+                u_name = row[0] or 'Verified User'
+                u_rating = int(row[1]) if row[1] else 5
+                u_comment = row[2] or ''
+                created_val = row[3]
+                pic_val = row[4]
 
             if hasattr(created_val, 'strftime'):
                 formatted_date = created_val.strftime('%d %b %Y')
@@ -4056,27 +4076,29 @@ def get_all_reviews():
             else:
                 formatted_date = 'Recent'
 
-            if pic_val and pic_val.startswith('http'):
-                final_photo = pic_val
+            if pic_val and str(pic_val).startswith('http'):
+                final_pic = pic_val
             else:
-                final_photo = f"https://ui-avatars.com/api/?name={user_name.replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
+                final_pic = f"https://ui-avatars.com/api/?name={str(u_name).replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
 
             reviews.append({
-                'user_name': user_name,
-                'rating': rating_val,
-                'comment': comment_val,
+                'user_name': u_name,
+                'rating': u_rating,
+                'comment': u_comment,
                 'date': formatted_date,
-                'user_photo': final_photo
+                'user_photo': final_pic
             })
 
         return jsonify({'success': True, 'reviews': reviews})
+
     except Exception as e:
-        print(f"Error fetching all reviews: {e}")
-        return jsonify({'success': True, 'reviews': []})
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'reviews': [], 'error': str(e)}), 500
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
-                
+                        
 # 🟢 3. View All Reviews Page Route
 @app.route('/reviews')
 def all_reviews_page():
