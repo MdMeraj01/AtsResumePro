@@ -1253,6 +1253,34 @@
     </div>
 </div>
 
+<!-- 🟢 REVIEW POPUP MODAL -->
+<div id="reviewModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white relative">
+        <button type="button" onclick="closeReviewModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+        
+        <h3 class="text-xl font-bold text-center mb-1">Rate Your Experience ⭐</h3>
+        <p class="text-gray-400 text-xs text-center mb-4">Aapka resume kaisa bana? Hame zaroor batayein!</p>
+        
+        <!-- Star Rating -->
+        <div class="flex justify-center gap-2 mb-4 text-2xl text-amber-400 cursor-pointer" id="starContainer">
+            <i class="fas fa-star" data-val="1"></i>
+            <i class="fas fa-star" data-val="2"></i>
+            <i class="fas fa-star" data-val="3"></i>
+            <i class="fas fa-star" data-val="4"></i>
+            <i class="fas fa-star" data-val="5"></i>
+        </div>
+        <input type="hidden" id="reviewRatingInput" value="5">
+
+        <textarea id="reviewCommentInput" rows="3" placeholder="Write a short feedback..." class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+
+        <button type="button" onclick="submitReviewAction()" id="btnSubmitReview" class="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/30">
+            Submit Review
+        </button>
+    </div>
+</div>
+
 <script>
 function showUpgradeModal() {
     document.getElementById('upgradeModal').classList.remove('hidden');

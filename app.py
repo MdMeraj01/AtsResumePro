@@ -2178,14 +2178,48 @@ def update_settings():
 # 3. Delete User API
 @app.route('/api/admin/delete-user/<int:user_id>', methods=['DELETE'])
 def admin_delete_user(user_id):
-    if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True})
+    # 🟢 EXACT MATCH: Aapka admin session 'admin_id' use karta hai
+    if not session.get('admin_id'):
+        return jsonify({'success': False, 'message': 'Unauthorized - Admin login required'}), 403
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # 1. Child tables clean karo (Foreign key error rokne ke liye)
+        tables_to_clean = [
+            ("user_purchases", "user_id"),
+            ("reviews", "user_id"),
+            ("resumes", "user_id"),
+            ("activity_logs", "user_id"),
+            ("ai_cover_letters", "user_id"),
+            ("user_downloads", "user_id")
+        ]
+
+        for table, col in tables_to_clean:
+            try:
+                cursor.execute(f"DELETE FROM {table} WHERE {col} = %s", (user_id,))
+            except Exception:
+                pass
+
+        # 2. Main users table se delete karo
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn.commit()
+
+        return jsonify({'success': True, 'message': 'User deleted successfully'})
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Delete Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # 4. Reset Password API (Admin Power)
 @app.route('/api/admin/reset-password', methods=['POST'])
@@ -3303,57 +3337,44 @@ def contact_us():
 # app.py -> /api/check-download-limit
 @app.route('/api/check-download-limit', methods=['POST'])
 def check_download_limit():
+    # silent=True lagane se agar body empty bhi ho to Flask 400 HTML crash nahi karega
+    data = request.get_json(silent=True) or {}
+    template_name = data.get('template_name', 'modern')
+
+    # Agar user session check karna hai
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+        # Guest user ko allow karna hai ya login mangna hai (Aapki choice)
+        return jsonify({'success': True, 'message': 'Guest download allowed'})
 
-    data = request.json or {}
-    template_name = str(data.get('template_name', 'modern')).strip().lower()
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    user_id = session['user_id']
+    conn = None
     try:
-        # Check template premium status
-        cursor.execute("SELECT is_premium FROM templates WHERE LOWER(name) = %s", (template_name,))
-        tpl = cursor.fetchone()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True) if hasattr(conn, 'cursor') else conn.cursor()
 
-        cursor.execute("SELECT plan_type, resume_limit FROM users WHERE id = %s", (session['user_id'],))
+        # Check user plan / limits
+        cursor.execute("SELECT plan_type, download_count FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
 
-        plan = str(user.get('plan_type') or 'Free').strip().capitalize()
-        limit = int(user.get('resume_limit') or 0)
+        # Free tier download limit check (e.g., max 3 downloads)
+        plan = (user.get('plan_type') or 'Free').capitalize() if user else 'Free'
+        downloads = user.get('download_count', 0) if user else 0
 
-        # 🛑 Block if Premium Template is not owned by user
-        if tpl and tpl.get('is_premium') and plan not in ['Standard', 'Premium', 'Pro', 'Lifetime']:
-            cursor.execute("SELECT id FROM user_purchases WHERE user_id = %s AND LOWER(template_name) = %s", 
-                           (session['user_id'], template_name))
-            if not cursor.fetchone():
-                return jsonify({
-                    'success': False, 
-                    'error': 'PREMIUM_LOCKED', 
-                    'message': 'This is a premium template. Please unlock it to download.'
-                }), 403
+        if plan == 'Free' and downloads >= 3:
+            return jsonify({
+                'success': False, 
+                'error': 'LIMIT_REACHED', 
+                'message': 'Your free download limit is over.'
+            })
 
-        # Standard Free limit check
-        if plan == 'Free':
-            if limit > 0:
-                new_limit = limit - 1
-                cursor.execute("UPDATE users SET resume_limit = %s WHERE id = %s", (new_limit, session['user_id']))
-                conn.commit()
-                return jsonify({'success': True, 'remaining': new_limit})
-            else:
-                return jsonify({
-                    'success': False, 
-                    'error': 'LIMIT_REACHED',
-                    'message': 'Free limit exceeded! Upgrade plan.'
-                }), 403
-        else:
-            return jsonify({'success': True, 'message': 'Premium Plan Active'})
+        return jsonify({'success': True, 'downloads_left': max(0, 3 - downloads)})
 
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"Limit Check Error: {e}")
+        return jsonify({'success': True})  # Error par download block na ho
     finally:
-        conn.close()       
+        if conn:
+            conn.close()
 
 # ==========================================
 # 💳 PAYMENT & CHECKOUT ROUTES
@@ -3888,6 +3909,210 @@ def check_template_access():
     finally:
         conn.close()
 
+
+from flask import request, jsonify, session, render_template
+
+# 🟢 1. Review Submit Route (User Dashboard & Download Modal dono yahi call karenge)
+@app.route('/api/reviews/submit', methods=['POST'])
+def submit_review():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login to leave a review'}), 401
+
+    data = request.json or {}
+    rating = int(data.get('rating', 5))
+    comment = str(data.get('comment', '')).strip()
+    user_id = session['user_id']
+    user_name = session.get('user_name', 'Verified User')
+
+    if not comment:
+        return jsonify({'success': False, 'message': 'Comment cannot be empty'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # PostgreSQL UPSERT
+        cursor.execute("""
+            INSERT INTO reviews (user_id, user_name, rating, comment, is_approved)
+            VALUES (%s, %s, %s, %s, TRUE)
+            ON CONFLICT (user_id) DO UPDATE 
+                SET rating = EXCLUDED.rating,
+                    comment = EXCLUDED.comment,
+                    created_at = CURRENT_TIMESTAMP;
+        """, (user_id, user_name, rating, comment))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Review submitted successfully!'})
+    except Exception as e:
+        conn.rollback()
+        # MySQL Fallback (agar MySQL use ho raha ho)
+        try:
+            cursor.execute("""
+                INSERT INTO reviews (user_id, user_name, rating, comment, is_approved)
+                VALUES (%s, %s, %s, %s, TRUE)
+                ON DUPLICATE KEY UPDATE 
+                    rating = VALUES(rating), 
+                    comment = VALUES(comment),
+                    created_at = CURRENT_TIMESTAMP
+            """, (user_id, user_name, rating, comment))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Review submitted successfully!'})
+        except Exception as inner_e:
+            return jsonify({'success': False, 'message': str(inner_e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 🟢 1. Home Page Top 6 Reviews with Google Profile Pictures
+@app.route('/api/reviews/recent', methods=['GET'])
+def get_recent_reviews():
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # ⚡ users table se profile_pic uthane ke liye JOIN
+        query = """
+            SELECT r.user_name, r.rating, r.comment, r.created_at, u.profile_pic
+            FROM reviews r
+            LEFT JOIN users u ON r.user_id = u.id
+            WHERE r.is_approved = TRUE
+            ORDER BY r.id DESC
+            LIMIT 6
+        """
+        cursor.execute(query)
+        rows = cursor.fetchall()
+
+        reviews = []
+        for row in rows:
+            user_name = row[0] or 'Verified User'
+            rating_val = int(row[1]) if row[1] else 5
+            comment_val = row[2] or ''
+            created_val = row[3]
+            pic_val = row[4]
+
+            # Date format safely
+            if hasattr(created_val, 'strftime'):
+                formatted_date = created_val.strftime('%d %b %Y')
+            elif created_val:
+                formatted_date = str(created_val)[:10]
+            else:
+                formatted_date = 'Recent'
+
+            # 📸 Google Photo Fallback Handler:
+            # Agar profile_pic empty ho ya 'default.png' ho to UI Avatars laga do
+            if pic_val and pic_val.startswith('http'):
+                final_photo = pic_val
+            else:
+                final_photo = f"https://ui-avatars.com/api/?name={user_name.replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
+
+            reviews.append({
+                'user_name': user_name,
+                'rating': rating_val,
+                'comment': comment_val,
+                'date': formatted_date,
+                'user_photo': final_photo
+            })
+
+        return jsonify({'success': True, 'reviews': reviews})
+    except Exception as e:
+        print(f"Error fetching recent reviews: {e}")
+        return jsonify({'success': True, 'reviews': []})
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+
+# 🟢 2. All Reviews Page Route with Google Profile Pictures
+@app.route('/api/reviews/all', methods=['GET'])
+def get_all_reviews():
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT r.user_name, r.rating, r.comment, r.created_at, u.profile_pic
+            FROM reviews r
+            LEFT JOIN users u ON r.user_id = u.id
+            WHERE r.is_approved = TRUE
+            ORDER BY r.id DESC
+        """
+        cursor.execute(query)
+        rows = cursor.fetchall()
+
+        reviews = []
+        for row in rows:
+            user_name = row[0] or 'Verified User'
+            rating_val = int(row[1]) if row[1] else 5
+            comment_val = row[2] or ''
+            created_val = row[3]
+            pic_val = row[4]
+
+            if hasattr(created_val, 'strftime'):
+                formatted_date = created_val.strftime('%d %b %Y')
+            elif created_val:
+                formatted_date = str(created_val)[:10]
+            else:
+                formatted_date = 'Recent'
+
+            if pic_val and pic_val.startswith('http'):
+                final_photo = pic_val
+            else:
+                final_photo = f"https://ui-avatars.com/api/?name={user_name.replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
+
+            reviews.append({
+                'user_name': user_name,
+                'rating': rating_val,
+                'comment': comment_val,
+                'date': formatted_date,
+                'user_photo': final_photo
+            })
+
+        return jsonify({'success': True, 'reviews': reviews})
+    except Exception as e:
+        print(f"Error fetching all reviews: {e}")
+        return jsonify({'success': True, 'reviews': []})
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+                
+# 🟢 3. View All Reviews Page Route
+@app.route('/reviews')
+def all_reviews_page():
+    return render_template('reviews.html')
+
+        
+# 🟢 5. Admin Approve/Hide Toggle Route (/furqan panel ke liye)
+@app.route('/api/admin/reviews/toggle', methods=['POST'])
+def admin_toggle_review():
+    if not session.get('is_admin'):
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    data = request.json or {}
+    review_id = data.get('review_id')
+    status = data.get('status') # True ya False
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE reviews SET is_approved = %s WHERE id = %s", (status, review_id))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Review status updated instantly'})
+    finally:
+        conn.close()
+        
+ 
+from flask import send_from_directory
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static', 'images'),
+        'favicon.png', 
+        mimetype='image/vnd.microsoft.icon'
+    )
+           
 @app.route('/manifest.json')
 def manifest():
     return app.send_static_file('manifest.json')

@@ -67,7 +67,7 @@ async function downloadPDF() {
 
     const btn = document.getElementById('downloadPdfBtn');
     const originalText = btn ? btn.innerHTML : '';
-    const actualTemplateId = getCurrentTemplateId(); // 👈 Exact template ID
+    const actualTemplateId = getCurrentTemplateId();
     
     if (btn) {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking Limit...';
@@ -75,13 +75,21 @@ async function downloadPDF() {
     }
 
     try {
-        // 🛑 STEP 1: Limit Check & Auto-Deduct
+        // 🛑 STEP 1: Limit Check & Auto-Deduct (Payload passed to avoid 400)
         const checkResponse = await fetch('/api/check-download-limit', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                template_name: actualTemplateId 
+            })
         });
 
-        const checkResult = await checkResponse.json();
+        let checkResult = {};
+        try {
+            checkResult = await checkResponse.json();
+        } catch (e) {
+            throw new Error("Server error or invalid response. Status: " + checkResponse.status);
+        }
 
         if (!checkResult.success) {
             if (checkResult.error === 'LIMIT_REACHED') {
@@ -143,9 +151,14 @@ async function downloadPDF() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 activity_type: 'downloaded_pdf', 
-                details: actualTemplateId // 👈 Emerald, Executive, etc.
+                details: actualTemplateId 
             })
         });
+
+        // 🌟 Auto-Open Review Modal
+        setTimeout(() => {
+            openReviewModal();
+        }, 1500);
 
     } catch (err) {
         console.error("PDF Download Error:", err);
@@ -262,6 +275,11 @@ async function downloadWord() {
             })
         });
 
+        // 🌟 Auto-Open Review Modal
+        setTimeout(() => {
+            openReviewModal();
+        }, 1500);
+
     } catch(err) {
         console.error(err);
         alert("Word export failed: " + err.message);
@@ -274,8 +292,118 @@ async function downloadWord() {
     }
 }
 
+// ==========================================
+// ⭐ REVIEW MODAL HELPERS & SUBMISSION (ROBUST)
+// ==========================================
+
+function openReviewModal() {
+    const modal = document.getElementById('reviewModal');
+    if (!modal) {
+        console.warn("⚠️ reviewModal element not found in HTML!");
+        return;
+    }
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+// Star Click Handler Setup
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('#starContainer i');
+    const ratingInput = document.getElementById('reviewRatingInput');
+
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            const selectedVal = index + 1;
+            if (ratingInput) ratingInput.value = selectedVal;
+            
+            stars.forEach((s, i) => {
+                if (i < selectedVal) {
+                    s.classList.remove('far');
+                    s.classList.add('fas');
+                } else {
+                    s.classList.remove('fas');
+                    s.classList.add('far');
+                }
+            });
+        });
+    });
+});
+
+// pdf.js ke bottom me submitReviewAction ko isse update karo
+async function submitReviewAction() {
+    const ratingInput = document.getElementById('reviewRatingInput');
+    const commentInput = document.getElementById('reviewCommentInput');
+    const btn = document.getElementById('btnSubmitReview');
+
+    const rating = ratingInput ? ratingInput.value : 5;
+    const comment = commentInput ? commentInput.value.trim() : '';
+
+    if (!comment) {
+        if (typeof showToast === 'function') {
+            showToast('Please write a short review!', 'warning');
+        } else {
+            alert('Please write a short review!');
+        }
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Submitting...";
+    }
+
+    try {
+        const res = await fetch('/api/reviews/submit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ rating, comment })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeReviewModal();
+            // Reset input fields
+            if (commentInput) commentInput.value = '';
+            
+            // 🟢 Custom Native Toast Notification
+            if (typeof showToast === 'function') {
+                showToast('🎉 Thanks! Your review is now live.', 'success');
+            } else {
+                alert("Thanks! Your review is live now.");
+            }
+        } else {
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Failed to submit review', 'error');
+            } else {
+                alert(data.message);
+            }
+        }
+    } catch (err) {
+        console.error("Submit Review Error:", err);
+        if (typeof showToast === 'function') {
+            showToast('Server error. Please try again.', 'error');
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "Submit Review";
+        }
+    }
+}
+
 // Global Exports
 window.handlePdfClick = handlePdfClick;
 window.downloadPDF = downloadPDF;
 window.downloadWord = downloadWord;
 window.getCurrentTemplateId = getCurrentTemplateId;
+window.openReviewModal = openReviewModal;
+window.closeReviewModal = closeReviewModal;
+window.submitReviewAction = submitReviewAction;

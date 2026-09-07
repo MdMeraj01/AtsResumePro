@@ -2243,14 +2243,14 @@ function getDynamicData(containerId) {
 }
 
 // Builder Page par Download Button ka code example:
-fetch('/api/export/pdf', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-        resume_data: yourResumeData,
-        template_name: currentTemplateName // <--- YE BHEJNA ZAROORI HAI (e.g., 'Modern', 'Creative')
-    })
-})
+// fetch('/api/export/pdf', {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ 
+//         resume_data: yourResumeData,
+//         template_name: currentTemplateName // <--- YE BHEJNA ZAROORI HAI (e.g., 'Modern', 'Creative')
+//     })
+// })
 // ==========================================
 // 🛡️ STRICT TEMPLATE ACCESS GUARD (
 // ==========================================
