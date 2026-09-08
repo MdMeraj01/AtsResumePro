@@ -185,11 +185,14 @@
                     <label for="signup-name" class="form-label">
                         <i class="fas fa-user"></i> Full Name
                     </label>
-                    <div class="input-container">
-                        <input type="text" id="signup-name" class="form-input" placeholder="John Doe" required>
-                        <div class="input-icon"><i class="fas fa-user"></i></div>
+                    <input type="text" 
+                        id="signup-name" 
+                       class="form-input" 
+                       placeholder="John Doe" 
+                       pattern="^[A-Za-z\s]{2,50}$" 
+                       title="Only English letters and spaces allowed (No emojis or special characters)" 
+                       required>
                     </div>
-                </div>
                 
                 <div class="form-group">
                     <label for="signup-email" class="form-label">

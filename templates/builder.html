@@ -113,7 +113,7 @@
     </div>
 
     <!-- ========== HEADER SECTION ========== -->
-    <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
+     <nav class="fixed w-full z-50 nav-glass border-b border-white/5 bg-slate-900/90 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-20 w-full">
             
@@ -144,8 +144,19 @@
                 {% if current_user %}
                     <div class="relative group">
                         <button class="flex items-center space-x-3 px-4 py-2 rounded-xl glass-panel hover:bg-white/10 transition-all border border-transparent hover:border-blue-500/30">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                                {{ current_user.full_name[0] | upper }}
+                            <!-- 🟢 DESKTOP NAVBAR PROFILE PHOTO -->
+                            <div class="w-8 h-8 rounded-full overflow-hidden shadow-lg ring-2 ring-indigo-500/40 bg-slate-800 flex-shrink-0">
+                                {% if current_user.profile_pic and current_user.profile_pic.startswith('http') %}
+                                    <img src="{{ current_user.profile_pic }}" 
+                                         alt="{{ current_user.full_name }}" 
+                                         class="w-full h-full object-cover"
+                                         referrerpolicy="no-referrer"
+                                         onerror="this.src='https://ui-avatars.com/api/?name={{ current_user.full_name | urlencode }}&background=4f46e5&color=fff&bold=true'">
+                                {% else %}
+                                    <img src="https://ui-avatars.com/api/?name={{ current_user.full_name | urlencode }}&background=4f46e5&color=fff&bold=true" 
+                                         alt="{{ current_user.full_name }}" 
+                                         class="w-full h-full object-cover">
+                                {% endif %}
                             </div>
                             <div class="text-left">
                                 <p class="text-xs text-gray-400">Welcome,</p>
@@ -205,17 +216,27 @@
         </div>
 
         <div class="flex flex-col px-8 space-y-6 pb-20">
-            
             {% if current_user %}
-            <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xl">
-                    {{ current_user.full_name[0] | upper }}
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex items-center gap-4">
+                    <!-- 🟢 MOBILE DRAWER PROFILE PHOTO -->
+                    <div class="w-12 h-12 rounded-full overflow-hidden ring-2 ring-indigo-500/40 bg-slate-800 flex-shrink-0">
+                        {% if current_user.profile_pic and current_user.profile_pic.startswith('http') %}
+                            <img src="{{ current_user.profile_pic }}" 
+                                 alt="{{ current_user.full_name }}" 
+                                 class="w-full h-full object-cover"
+                                 referrerpolicy="no-referrer"
+                                 onerror="this.src='https://ui-avatars.com/api/?name={{ current_user.full_name | urlencode }}&background=4f46e5&color=fff&bold=true'">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ current_user.full_name | urlencode }}&background=4f46e5&color=fff&bold=true" 
+                                 alt="{{ current_user.full_name }}" 
+                                 class="w-full h-full object-cover">
+                        {% endif %}
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
+                        <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
+                    </div>
                 </div>
-                <div class="overflow-hidden">
-                    <p class="text-white font-bold truncate">{{ current_user.full_name }}</p>
-                    <p class="text-blue-400 text-xs uppercase font-bold tracking-wide">{{ current_user.plan_type }} Plan</p>
-                </div>
-            </div>
             {% endif %}
 
             <a href="{{ url_for('index') }}" class="flex items-center space-x-4 text-lg font-medium text-gray-300 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors">
@@ -1159,28 +1180,51 @@
         </div>
     </div>
 </div>
-<div id="upgradeModal" class="fixed inset-0 z-[200] hidden">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeUpgradeModal()"></div>
-    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6">
-        <div class="glass-card rounded-2xl p-8 border border-yellow-500/30 shadow-2xl bg-slate-900 relative overflow-hidden text-center">
-            
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/20 blur-[50px] rounded-full pointer-events-none"></div>
+<!-- 🟢 NAYA DEDICATED TEMPLATE LOCK MODAL -->
+<div id="upgradeModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeUpgradeModal()"></div>
+    
+    <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border border-amber-500/40 rounded-3xl p-7 shadow-2xl overflow-hidden text-center z-10 animate-fade-in">
+        
+        <!-- Glow Orbs -->
+        <div class="absolute -top-16 -left-16 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-purple-600/20 rounded-full blur-2xl pointer-events-none"></div>
 
-            <div class="w-16 h-16 mx-auto bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-yellow-500/20 animate-pulse">
-                <i class="fas fa-crown text-white text-3xl"></i>
-            </div>
-            
-            <h2 class="text-2xl font-bold text-white mb-2">Out of AI Credits!</h2>
-            <p class="text-gray-400 mb-6">You've used all your free AI generations. Upgrade to PRO to get unlimited access.</p>
+        <!-- Crown Icon -->
+        <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-amber-400 to-yellow-500 rounded-2xl flex items-center justify-center mb-5 shadow-xl shadow-amber-500/20 transform hover:scale-105 transition-transform">
+            <i class="fas fa-crown text-slate-950 text-2xl"></i>
+        </div>
+        
+        <span class="inline-block text-[11px] font-extrabold uppercase px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 tracking-wider mb-2">
+            VIP Design
+        </span>
 
-            <div class="space-y-3">
-                <a href="{{ url_for('pricing') }}" class="block w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold text-lg hover:scale-105 transition-transform shadow-xl">
-                    Upgrade Now - $9/mo
-                </a>
-                <button onclick="closeUpgradeModal()" class="block w-full py-3 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
-                    Maybe Later
-                </button>
-            </div>
+        <h3 class="text-2xl font-extrabold text-white mb-2 leading-tight">
+            Premium Template Locked
+        </h3>
+        
+        <p class="text-xs text-gray-300 leading-relaxed mb-6">
+            <span id="lockedTemplateDisplayName" class="text-amber-400 font-bold capitalize">This</span> is a recruiter-approved VIP design. Unlock this individual template or upgrade to the Pro Plan for unlimited downloads and all premium templates.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="space-y-3">
+            <!-- 1. Unlock All With Pro Plan -->
+            <a href="{{ url_for('pricing') }}" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] active:scale-95">
+                <i class="fas fa-bolt text-base"></i>
+                <span>Upgrade to Pro (Unlock All Templates)</span>
+            </a>
+
+            <!-- 2. Unlock Single Template -->
+            <a id="unlockSingleTemplateBtn" href="{{ url_for('templates_section') }}" class="w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-2 border border-white/10 transition-all">
+                <i class="fas fa-gem text-amber-400"></i>
+                <span>Buy This Template Only</span>
+            </a>
+
+            <!-- 3. Dismiss Button -->
+            <button type="button" onclick="closeUpgradeModal()" class="w-full py-2.5 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-200 transition-colors">
+                Continue with Free Templates
+            </button>
         </div>
     </div>
 </div>
@@ -1280,14 +1324,20 @@
         </button>
     </div>
 </div>
-
+<!-- 🟢 NAYA CODE (Tag ke andar band karo) -->
 <script>
 function showUpgradeModal() {
-    document.getElementById('upgradeModal').classList.remove('hidden');
+    const modal = document.getElementById('upgradeModal');
+    if (modal) modal.classList.remove('hidden');
 }
 function closeUpgradeModal() {
-    document.getElementById('upgradeModal').classList.add('hidden');
+    const modal = document.getElementById('upgradeModal');
+    if (modal) modal.classList.add('hidden');
 }
+
+window.DYNAMIC_PREMIUM_TEMPLATES = {{ dynamic_premium_templates | default([]) | tojson | safe }};
+window.USER_UNLOCKED = {{ user_unlocked_templates | default([]) | tojson | safe }};
+window.IS_PRO_USER = {{ 'true' if is_pro_user else 'false' }};
 </script>
 
 <script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
@@ -1520,50 +1570,7 @@ async function saveResume() {
     }
 }
 
-
-// 1. Check on Page Load from URL Query (?template=luxury)
-document.addEventListener('DOMContentLoaded', async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const requestedTemplate = urlParams.get('template');
-
-    if (requestedTemplate) {
-        const allowed = await verifyTemplatePermission(requestedTemplate);
-        if (!allowed) {
-            // Agar allow nahi hai toh URL se parameter hata kar default 'modern' par reset karo
-            const selector = document.getElementById('templateSelector');
-            if (selector) selector.value = 'modern';
-            window.history.replaceState({}, document.title, window.location.pathname);
-            if (typeof changeTemplate === 'function') changeTemplate('modern');
-        }
-    }
-});
-
-// 2. Check on Dropdown Option Change
-const templateSelector = document.getElementById('templateSelector');
-if (templateSelector) {
-    let previousValidTemplate = templateSelector.value || 'modern';
-
-    templateSelector.addEventListener('focus', function() {
-        previousValidTemplate = this.value;
-    });
-
-    templateSelector.addEventListener('change', async function(e) {
-        const selected = this.value;
-        const allowed = await verifyTemplatePermission(selected);
-
-        if (!allowed) {
-            // Revert dropdown back to the previous allowed template
-            this.value = previousValidTemplate;
-            e.preventDefault();
-        } else {
-            previousValidTemplate = selected;
-            // Agar allowed hai tabhi render/template change trigger karo
-            if (typeof changeTemplate === 'function') {
-                changeTemplate(selected);
-            }
-        }
-    });
-}
+    
 
 </script>
 </body>

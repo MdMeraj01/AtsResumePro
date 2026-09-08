@@ -305,8 +305,19 @@
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 group user-row">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
-                                            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-lg">
-                                                {{ user.full_name[0] | upper }}
+                                             <!-- 🟢 NAYA CODE (User Management Profile Photo) -->
+                                            <div class="w-10 h-10 rounded-full overflow-hidden shadow-md ring-2 ring-indigo-500/30 bg-slate-800 flex-shrink-0">
+                                                {% if user.profile_pic and user.profile_pic.startswith('http') %}
+                                                    <img src="{{ user.profile_pic }}" 
+                                                         alt="{{ user.full_name }}" 
+                                                         class="w-full h-full object-cover" 
+                                                         referrerpolicy="no-referrer"
+                                                         onerror="this.src='https://ui-avatars.com/api/?name={{ user.full_name | urlencode }}&background=4f46e5&color=fff&bold=true'">
+                                                {% else %}
+                                                    <img src="https://ui-avatars.com/api/?name={{ user.full_name | urlencode }}&background=4f46e5&color=fff&bold=true" 
+                                                         alt="{{ user.full_name }}" 
+                                                         class="w-full h-full object-cover">
+                                                {% endif %}
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900 dark:text-white user-name">{{ user.full_name }}</div>

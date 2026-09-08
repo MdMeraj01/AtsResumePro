@@ -1620,18 +1620,26 @@ function initEventListeners() {
     }
 
     // 7. TEMPLATE SELECTOR (CRITICAL FIX)
-    // Change hone par loadTemplate call hoga, sirf updatePreview nahi
-    const templateSelector = document.getElementById('templateSelector');
-    if (templateSelector) {
-        templateSelector.addEventListener('change', (e) => {
-            const newTemplate = e.target.value;
-            console.log("Template Changed to:", newTemplate);
-            document.body.setAttribute('data-template', newTemplate);
-            if (typeof loadTemplate === 'function') {
-                loadTemplate(newTemplate);
-            }
-        });
-    }
+     // 🟢 NAYA UNIFIED BLOCK (builder.js ke initEventListeners function ke andar)
+const templateSelector = document.getElementById('templateSelector');
+if (templateSelector) {
+    templateSelector.addEventListener('change', (e) => {
+        const newTemplate = e.target.value;
+        
+        // 1. Pehle instant dynamic permission check karo
+        if (typeof checkAndLockTemplate === 'function') {
+            const isAllowed = checkAndLockTemplate(newTemplate);
+            if (!isAllowed) return; // Agar locked hai toh yahi ruk jao
+        }
+
+        // 2. Agar allowed hai tabhi template load karo
+        console.log("Template Changed to:", newTemplate);
+        document.body.setAttribute('data-template', newTemplate);
+        if (typeof loadTemplate === 'function') {
+            loadTemplate(newTemplate);
+        }
+    });
+}
 
     // ==========================================
     // 8. AI BUTTONS FIX (Yeh Naya Code Hai)
@@ -2319,3 +2327,75 @@ async function verifyTemplatePermission(targetTemplate) {
         return false;
     }
 }
+
+window.isCurrentTemplateLocked = false;
+
+// Instant Check and Lock
+// builder.js ke andar checkAndLockTemplate function ko update karein:
+function checkAndLockTemplate(templateName) {
+    const tName = String(templateName || '').toLowerCase();
+    const premiumList = window.DYNAMIC_PREMIUM_TEMPLATES || [];
+    const unlockedList = window.USER_UNLOCKED || [];
+    const isPro = window.IS_PRO_USER || false;
+
+    const isPremiumInDB = premiumList.includes(tName);
+    const hasAccess = isPro || unlockedList.includes(tName);
+
+    if (isPremiumInDB && !hasAccess) {
+        window.isCurrentTemplateLocked = true;
+        
+        // 🟢 Template ka naam popup me dynamically show karo
+        const nameEl = document.getElementById('lockedTemplateDisplayName');
+        if (nameEl) {
+            nameEl.textContent = `"${tName.toUpperCase()}"`;
+        }
+        
+        // 🟢 Direct template store link bind karo
+        const singleBtn = document.getElementById('unlockSingleTemplateBtn');
+        if (singleBtn) {
+            singleBtn.href = `/templates?highlight=${encodeURIComponent(tName)}`;
+        }
+        
+        // 🔴 Modal Show Karo
+        if (typeof showUpgradeModal === 'function') {
+            showUpgradeModal();
+        }
+        
+        // Dropdown ko wapas 'modern' par reset karo
+        const selector = document.getElementById('templateSelector');
+        if (selector) selector.value = 'modern';
+        if (typeof changeTemplate === 'function') changeTemplate('modern');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return false;
+    } else {
+        window.isCurrentTemplateLocked = false;
+        return true;
+    }
+}
+
+// URL Param Check on Load
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reqTemplate = urlParams.get('template');
+    if (reqTemplate) {
+        checkAndLockTemplate(reqTemplate);
+    }
+});
+
+// Download Buttons Hard Lock (Instant Block)
+document.body.addEventListener('click', function(e) {
+    const downloadBtn = e.target.closest('#downloadPdfBtn, #downloadWordBtn, #downloadPdfFinalBtn, #downloadDocxFinalBtn');
+    
+    if (downloadBtn && window.isCurrentTemplateLocked) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (typeof showUpgradeModal === 'function') {
+            showUpgradeModal();
+        } else {
+            alert("⚠️ This is a Premium Template. Please upgrade or choose a Free template to download!");
+        }
+        return false;
+    }
+}, true);

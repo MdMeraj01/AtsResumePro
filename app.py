@@ -75,6 +75,15 @@ def get_db_connection():
 
     return pymysql.connect(**config)
 
+def get_safe_cursor(conn):
+    try:
+        import pymysql.cursors
+        return conn.cursor(pymysql.cursors.DictCursor)
+    except Exception:
+        try:
+            return conn.cursor(dictionary=True)
+        except Exception:
+            return conn.cursor()
 
 CORS(app)
 
@@ -382,6 +391,9 @@ def user_dashboard():
         return redirect(url_for('login_page'))
     
     conn = get_db_connection()
+    cursor = None
+    
+    # Cursor setup (Dictionary Cursor Priority)
     try:
         import pymysql
         cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -392,7 +404,7 @@ def user_dashboard():
             cursor = conn.cursor()
     
     try:
-        # 1. User Info Fetch
+        # 1. User Info Fetch (profile_pic explicitly included)
         cursor.execute("""
             SELECT *, 
             COALESCE(ai_credits, 5) as ai_credits, 
@@ -400,16 +412,34 @@ def user_dashboard():
             COALESCE(plan_type, 'Free') as plan_type 
             FROM users WHERE id = %s
         """, (session['user_id'],))
-        user_data = cursor.fetchone()
+        raw_user = cursor.fetchone()
 
-        if user_data:
-            ref_code = user_data.get('referral_code') if isinstance(user_data, dict) else None
-            if not ref_code:
-                new_code = secrets.token_hex(4).upper()
-                cursor.execute("UPDATE users SET referral_code = %s WHERE id = %s", (new_code, session['user_id']))
-                conn.commit()
-                if isinstance(user_data, dict):
-                    user_data['referral_code'] = new_code
+        if not raw_user:
+            session.clear()
+            return redirect(url_for('login_page'))
+
+        # 🟢 Tuple to Dict Conversion (Agar fallback cursor chala ho)
+        if isinstance(raw_user, dict):
+            user_data = dict(raw_user)
+        else:
+            col_names = [desc[0] for desc in cursor.description]
+            user_data = dict(zip(col_names, raw_user))
+
+        # 🟢 Profile Picture Safe Check & Smart Monogram Fallback
+        user_pic = user_data.get('profile_pic')
+        u_name = user_data.get('full_name') or 'User'
+        
+        if not user_pic or not str(user_pic).strip().startswith('http'):
+            user_data['profile_pic'] = f"https://ui-avatars.com/api/?name={str(u_name).replace(' ', '+')}&background=4f46e5&color=fff&bold=true"
+
+        # Referral Code Generator (Agar empty ho)
+        ref_code = user_data.get('referral_code')
+        if not ref_code:
+            import secrets
+            new_code = secrets.token_hex(4).upper()
+            cursor.execute("UPDATE users SET referral_code = %s WHERE id = %s", (new_code, session['user_id']))
+            conn.commit()
+            user_data['referral_code'] = new_code
                     
         # 2. My Resumes Fetch
         cursor.execute("""
@@ -419,7 +449,7 @@ def user_dashboard():
         """, (session['user_id'],))
         my_resumes = cursor.fetchall()
         
-        real_resume_count = len(my_resumes)
+        real_resume_count = len(my_resumes) if my_resumes else 0
 
         # 3. Stats Fetch
         cursor.execute("""
@@ -430,38 +460,36 @@ def user_dashboard():
         """, (session['user_id'],))
         db_stats = cursor.fetchall()
         
-        # 4. Stats Update
+        # 4. Stats Normalization
         stats = []
-        for s in db_stats:
-            act_type = s['activity_type'] if isinstance(s, dict) else s[0]
-            act_count = s['count'] if isinstance(s, dict) else s[1]
-            if act_type != 'created':
-                stats.append({'activity_type': act_type, 'count': act_count})
+        if db_stats:
+            for s in db_stats:
+                act_type = s['activity_type'] if isinstance(s, dict) else s[0]
+                act_count = s['count'] if isinstance(s, dict) else s[1]
+                if act_type != 'created':
+                    stats.append({'activity_type': act_type, 'count': act_count})
         stats.append({'activity_type': 'created', 'count': real_resume_count})
 
-        # --- LIMIT LOGIC (100% Hacker-Proof & Bug-Free) ---
-        raw_limit = user_data['resume_limit'] if isinstance(user_data, dict) else user_data[10] 
-        raw_plan = user_data['plan_type'] if isinstance(user_data, dict) else user_data[11]
-        
+        # --- LIMIT & PLAN LOGIC ---
+        raw_plan = user_data.get('plan_type')
         if not raw_plan or str(raw_plan).strip() == '' or str(raw_plan).lower() == 'none':
             plan_type = 'Free'
         else:
             plan_type = str(raw_plan).strip().capitalize()
 
+        raw_limit = user_data.get('resume_limit')
         if raw_limit is None or str(raw_limit).strip() == '':
             resume_limit = 3
         else:
             resume_limit = int(raw_limit)
 
-        limit_percent = 0
         if plan_type == 'Free':
             limit_percent = (resume_limit / 3) * 100
         else:
             limit_percent = 100 
             
-        if isinstance(user_data, dict):
-            user_data['plan_type'] = plan_type
-            user_data['resume_limit'] = resume_limit
+        user_data['plan_type'] = plan_type
+        user_data['resume_limit'] = resume_limit
 
         # 5. Fetch Purchased Premium Templates
         purchased_templates = []
@@ -472,7 +500,7 @@ def user_dashboard():
                 WHERE user_id = %s 
                 ORDER BY purchase_date DESC
             """, (session['user_id'],))
-            purchased_templates = cursor.fetchall()
+            purchased_templates = cursor.fetchall() or []
         except:
             try:
                 cursor.execute("""
@@ -481,12 +509,12 @@ def user_dashboard():
                     WHERE user_id = %s 
                     ORDER BY purchase_date DESC
                 """, (session['user_id'],))
-                purchased_templates = cursor.fetchall()
+                purchased_templates = cursor.fetchall() or []
             except Exception as pe:
                 print(f"Purchases fetch error: {pe}")
                 purchased_templates = []
 
-        # 6. 🟢 FETCH REFERRAL COUNT (Safe & Crash-Proof)
+        # 6. Fetch Referral Count
         referral_count = 0
         try:
             cursor.execute("SELECT COUNT(*) as total_ref FROM referrals WHERE referrer_id = %s", (session['user_id'],))
@@ -508,9 +536,15 @@ def user_dashboard():
                                referral_count=referral_count)
         
     except Exception as e:
-        return f"<div style='padding:50px; font-family:sans-serif;'><h1>🚨 Dashboard me Error Aa Gaya!</h1><h2 style='color:red;'>{str(e)}</h2><p style='font-size:18px;'>Bhai, is lal rang ke error ko copy karke mujhe bhejo, abhi 1 minute me fix karta hu!</p></div>"
+        import traceback
+        traceback.print_exc()
+        return f"<div style='padding:50px; font-family:sans-serif;'><h1>🚨 Dashboard me Error Aa Gaya!</h1><h2 style='color:red;'>{str(e)}</h2></div>"
     finally:
-        conn.close()            
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+                    
 # ==========================================
 # UPDATE PROFILE ROUTE
 # ==========================================
@@ -594,53 +628,97 @@ def change_password():
 @app.route('/api/track-activity', methods=['POST'])
 def track_activity():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
+        return jsonify({'success': False, 'message': 'Login required'}), 401
+        
+    data = request.get_json(silent=True) or {}
+    template_name = str(data.get('template_name', '')).strip().lower()
+    
+    conn = get_db_connection()
+    cursor = get_safe_cursor(conn)
+    
     try:
-        data = request.json or {}
-        activity_type = data.get('activity_type') # e.g. 'downloaded_pdf'
-        details = str(data.get('details', '')).strip().lower() # e.g. 'emerald', 'executive'
-
-        valid_types = ['created', 'downloaded_pdf', 'downloaded_docx', 'ai_summary', 'ats_check', 'cover_letter_created']
+        # 1. Check if template is marked as premium in database
+        cursor.execute("SELECT is_premium FROM templates WHERE LOWER(name) = %s", (template_name,))
+        t_row = cursor.fetchone()
         
-        if activity_type not in valid_types:
-            return jsonify({'success': False, 'message': 'Invalid activity type'}), 400
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # 1. Activity Log Table Entry
-        cursor.execute(
-            "INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, %s, %s)",
-            (session['user_id'], activity_type, details)
-        )
-        
-        # 2. 🟢 Exact Template Download Count +1 (Case-Insensitive Match)
-        if activity_type in ['downloaded_pdf', 'downloaded_docx'] and details:
-            cursor.execute("""
-                UPDATE templates 
-                SET downloads = downloads + 1 
-                WHERE LOWER(name) = %s OR LOWER(display_name) = %s
-            """, (details, details))
+        is_prem = 0
+        if t_row:
+            is_prem = t_row.get('is_premium') if isinstance(t_row, dict) else t_row[0]
             
+        if is_prem:
+            # 2. Check user's subscription
+            cursor.execute("SELECT plan_type FROM users WHERE id = %s", (session['user_id'],))
+            u_row = cursor.fetchone()
+            u_plan = (u_row.get('plan_type') if isinstance(u_row, dict) else u_row[0]) if u_row else 'Free'
+            
+            # 3. Check individual purchase
+            cursor.execute("SELECT id FROM user_purchases WHERE user_id = %s AND LOWER(template_name) = %s", 
+                           (session['user_id'], template_name))
+            purchased = cursor.fetchone()
+            
+            # Agar na Pro plan hai na purchase kiya hai -> STRICT BLOCK
+            if str(u_plan).capitalize() != 'Premium' and not purchased:
+                return jsonify({'success': False, 'message': 'Strictly Restricted: Premium Template!'}), 403
+
+        # 4. Agar verification pass ho tabhi count aur download permit hoga
+        act_type = data.get('activity_type', 'downloaded_pdf')
+        cursor.execute("INSERT INTO resume_activity (user_id, activity_type, created_at) VALUES (%s, %s, NOW())", 
+                       (session['user_id'], act_type))
         conn.commit()
-        conn.close()
-
         return jsonify({'success': True})
-
+        
     except Exception as e:
-        print(f"Tracking Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
+        print(f"Safe Limit Check Error: {e}")
+        # Crash hone par allow mat karo, block karo
+        return jsonify({'success': False, 'message': 'Verification failed'}), 500
+    finally:
+        cursor.close()
+        conn.close()
+        
 # ========== MAIN ROUTES ==========
 @app.route('/')
 def index():
     return render_template('home.html')
 
+# 1. Builder Route (Template load hote waqt hi dynamic list inject hogi)
 @app.route('/builder')
 def builder():
-    return render_template('builder.html')
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor) if hasattr(pymysql, 'cursors') else conn.cursor()
+    
+    # Database se direct dynamic premium templates ki list nikalo
+    cursor.execute("SELECT name FROM templates WHERE is_premium = 1")
+    rows = cursor.fetchall()
+    
+    premium_templates = []
+    for r in rows:
+        val = r['name'] if isinstance(r, dict) else r[0]
+        premium_templates.append(val.lower())
+
+    # Check karo agar current user Pro plan par hai ya unhone koi template unlock kiya hai
+    user_unlocked = []
+    is_pro_user = False
+    if 'user_id' in session:
+        cursor.execute("SELECT plan_type FROM users WHERE id = %s", (session['user_id'],))
+        u = cursor.fetchone()
+        if u and (u['plan_type'] if isinstance(u, dict) else u[0]) == 'Premium':
+            is_pro_user = True
+            
+        cursor.execute("SELECT template_name FROM user_purchases WHERE user_id = %s", (session['user_id'],))
+        p_rows = cursor.fetchall()
+        for p in p_rows:
+            p_val = p['template_name'] if isinstance(p, dict) else p[0]
+            user_unlocked.append(p_val.lower())
+            
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'builder.html', 
+        dynamic_premium_templates=premium_templates,
+        user_unlocked_templates=user_unlocked,
+        is_pro_user=is_pro_user
+    )
 
 @app.route('/templates')
 def templates_section():
@@ -2004,7 +2082,13 @@ def admin_dashboard():
 
     # 2. Fetch ALL Users
     cursor.execute("SELECT * FROM users ORDER BY created_at DESC")
-    all_users = cursor.fetchall()
+    raw_users = cursor.fetchall()
+
+    if raw_users and not isinstance(raw_users[0], dict):
+     col_names = [desc[0] for desc in cursor.description]
+     all_users = [dict(zip(col_names, row)) for row in raw_users]
+    else:
+     all_users = raw_users
     
     # 3. Fetch ALL Templates
     cursor.execute("SELECT * FROM templates ORDER BY created_at DESC")
