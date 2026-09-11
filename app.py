@@ -107,7 +107,7 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 # try:
 #     mysql = MySQL(app)
 #     
-# except Exception as e:
+# except Exception as e:  
 #     print(f"❌ Extension Initialization Error: {e}")
 
 bcrypt = Bcrypt(app)
