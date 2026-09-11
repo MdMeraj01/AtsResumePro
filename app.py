@@ -1373,12 +1373,18 @@ def blog_post(id):
 # 3. Admin API: Add New Blog Post (Direct Image URL)
 @app.route('/api/admin/blog/add', methods=['POST'])
 def add_blog():
-    # Admin access check
-    is_admin = session.get('admin_logged_in') or session.get('admin_id') or session.get('admin_role')
+    # 1. Admin Session Check
+    is_admin = (
+        session.get('admin_logged_in') or 
+        session.get('admin_id') or 
+        session.get('admin_role') or 
+        session.get('is_admin')
+    )
     if not is_admin:
         return jsonify({'success': False, 'message': 'Admin login required'}), 401
 
     try:
+        # 2. Extract Data
         if request.is_json:
             data = request.get_json(silent=True) or {}
             title = data.get('title')
@@ -1392,26 +1398,32 @@ def add_blog():
             image_url = request.form.get('image_url')
 
         if not title or not content:
-            return jsonify({'success': False, 'message': 'Title and content are required'}), 400
+            return jsonify({'success': False, 'message': 'Title and content are required!'}), 400
 
         conn = get_db_connection()
         cursor = get_safe_cursor(conn)
 
-        cursor.execute("""
-            INSERT INTO blogs (title, summary, content, image_file, created_at) 
-            VALUES (%s, %s, %s, %s, NOW())
-        """, (title, summary, content, image_url))
-        
+        # 3. Direct Insert into blog_posts (No DESCRIBE blogs query)
+        query = """
+            INSERT INTO blog_posts (title, summary, content, image_file, author, views, created_at)
+            VALUES (%s, %s, %s, %s, %s, 0, NOW())
+        """
+        author_name = session.get('admin_name', 'ATS Pro Admin')
+        cursor.execute(query, (title, summary or '', content, image_url or 'default.jpg', author_name))
+
         conn.commit()
         cursor.close()
         conn.close()
 
+        print(f"✅ Blog successfully added to blog_posts: {title}")
         return jsonify({'success': True, 'message': 'Blog published successfully!'})
 
     except Exception as e:
-        print(f"Blog Add Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-        
+        print(f"❌ Critical Blog Add Crash Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': f"Database Error: {str(e)}"}), 500
+            
 # 4. Admin API: Delete Blog Post
 @app.route('/api/admin/delete-blog/<int:id>', methods=['DELETE'])
 def delete_blog(id):
@@ -3139,36 +3151,42 @@ def delete_admin(id):
 # ==========================================
 
 # 1. Get Single User Details (For Admin View)
+# app.py -> get_user_details route ke andar:
 @app.route('/api/admin/user-details/<int:user_id>', methods=['GET'])
 def get_user_details(user_id):
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
     conn = get_db_connection()
-    # Ensure dictionary cursor is used
     cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
     
     try:
-        # User Basic Info
         cursor.execute("SELECT id, full_name, email, plan_type, status, ai_credits, created_at, profile_pic FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
         
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
             
-        # Stats: Total Resumes Created
         cursor.execute("SELECT COUNT(*) as count FROM resume_activity WHERE user_id = %s AND activity_type != 'ai_usage'", (user_id,))
         resume_count = cursor.fetchone()['count']
         
-        # Stats: Last Active
         cursor.execute("SELECT created_at FROM resume_activity WHERE user_id = %s ORDER BY created_at DESC LIMIT 1", (user_id,))
         last_active = cursor.fetchone()
         last_active_date = last_active['created_at'] if last_active else user['created_at']
 
-        # Saved Documents
+        # 1. Builder draft saves
         cursor.execute("SELECT id, title, template_name, updated_at FROM saved_resumes WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
         saved_docs = cursor.fetchall()
         
-        # 🟢 NEW: Fetch Purchased Premium Templates
+        # 2. 🟢 NEW: Actual Cloudinary Downloaded PDFs Fetch
+        cursor.execute("""
+            SELECT id, resume_title, template_name, pdf_url, downloaded_at 
+            FROM user_downloaded_resumes 
+            WHERE user_id = %s 
+            ORDER BY downloaded_at DESC
+        """, (user_id,))
+        downloaded_pdfs = cursor.fetchall() or []
+
+        # 3. Premium Purchases
         try:
             cursor.execute("""
                 SELECT template_name, access_type, DATE(purchase_date) as purchase_date 
@@ -3176,12 +3194,10 @@ def get_user_details(user_id):
                 WHERE user_id = %s 
                 ORDER BY purchase_date DESC
             """, (user_id,))
-            purchases = cursor.fetchall()
-        except Exception as e:
-            print(f"Purchases fetch error: {e}")
+            purchases = cursor.fetchall() or []
+        except Exception:
             purchases = []
 
-        # Data structure return karo
         return jsonify({
             'success': True,
             'user': {
@@ -3195,15 +3211,16 @@ def get_user_details(user_id):
                 'resume_count': resume_count,
                 'last_active': last_active_date,
                 'saved_docs': saved_docs,
-                'purchases': purchases # <-- Ye naya data ab JS ko jayega
+                'downloaded_pdfs': downloaded_pdfs, # 👈 Admin ke eye modal me show karne ke liye
+                'purchases': purchases
             }
         })
     except Exception as e:
         print("Error fetching details:", e)
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
-        conn.close()    
-
+        conn.close()
+        
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])
 def update_user_resources():
@@ -4220,7 +4237,61 @@ def admin_toggle_review():
     finally:
         conn.close()
         
- 
+
+import cloudinary.uploader
+@app.route('/api/upload-downloaded-pdf', methods=['POST'])
+def upload_downloaded_pdf():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'User not authenticated'}), 401
+    
+    data = request.get_json(silent=True) or {}
+    pdf_base64 = data.get('pdf_base64')
+    template_name = data.get('template_name', 'modern')
+    resume_title = data.get('title', 'My Resume')
+
+    if not pdf_base64:
+        return jsonify({'success': False, 'message': 'PDF payload missing'}), 400
+
+    try:
+        if 'base64,' in pdf_base64:
+            pdf_base64 = pdf_base64.split('base64,')[1]
+            
+        pdf_bytes = base64.b64decode(pdf_base64)
+        
+        file_slug = f"user_{user_id}_{int(datetime.now().timestamp())}"
+        upload_result = cloudinary.uploader.upload(
+            pdf_bytes,
+            resource_type = "raw",
+            folder = "user_resumes/",
+            public_id = f"{file_slug}.pdf"
+        )
+        
+        pdf_secure_url = upload_result.get('secure_url')
+        public_id = upload_result.get('public_id')
+
+        # 🟢 CRITICAL FIX: INSERT must happen here!
+        conn = get_db_connection()
+        cursor = get_safe_cursor(conn)
+        
+        cursor.execute("""
+            INSERT INTO user_downloaded_resumes 
+            (user_id, resume_title, template_name, pdf_url, cloudinary_public_id, downloaded_at) 
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        """, (user_id, resume_title, template_name, pdf_secure_url, public_id))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        print(f"✅ User {user_id} PDF saved to Cloudinary & DB: {pdf_secure_url}")
+        return jsonify({'success': True, 'pdf_url': pdf_secure_url})
+
+    except Exception as e:
+        print(f"❌ Cloudinary PDF Storage Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+    
 from flask import send_from_directory
 
 @app.route('/favicon.ico')

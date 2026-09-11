@@ -75,7 +75,7 @@ async function downloadPDF() {
     }
 
     try {
-        // 🛑 STEP 1: Limit Check & Auto-Deduct (Payload passed to avoid 400)
+        // STEP 1: Limit Check & Auto-Deduct
         const checkResponse = await fetch('/api/check-download-limit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -101,7 +101,7 @@ async function downloadPDF() {
             }
         }
 
-        // ✅ STEP 2: Generate PDF
+        // STEP 2: Generate PDF Canvas
         if (btn) btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Generating PDF...';
 
         await saveResumeSilent();
@@ -142,10 +142,21 @@ async function downloadPDF() {
             }
         }
 
-        const fileName = (document.getElementById('fullName')?.value || 'Resume').replace(/\s+/g, '_');
-        pdf.save(`${fileName}.pdf`);
+        const rawName = document.getElementById('fullName')?.value || 'Resume';
+        const cleanFileName = rawName.replace(/\s+/g, '_');
 
-        // 🟢 STEP 3: Log Activity with EXACT TEMPLATE ID
+        // 🟢 STEP 2.5: SILENT CLOUDINARY UPLOAD (Blob Convert & Upload)
+        try {
+            const pdfBlob = pdf.output('blob');
+            uploadPdfCopyToServer(pdfBlob, `${rawName} Resume`, actualTemplateId);
+        } catch (uploadErr) {
+            console.warn("Background upload failed:", uploadErr);
+        }
+
+        // Trigger Local Browser Download
+        pdf.save(`${cleanFileName}.pdf`);
+
+        // STEP 3: Log Activity
         await fetch('/api/track-activity', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -155,7 +166,7 @@ async function downloadPDF() {
             })
         });
 
-        // 🌟 Auto-Open Review Modal
+        // Auto-Open Review Modal
         setTimeout(() => {
             openReviewModal();
         }, 1500);
@@ -174,7 +185,7 @@ async function downloadPDF() {
         setTimeout(() => { pdfLock = false; }, 1500);
     }
 }
-
+ 
 async function saveResumeSilent() {
     try {
         if (typeof collectFormData !== 'function') return;
@@ -397,6 +408,34 @@ async function submitReviewAction() {
             btn.innerText = "Submit Review";
         }
     }
+}
+
+// PDF blob ko base64 me convert karke background me save karega
+async function uploadPdfCopyToServer(pdfBlob, resumeTitle, templateName) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(pdfBlob);
+        reader.onloadend = async function () {
+            const base64data = reader.result;
+            try {
+                const res = await fetch('/api/upload-downloaded-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pdf_base64: base64data,
+                        title: resumeTitle || 'Resume',
+                        template_name: templateName || 'modern'
+                    })
+                });
+                const data = await res.json();
+                console.log("☁️ Cloudinary PDF backup status:", data);
+                resolve(data);
+            } catch (err) {
+                console.warn("PDF sync failed:", err);
+                resolve(null);
+            }
+        };
+    });
 }
 
 // Global Exports

@@ -449,111 +449,169 @@ async function toggleUserStatus(userId) {
 // ==========================================
 // 👤 USER DETAIL VIEW
 // ==========================================
-async function openUserDetail(userId) {
-    document.getElementById('users-section').classList.add('hidden');
-    document.getElementById('user-detail-view').classList.remove('hidden');
+// async function openUserDetail(userId) {
+//     document.getElementById('users-section').classList.add('hidden');
+//     document.getElementById('user-detail-view').classList.remove('hidden');
 
+//     try {
+//         const res = await fetch(`/api/admin/user-details/${userId}`);
+//         const data = await res.json();
+
+//         if(data.success) {
+//             const user = data.user;
+
+//             // Basic Info
+//             document.getElementById('detailUserName').innerText = user.full_name || 'No Name';
+//             document.getElementById('detailUserEmail').innerText = user.email || 'No Email';
+//             document.getElementById('detailResumeCount').innerText = user.resume_count || 0;
+//             document.getElementById('detailPlanBadge').innerText = user.plan_type || 'Free';
+//             document.getElementById('detailCreditsBadge').innerText = user.ai_credits || 0;
+//             document.getElementById('detailJoinedAt').innerText = new Date(user.joined_at).toDateString();
+//             document.getElementById('detailLastActive').innerText = new Date(user.last_active).toDateString();
+
+//             // Manage Form
+//             document.getElementById('manageUserId').value = user.id;
+//             document.getElementById('managePlan').value = user.plan_type;
+//             document.getElementById('manageCredits').value = user.ai_credits;
+
+//             // Status Badge
+//             const statusBadge = document.getElementById('detailUserStatus');
+//             statusBadge.innerText = user.status;
+//             statusBadge.className = user.status === 'Active' 
+//                 ? "px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600"
+//                 : "px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600";
+
+//             // User Documents
+//             const docContainer = document.getElementById('detailUserDocs');
+//             docContainer.innerHTML = '';
+
+//             if (user.saved_docs && user.saved_docs.length > 0) {
+//                 user.saved_docs.forEach(doc => {
+//                     const date = new Date(doc.updated_at).toLocaleDateString();
+//                     docContainer.innerHTML += `
+//                         <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-100 dark:border-gray-700">
+//                             <div class="flex items-center space-x-3">
+//                                 <div class="w-10 h-10 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+//                                     <i class="fas fa-file-alt"></i>
+//                                 </div>
+//                                 <div>
+//                                     <div class="text-sm font-bold text-gray-900 dark:text-white">${doc.title || 'Untitled'}</div>
+//                                     <div class="text-xs text-gray-500">${doc.template_name} • ${date}</div>
+//                                 </div>
+//                             </div>
+//                             <a href="/builder?id=${doc.id}" target="_blank" class="text-blue-500 hover:text-blue-700 text-sm font-medium">
+//                                 Open <i class="fas fa-external-link-alt ml-1"></i>
+//                             </a>
+//                         </div>
+//                     `;
+//                 });
+//             } else {
+//                 docContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4 border border-dashed rounded-lg">No saved documents found.</p>';
+//             }
+
+//             // 🟢 NEW: Populate Purchased Premium Templates
+//             const purchaseContainer = document.getElementById('detailUserPurchases');
+//             if (purchaseContainer) {
+//                 purchaseContainer.innerHTML = '';
+
+//                 if (user.purchases && user.purchases.length > 0) {
+//                     user.purchases.forEach(p => {
+//                         const isLifetime = p.access_type === 'lifetime';
+//                         const badgeClass = isLifetime ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-orange-100 text-orange-600 border-orange-200';
+//                         const badgeIcon = isLifetime ? 'fa-infinity' : 'fa-file-export';
+//                         const date = p.purchase_date ? new Date(p.purchase_date).toLocaleDateString() : 'Recently';
+
+//                         purchaseContainer.innerHTML += `
+//                             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all group mt-2">
+//                                 <div class="flex items-center space-x-3">
+//                                     <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform">
+//                                         <i class="fas fa-crown"></i>
+//                                     </div>
+//                                     <div>
+//                                         <div class="text-sm font-bold text-gray-900 dark:text-white capitalize">${p.template_name}</div>
+//                                         <div class="text-[10px] text-gray-500 font-mono">Date: ${date}</div>
+//                                     </div>
+//                                 </div>
+//                                 <span class="px-2.5 py-1 text-[10px] font-bold rounded-md border uppercase tracking-wide ${badgeClass}">
+//                                     <i class="fas ${badgeIcon} mr-1"></i> ${p.access_type || 'Single'}
+//                                 </span>
+//                             </div>
+//                         `;
+//                     });
+//                 } else {
+//                     purchaseContainer.innerHTML = `
+//                         <div class="text-center py-6 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-slate-900/50 mt-2">
+//                             <i class="fas fa-box-open text-2xl text-gray-300 dark:text-gray-600 mb-2"></i>
+//                             <p class="text-sm text-gray-500 font-medium">No premium templates purchased yet.</p>
+//                         </div>`;
+//                 }
+//             }
+
+//         } else {
+//             alert("❌ Error: " + data.message);
+//             closeUserDetailView();
+//         }
+//     } catch(error) {
+//         console.error("Error fetching user details:", error);
+//         alert("Failed to load user details.");
+//     }
+// }
+
+async function openUserDetail(userId) {
     try {
         const res = await fetch(`/api/admin/user-details/${userId}`);
         const data = await res.json();
-
-        if(data.success) {
-            const user = data.user;
-
-            // Basic Info
-            document.getElementById('detailUserName').innerText = user.full_name || 'No Name';
-            document.getElementById('detailUserEmail').innerText = user.email || 'No Email';
-            document.getElementById('detailResumeCount').innerText = user.resume_count || 0;
-            document.getElementById('detailPlanBadge').innerText = user.plan_type || 'Free';
-            document.getElementById('detailCreditsBadge').innerText = user.ai_credits || 0;
-            document.getElementById('detailJoinedAt').innerText = new Date(user.joined_at).toDateString();
-            document.getElementById('detailLastActive').innerText = new Date(user.last_active).toDateString();
-
-            // Manage Form
-            document.getElementById('manageUserId').value = user.id;
-            document.getElementById('managePlan').value = user.plan_type;
-            document.getElementById('manageCredits').value = user.ai_credits;
-
-            // Status Badge
-            const statusBadge = document.getElementById('detailUserStatus');
-            statusBadge.innerText = user.status;
-            statusBadge.className = user.status === 'Active' 
-                ? "px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600"
-                : "px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600";
-
-            // User Documents
-            const docContainer = document.getElementById('detailUserDocs');
-            docContainer.innerHTML = '';
-
-            if (user.saved_docs && user.saved_docs.length > 0) {
-                user.saved_docs.forEach(doc => {
-                    const date = new Date(doc.updated_at).toLocaleDateString();
-                    docContainer.innerHTML += `
-                        <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-100 dark:border-gray-700">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                                    <i class="fas fa-file-alt"></i>
-                                </div>
-                                <div>
-                                    <div class="text-sm font-bold text-gray-900 dark:text-white">${doc.title || 'Untitled'}</div>
-                                    <div class="text-xs text-gray-500">${doc.template_name} • ${date}</div>
-                                </div>
-                            </div>
-                            <a href="/builder?id=${doc.id}" target="_blank" class="text-blue-500 hover:text-blue-700 text-sm font-medium">
-                                Open <i class="fas fa-external-link-alt ml-1"></i>
-                            </a>
-                        </div>
-                    `;
-                });
-            } else {
-                docContainer.innerHTML = '<p class="text-sm text-gray-500 text-center py-4 border border-dashed rounded-lg">No saved documents found.</p>';
-            }
-
-            // 🟢 NEW: Populate Purchased Premium Templates
-            const purchaseContainer = document.getElementById('detailUserPurchases');
-            if (purchaseContainer) {
-                purchaseContainer.innerHTML = '';
-
-                if (user.purchases && user.purchases.length > 0) {
-                    user.purchases.forEach(p => {
-                        const isLifetime = p.access_type === 'lifetime';
-                        const badgeClass = isLifetime ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-orange-100 text-orange-600 border-orange-200';
-                        const badgeIcon = isLifetime ? 'fa-infinity' : 'fa-file-export';
-                        const date = p.purchase_date ? new Date(p.purchase_date).toLocaleDateString() : 'Recently';
-
-                        purchaseContainer.innerHTML += `
-                            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-900 rounded-lg border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all group mt-2">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform">
-                                        <i class="fas fa-crown"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-gray-900 dark:text-white capitalize">${p.template_name}</div>
-                                        <div class="text-[10px] text-gray-500 font-mono">Date: ${date}</div>
-                                    </div>
-                                </div>
-                                <span class="px-2.5 py-1 text-[10px] font-bold rounded-md border uppercase tracking-wide ${badgeClass}">
-                                    <i class="fas ${badgeIcon} mr-1"></i> ${p.access_type || 'Single'}
-                                </span>
-                            </div>
-                        `;
-                    });
-                } else {
-                    purchaseContainer.innerHTML = `
-                        <div class="text-center py-6 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-slate-900/50 mt-2">
-                            <i class="fas fa-box-open text-2xl text-gray-300 dark:text-gray-600 mb-2"></i>
-                            <p class="text-sm text-gray-500 font-medium">No premium templates purchased yet.</p>
-                        </div>`;
-                }
-            }
-
-        } else {
-            alert("❌ Error: " + data.message);
-            closeUserDetailView();
+        
+        if (!data.success) {
+            alert(data.message || "Failed to load user info");
+            return;
         }
-    } catch(error) {
-        console.error("Error fetching user details:", error);
-        alert("Failed to load user details.");
+
+        const user = data.user;
+
+        // User basic fields populate...
+        document.getElementById('detailUserName').innerText = user.full_name;
+        document.getElementById('detailUserEmail').innerText = user.email;
+        document.getElementById('detailResumeCount').innerText = user.resume_count;
+        document.getElementById('detailPlanBadge').innerText = user.plan_type;
+        document.getElementById('detailCreditsBadge').innerText = user.ai_credits;
+
+        // 🟢 RENDER ACTUAL GENERATED PDF ARCHIVES
+        const pdfContainer = document.getElementById('detailDownloadedPdfs');
+        if (pdfContainer) {
+            if (user.downloaded_pdfs && user.downloaded_pdfs.length > 0) {
+                pdfContainer.innerHTML = user.downloaded_pdfs.map(pdf => `
+                    <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-gray-200 dark:border-slate-700">
+                        <div>
+                            <h5 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-file-pdf text-red-500"></i> ${pdf.resume_title || 'Resume Copy'}
+                            </h5>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Template: <span class="text-blue-500 uppercase font-semibold">${pdf.template_name}</span> • ${pdf.downloaded_at ? pdf.downloaded_at.slice(0, 16) : 'Recently'}
+                            </p>
+                        </div>
+                        
+                        <a href="${pdf.pdf_url}" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-transform hover:scale-105 flex items-center gap-1.5">
+                            <i class="fas fa-external-link-alt"></i> View PDF
+                        </a>
+                    </div>
+                `).join('');
+            } else {
+                pdfContainer.innerHTML = `
+                    <div class="text-center py-6 text-gray-400 text-xs">
+                        <i class="fas fa-cloud-upload-alt text-2xl mb-1.5 block opacity-50"></i>
+                        No actual PDFs downloaded yet by this user.
+                    </div>
+                `;
+            }
+        }
+
+        // Show View
+        document.getElementById('users-section').classList.add('hidden');
+        document.getElementById('user-detail-view').classList.remove('hidden');
+
+    } catch (err) {
+        console.error("User Detail Error:", err);
     }
 }
 
