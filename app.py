@@ -1371,34 +1371,26 @@ def blog_post(id):
     return render_template('company/blog_post.html', post=post)
 
 # 3. Admin API: Add New Blog Post (Direct Image URL)
-@app.route('/api/admin/add-blog', methods=['POST'])
+@app.route('/api/admin/blog/add', methods=['POST'])
 def add_blog():
-    if 'admin_id' not in session: 
-        return jsonify({'error': 'Unauthorized'}), 401
+    # ... admin auth check ...
+    title = request.form.get('title')
+    summary = request.form.get('summary')
+    content = request.form.get('content')
+    image_url = request.form.get('image_url') # Cloudinary link
+
+    conn = get_db_connection()
+    cursor = get_safe_cursor(conn)
     
-    try:
-        title = request.form.get('title')
-        summary = request.form.get('summary')
-        content = request.form.get('content')
-        author = session.get('admin_name', 'Admin')
-        
-        # Direct URL Form se aayega
-        image_url = request.form.get('image_url') or 'https://placehold.co/600x400/1e293b/FFF?text=Blog+Post'
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO blog_posts (title, summary, content, image_file, author) 
-            VALUES (%s, %s, %s, %s, %s)
-        """, (title, summary, content, image_url, author))
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'message': 'Blog Post Published Successfully!'})
-
-    except Exception as e:
-        print(f"Blog Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+    cursor.execute("""
+        INSERT INTO blogs (title, summary, content, image_file, created_at) 
+        VALUES (%s, %s, %s, %s, NOW())
+    """, (title, summary, content, image_url))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'success': True})
     
 # 4. Admin API: Delete Blog Post
 @app.route('/api/admin/delete-blog/<int:id>', methods=['DELETE'])

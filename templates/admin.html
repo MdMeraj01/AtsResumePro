@@ -944,9 +944,11 @@
                             
                             <div class="col-span-1">
                                 <div class="h-12 w-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-                                    <img src="{{ url_for('static', filename='images/blog/' + post.image_file) }}" 
-                                         class="w-full h-full object-cover"
-                                         onerror="this.src='https://placehold.co/100x100/1e293b/FFF?text=IMG'">
+                                     <!-- 🟢 NAYA CODE (Cloudinary + Local Dono Support Karega) -->
+                                     <img src="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg')) }}" 
+                                        class="w-full h-full object-cover"
+                                         referrerpolicy="no-referrer"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/FFF?text=IMG'">
                                 </div>
                             </div>
 

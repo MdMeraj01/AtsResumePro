@@ -102,10 +102,11 @@
                     {% for post in posts %}
                     <article class="blog-card glass-panel rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 transition-all bg-white dark:bg-transparent flex flex-col h-full">
                         <div class="h-48 overflow-hidden relative group">
-                            <img src="{{ url_for('static', filename='images/blog/' + post.image_file) }}" 
-                                 alt="{{ post.title }}" 
-                                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                 onerror="this.src='https://placehold.co/600x400/1e293b/FFF?text=ATS+Pro'">
+                             <img src="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg')) }}" 
+                                 alt="{{ post.title }}"
+                                 class="w-full h-48 object-cover rounded-t-xl"
+                                 referrerpolicy="no-referrer"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/600x400/1e293b/FFF?text=No+Preview'">
                             <div class="absolute top-4 left-4">
                                 <span class="px-3 py-1 bg-black/50 backdrop-blur-md text-white text-xs rounded-full border border-white/20">
                                     {{ post.created_at.strftime('%d %b, %Y') }}
