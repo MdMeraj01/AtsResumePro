@@ -569,29 +569,62 @@ async function openUserDetail(userId) {
 
         const user = data.user;
 
-        // User basic fields populate...
+        // 1. Header & Stats
         document.getElementById('detailUserName').innerText = user.full_name;
         document.getElementById('detailUserEmail').innerText = user.email;
         document.getElementById('detailResumeCount').innerText = user.resume_count;
         document.getElementById('detailPlanBadge').innerText = user.plan_type;
         document.getElementById('detailCreditsBadge').innerText = user.ai_credits;
+        
+        // Status Badge
+        const statusEl = document.getElementById('detailUserStatus');
+        if (statusEl) {
+            statusEl.innerText = user.status;
+            statusEl.className = user.status === 'Active' 
+                ? 'px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-600'
+                : 'px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600';
+        }
 
-        // 🟢 RENDER ACTUAL GENERATED PDF ARCHIVES
+        // 2. Activity Dates Fix
+        document.getElementById('detailJoinedAt').innerText = user.joined_at;
+        document.getElementById('detailLastActive').innerText = user.last_active;
+
+        // Resource Manager inputs
+        if (document.getElementById('manageUserId')) document.getElementById('manageUserId').value = user.id;
+        if (document.getElementById('managePlan')) document.getElementById('managePlan').value = user.plan_type;
+        if (document.getElementById('manageCredits')) document.getElementById('manageCredits').value = user.ai_credits;
+
+        // 3. Render Saved Documents
+        const docsContainer = document.getElementById('detailUserDocs');
+        if (docsContainer) {
+            if (user.saved_docs && user.saved_docs.length > 0) {
+                docsContainer.innerHTML = user.saved_docs.map(doc => `
+                    <div class="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700">
+                        <div>
+                            <h5 class="text-sm font-bold text-gray-900 dark:text-white">${doc.title}</h5>
+                            <p class="text-xs text-gray-400">Template: <span class="uppercase text-blue-500 font-semibold">${doc.template_name}</span> • Updated: ${doc.updated_at}</p>
+                        </div>
+                        <a href="/builder?resume_id=${doc.id}" target="_blank" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">Open in Builder</a>
+                    </div>
+                `).join('');
+            } else {
+                docsContainer.innerHTML = `<p class="text-xs text-gray-400 py-2">No saved drafts found.</p>`;
+            }
+        }
+
+        // 4. Render Downloaded PDF Copies (Cloudinary)
         const pdfContainer = document.getElementById('detailDownloadedPdfs');
         if (pdfContainer) {
             if (user.downloaded_pdfs && user.downloaded_pdfs.length > 0) {
                 pdfContainer.innerHTML = user.downloaded_pdfs.map(pdf => `
-                    <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-gray-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-blue-100 dark:border-slate-700">
                         <div>
                             <h5 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-file-pdf text-red-500"></i> ${pdf.resume_title || 'Resume Copy'}
+                                <i class="fas fa-file-pdf text-red-500"></i> ${pdf.resume_title}
                             </h5>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Template: <span class="text-blue-500 uppercase font-semibold">${pdf.template_name}</span> • ${pdf.downloaded_at ? pdf.downloaded_at.slice(0, 16) : 'Recently'}
-                            </p>
+                            <p class="text-xs text-gray-400 mt-0.5">Template: <span class="uppercase text-blue-500 font-semibold">${pdf.template_name}</span> • ${pdf.downloaded_at}</p>
                         </div>
-                        
-                        <a href="${pdf.pdf_url}" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-transform hover:scale-105 flex items-center gap-1.5">
+                        <a href="${pdf.pdf_url}" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition-transform hover:scale-105 flex items-center gap-1.5">
                             <i class="fas fa-external-link-alt"></i> View PDF
                         </a>
                     </div>
@@ -606,12 +639,28 @@ async function openUserDetail(userId) {
             }
         }
 
-        // Show View
+        // 5. Render Purchased Templates
+        const purchasesContainer = document.getElementById('detailUserPurchases');
+        if (purchasesContainer) {
+            if (user.purchases && user.purchases.length > 0) {
+                purchasesContainer.innerHTML = user.purchases.map(p => `
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-xl border border-yellow-200 dark:border-yellow-900/40">
+                        <span class="text-sm font-bold text-gray-900 dark:text-white uppercase">${p.template_name}</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${p.purchase_date}</span>
+                    </div>
+                `).join('');
+            } else {
+                purchasesContainer.innerHTML = `<p class="text-xs text-gray-400 py-2">No purchased templates.</p>`;
+            }
+        }
+
+        // Switch View
         document.getElementById('users-section').classList.add('hidden');
         document.getElementById('user-detail-view').classList.remove('hidden');
 
     } catch (err) {
         console.error("User Detail Error:", err);
+        alert("Failed to load user profile.");
     }
 }
 

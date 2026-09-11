@@ -3154,42 +3154,67 @@ def delete_admin(id):
 # app.py -> get_user_details route ke andar:
 @app.route('/api/admin/user-details/<int:user_id>', methods=['GET'])
 def get_user_details(user_id):
-    if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
+    if 'admin_id' not in session: 
+        return jsonify({'error': 'Unauthorized'}), 401
     
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
+    cursor = get_safe_cursor(conn)
     
     try:
+        # 1. User Basic Info
         cursor.execute("SELECT id, full_name, email, plan_type, status, ai_credits, created_at, profile_pic FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
         
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
-            
-        cursor.execute("SELECT COUNT(*) as count FROM resume_activity WHERE user_id = %s AND activity_type != 'ai_usage'", (user_id,))
-        resume_count = cursor.fetchone()['count']
-        
+
+        # 2. Resumes Created Count
+        cursor.execute("SELECT COUNT(*) as count FROM saved_resumes WHERE user_id = %s", (user_id,))
+        res_count_row = cursor.fetchone()
+        resume_count = res_count_row['count'] if isinstance(res_count_row, dict) else res_count_row[0]
+
+        # 3. Last Activity
         cursor.execute("SELECT created_at FROM resume_activity WHERE user_id = %s ORDER BY created_at DESC LIMIT 1", (user_id,))
         last_active = cursor.fetchone()
-        last_active_date = last_active['created_at'] if last_active else user['created_at']
-
-        # 1. Builder draft saves
-        cursor.execute("SELECT id, title, template_name, updated_at FROM saved_resumes WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
-        saved_docs = cursor.fetchall()
         
-        # 2. 🟢 NEW: Actual Cloudinary Downloaded PDFs Fetch
+        joined_at_str = user['created_at'].strftime('%b %d, %Y') if user.get('created_at') else 'N/A'
+        last_active_str = last_active['created_at'].strftime('%b %d, %Y - %I:%M %p') if last_active and last_active.get('created_at') else joined_at_str
+
+        # 4. Saved Documents (Drafts)
+        cursor.execute("SELECT id, title, template_name, updated_at FROM saved_resumes WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
+        saved_docs_raw = cursor.fetchall() or []
+        saved_docs = []
+        for d in saved_docs_raw:
+            saved_docs.append({
+                'id': d['id'],
+                'title': d['title'] or 'Untitled Resume',
+                'template_name': d['template_name'] or 'modern',
+                'updated_at': d['updated_at'].strftime('%d %b %Y, %I:%M %p') if d.get('updated_at') else 'Recently'
+            })
+
+        # 5. Cloudinary Downloaded PDFs
         cursor.execute("""
             SELECT id, resume_title, template_name, pdf_url, downloaded_at 
             FROM user_downloaded_resumes 
             WHERE user_id = %s 
             ORDER BY downloaded_at DESC
         """, (user_id,))
-        downloaded_pdfs = cursor.fetchall() or []
+        downloaded_pdfs_raw = cursor.fetchall() or []
+        downloaded_pdfs = []
+        for p in downloaded_pdfs_raw:
+            downloaded_pdfs.append({
+                'id': p['id'],
+                'resume_title': p['resume_title'] or 'Generated Resume',
+                'template_name': p['template_name'] or 'modern',
+                'pdf_url': p['pdf_url'],
+                'downloaded_at': p['downloaded_at'].strftime('%d %b %Y, %I:%M %p') if p.get('downloaded_at') else 'Recently'
+            })
 
-        # 3. Premium Purchases
+        # 6. Purchased Premium Templates
+        purchases = []
         try:
             cursor.execute("""
-                SELECT template_name, access_type, DATE(purchase_date) as purchase_date 
+                SELECT template_name, access_type, DATE_FORMAT(purchase_date, '%%d %%b %%Y') as purchase_date 
                 FROM user_purchases 
                 WHERE user_id = %s 
                 ORDER BY purchase_date DESC
@@ -3204,14 +3229,14 @@ def get_user_details(user_id):
                 'id': user['id'],
                 'full_name': user['full_name'],
                 'email': user['email'],
-                'plan_type': user['plan_type'],
+                'plan_type': user['plan_type'] or 'Free',
                 'ai_credits': user['ai_credits'] if user['ai_credits'] is not None else 0,
-                'status': user['status'],
-                'joined_at': user['created_at'],
+                'status': user['status'] or 'Active',
+                'joined_at': joined_at_str,
+                'last_active': last_active_str,
                 'resume_count': resume_count,
-                'last_active': last_active_date,
                 'saved_docs': saved_docs,
-                'downloaded_pdfs': downloaded_pdfs, # 👈 Admin ke eye modal me show karne ke liye
+                'downloaded_pdfs': downloaded_pdfs,
                 'purchases': purchases
             }
         })
@@ -3219,8 +3244,9 @@ def get_user_details(user_id):
         print("Error fetching details:", e)
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
+        cursor.close()
         conn.close()
-        
+                
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])
 def update_user_resources():
