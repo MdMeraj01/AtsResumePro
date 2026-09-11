@@ -631,13 +631,15 @@ def track_activity():
         return jsonify({'success': False, 'message': 'Login required'}), 401
         
     data = request.get_json(silent=True) or {}
-    template_name = str(data.get('template_name', '')).strip().lower()
+    # Template name chahe details se aaye ya template_name se, pakad lo
+    template_name = str(data.get('template_name') or data.get('details') or '').strip().lower()
+    act_type = data.get('activity_type', 'downloaded_pdf')
     
     conn = get_db_connection()
     cursor = get_safe_cursor(conn)
     
     try:
-        # 1. Check if template is marked as premium in database
+        # 1. Premium check (Safety net)
         cursor.execute("SELECT is_premium FROM templates WHERE LOWER(name) = %s", (template_name,))
         t_row = cursor.fetchone()
         
@@ -646,31 +648,36 @@ def track_activity():
             is_prem = t_row.get('is_premium') if isinstance(t_row, dict) else t_row[0]
             
         if is_prem:
-            # 2. Check user's subscription
             cursor.execute("SELECT plan_type FROM users WHERE id = %s", (session['user_id'],))
             u_row = cursor.fetchone()
             u_plan = (u_row.get('plan_type') if isinstance(u_row, dict) else u_row[0]) if u_row else 'Free'
             
-            # 3. Check individual purchase
             cursor.execute("SELECT id FROM user_purchases WHERE user_id = %s AND LOWER(template_name) = %s", 
                            (session['user_id'], template_name))
             purchased = cursor.fetchone()
             
-            # Agar na Pro plan hai na purchase kiya hai -> STRICT BLOCK
-            if str(u_plan).capitalize() != 'Premium' and not purchased:
+            if str(u_plan).capitalize() not in ['Premium', 'Lifetime'] and not purchased:
                 return jsonify({'success': False, 'message': 'Strictly Restricted: Premium Template!'}), 403
 
-        # 4. Agar verification pass ho tabhi count aur download permit hoga
-        act_type = data.get('activity_type', 'downloaded_pdf')
-        cursor.execute("INSERT INTO resume_activity (user_id, activity_type, created_at) VALUES (%s, %s, NOW())", 
-                       (session['user_id'], act_type))
+        # 2. Activity Table me log
+        cursor.execute("INSERT INTO resume_activity (user_id, activity_type, details, created_at) VALUES (%s, %s, %s, NOW())", 
+                       (session['user_id'], act_type, template_name))
+
+        # 🟢 3. CRITICAL RESTORATION: templates table ka download count increment karo
+        if template_name:
+            cursor.execute("""
+                UPDATE templates 
+                SET downloads = COALESCE(downloads, 0) + 1 
+                WHERE LOWER(name) = %s
+            """, (template_name,))
+            print(f"📈 Template Download Count Incremented: {template_name}")
+
         conn.commit()
         return jsonify({'success': True})
         
     except Exception as e:
-        print(f"Safe Limit Check Error: {e}")
-        # Crash hone par allow mat karo, block karo
-        return jsonify({'success': False, 'message': 'Verification failed'}), 500
+        print(f"❌ Track Activity Error: {e}")
+        return jsonify({'success': False, 'message': 'Tracking failed'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -3246,7 +3253,7 @@ def get_user_details(user_id):
     finally:
         cursor.close()
         conn.close()
-                
+
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])
 def update_user_resources():
@@ -4280,23 +4287,31 @@ def upload_downloaded_pdf():
         return jsonify({'success': False, 'message': 'PDF payload missing'}), 400
 
     try:
+        # Base64 Clean
         if 'base64,' in pdf_base64:
             pdf_base64 = pdf_base64.split('base64,')[1]
             
         pdf_bytes = base64.b64decode(pdf_base64)
-        
-        file_slug = f"user_{user_id}_{int(datetime.now().timestamp())}"
+
+        # 🟢 Direct Clean Config (Agar .env load hone me issue ho)
+        c_name = (os.getenv("CLOUDINARY_CLOUD_NAME") or "lvdqyicr").strip()
+        c_key = (os.getenv("CLOUDINARY_API_KEY") or "").strip()
+        c_secret = (os.getenv("CLOUDINARY_API_SECRET") or "").strip()
+
         upload_result = cloudinary.uploader.upload(
             pdf_bytes,
             resource_type = "raw",
             folder = "user_resumes/",
-            public_id = f"{file_slug}.pdf"
+            public_id = f"user_{user_id}_{int(datetime.now().timestamp())}.pdf",
+            cloud_name = c_name,
+            api_key = c_key,
+            api_secret = c_secret
         )
         
         pdf_secure_url = upload_result.get('secure_url')
         public_id = upload_result.get('public_id')
 
-        # 🟢 CRITICAL FIX: INSERT must happen here!
+        # Insert in DB
         conn = get_db_connection()
         cursor = get_safe_cursor(conn)
         
@@ -4310,11 +4325,13 @@ def upload_downloaded_pdf():
         cursor.close()
         conn.close()
 
-        print(f"✅ User {user_id} PDF saved to Cloudinary & DB: {pdf_secure_url}")
-        return jsonify({'success': True, 'pdf_url': pdf_secure_url})
+        print(f"✅ Cloudinary Upload & DB Save SUCCESS: {pdf_secure_url}")
+        return jsonify({'success': True, 'message': 'Archived successfully'})
 
     except Exception as e:
-        print(f"❌ Cloudinary PDF Storage Error: {e}")
+        print(f"❌ EXACT PDF STORAGE CRASH: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
     
     
