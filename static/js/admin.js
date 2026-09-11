@@ -714,37 +714,36 @@ function openAddBlogModal() {
     document.getElementById('addBlogForm').reset();
 }
 
-async function handleAddBlog(e) {
-    e.preventDefault();
-    
-    const form = document.getElementById('addBlogForm');
+async function handleAddBlog(event) {
+    event.preventDefault();
+    const form = event.target;
     const formData = new FormData(form);
-    const btn = form.querySelector('button[type="submit"]');
-    
-    const originalText = btn.innerText;
-    btn.innerText = "Publishing...";
-    btn.disabled = true;
 
     try {
-        const response = await fetch('/api/admin/add-blog', {
+        // 🟢 Exact single endpoint hit karo:
+        const response = await fetch('/api/admin/blog/add', {
             method: 'POST',
             body: formData
         });
 
+        if (!response.ok) {
+            throw new Error(`Server returned error ${response.status}`);
+        }
+
         const result = await response.json();
 
         if (result.success) {
-            alert('✅ Blog Published Successfully!');
-            location.reload();
+            alert("✅ Article published successfully!");
+            const modal = document.getElementById('addBlogModal');
+            if (modal) modal.classList.add('hidden');
+            form.reset();
+            window.location.reload();
         } else {
-            alert('❌ Error: ' + result.message);
+            alert("❌ Failed: " + (result.message || "Unknown error"));
         }
     } catch (error) {
-        console.error('Blog Error:', error);
-        alert('Something went wrong!');
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+        console.error("Blog Error:", error);
+        alert("Failed to publish blog. Please check console.");
     }
 }
 

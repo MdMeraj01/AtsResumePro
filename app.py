@@ -1373,25 +1373,45 @@ def blog_post(id):
 # 3. Admin API: Add New Blog Post (Direct Image URL)
 @app.route('/api/admin/blog/add', methods=['POST'])
 def add_blog():
-    # ... admin auth check ...
-    title = request.form.get('title')
-    summary = request.form.get('summary')
-    content = request.form.get('content')
-    image_url = request.form.get('image_url') # Cloudinary link
+    # Admin access check
+    is_admin = session.get('admin_logged_in') or session.get('admin_id') or session.get('admin_role')
+    if not is_admin:
+        return jsonify({'success': False, 'message': 'Admin login required'}), 401
 
-    conn = get_db_connection()
-    cursor = get_safe_cursor(conn)
-    
-    cursor.execute("""
-        INSERT INTO blogs (title, summary, content, image_file, created_at) 
-        VALUES (%s, %s, %s, %s, NOW())
-    """, (title, summary, content, image_url))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'success': True})
-    
+    try:
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+            title = data.get('title')
+            summary = data.get('summary')
+            content = data.get('content')
+            image_url = data.get('image_url')
+        else:
+            title = request.form.get('title')
+            summary = request.form.get('summary')
+            content = request.form.get('content')
+            image_url = request.form.get('image_url')
+
+        if not title or not content:
+            return jsonify({'success': False, 'message': 'Title and content are required'}), 400
+
+        conn = get_db_connection()
+        cursor = get_safe_cursor(conn)
+
+        cursor.execute("""
+            INSERT INTO blogs (title, summary, content, image_file, created_at) 
+            VALUES (%s, %s, %s, %s, NOW())
+        """, (title, summary, content, image_url))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Blog published successfully!'})
+
+    except Exception as e:
+        print(f"Blog Add Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+        
 # 4. Admin API: Delete Blog Post
 @app.route('/api/admin/delete-blog/<int:id>', methods=['DELETE'])
 def delete_blog(id):

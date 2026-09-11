@@ -3,7 +3,27 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    
+    <!-- Dynamic Title & SEO -->
     <title>{{ post.title }} | ATS Resume Builder Pro</title>
+    <meta name="description" content="{{ post.summary or post.title }}">
+    <link rel="canonical" href="{{ request.base_url }}">
+
+    <!-- Open Graph Framework (WhatsApp, LinkedIn, Facebook Link Previews) -->
+    <meta property="og:title" content="{{ post.title }}">
+    <meta property="og:description" content="{{ post.summary or 'Read this industry article on ATS Resume Builder Pro.' }}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ request.base_url }}">
+    <meta property="og:image" content="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg'), _external=True) }}">
+    <meta property="og:site_name" content="ATS Resume Builder Pro">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ post.title }}">
+    <meta name="twitter:description" content="{{ post.summary or 'Read this industry article on ATS Resume Builder Pro.' }}">
+    <meta name="twitter:image" content="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg'), _external=True) }}">
+
+    <!-- CDN & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,130 +46,266 @@
         
         /* Glass Effect */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
         .dark .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         /* Navbar Glass */
-        .nav-glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .dark .nav-glass { background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-
-        /* --- BLOG CONTENT TYPOGRAPHY (Important for Article Look) --- */
-        .blog-content { line-height: 1.8; font-size: 1.125rem; }
-        .blog-content h1, .blog-content h2, .blog-content h3 { 
-            font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: inherit; 
+        .nav-glass { 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(10px); 
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05); 
         }
-        .blog-content h2 { font-size: 1.5rem; color: #2563eb; } /* Blue headings */
-        .dark .blog-content h2 { color: #60a5fa; }
+        .dark .nav-glass { 
+            background: rgba(15, 23, 42, 0.9); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+        }
+
+        /* Blog Typography */
+        .blog-content { 
+            line-height: 1.85; 
+            font-size: 1.125rem; 
+        }
+        .blog-content h1, .blog-content h2, .blog-content h3 { 
+            font-weight: 700; 
+            margin-top: 2rem; 
+            margin-bottom: 1rem; 
+            color: inherit; 
+        }
+        .blog-content h2 { 
+            font-size: 1.5rem; 
+            color: #2563eb; 
+        }
+        .dark .blog-content h2 { 
+            color: #60a5fa; 
+        }
         
-        .blog-content p { margin-bottom: 1.5rem; color: #4b5563; }
-        .dark .blog-content p { color: #d1d5db; }
+        .blog-content p { 
+            margin-bottom: 1.5rem; 
+            color: #4b5563; 
+        }
+        .dark .blog-content p { 
+            color: #cbd5e1; 
+        }
         
-        .blog-content ul, .blog-content ol { margin-bottom: 1.5rem; padding-left: 1.5rem; list-style-type: disc; }
-        .blog-content li { margin-bottom: 0.5rem; color: #4b5563; }
-        .dark .blog-content li { color: #d1d5db; }
+        .blog-content ul, .blog-content ol { 
+            margin-bottom: 1.5rem; 
+            padding-left: 1.5rem; 
+            list-style-type: disc; 
+        }
+        .blog-content li { 
+            margin-bottom: 0.5rem; 
+            color: #4b5563; 
+        }
+        .dark .blog-content li { 
+            color: #cbd5e1; 
+        }
         
-        .blog-content img { border-radius: 12px; margin: 2rem 0; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .blog-content strong { font-weight: 700; color: #111827; }
-        .dark .blog-content strong { color: #fff; }
+        .blog-content img { 
+            border-radius: 16px; 
+            margin: 2rem 0; 
+            width: 100%; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); 
+        }
+        .blog-content strong { 
+            font-weight: 700; 
+            color: #111827; 
+        }
+        .dark .blog-content strong { 
+            color: #f8fafc; 
+        }
     </style>
 </head>
-<body class="antialiased font-sans min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-white transition-colors duration-300">
+<body class="antialiased font-sans min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-white transition-colors duration-300">
 
-    <nav class="fixed w-full z-50 nav-glass">
+    <!-- Top Navigation -->
+    <nav class="fixed w-full top-0 z-50 nav-glass">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20 w-full">
+                
                 <div class="flex items-center space-x-3 cursor-pointer group" onclick="window.location.href='{{ url_for('index') }}'">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-transform">
                         <i class="fas fa-file-alt text-white text-xl"></i>
                     </div>
-                    <span class="text-xl font-bold text-gray-900 dark:text-white">ATS<span class="text-blue-500">Pro</span></span>
+                    <span class="text-xl font-extrabold text-gray-900 dark:text-white tracking-wide">ATS<span class="text-blue-500">Pro</span></span>
                 </div>
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="{{ url_for('blog') }}" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400">
-                        <i class="fas fa-arrow-left mr-2"></i> Back to Blog
+
+                <div class="flex items-center space-x-6">
+                    <a href="{{ url_for('blog') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i> All Articles
                     </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button id="themeToggle" class="p-3 rounded-full glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600">
-                        <i class="fas fa-moon dark:hidden"></i><i class="fas fa-sun hidden dark:block"></i>
+
+                    <button id="themeToggle" class="p-2.5 rounded-xl glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-transform active:scale-95">
+                        <i class="fas fa-moon dark:hidden text-lg"></i>
+                        <i class="fas fa-sun hidden dark:block text-lg text-yellow-400"></i>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <article class="pt-32 pb-20 px-4">
+    <!-- Main Article Body -->
+    <article class="pt-32 pb-20 px-4 sm:px-6">
         <div class="max-w-4xl mx-auto">
             
-            <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
-                <a href="{{ url_for('blog') }}" class="hover:text-blue-500">Blog</a>
+            <!-- Metadata Breadcrumbs -->
+            <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
+                <a href="{{ url_for('blog') }}" class="hover:text-blue-500 transition-colors">Articles</a>
                 <span>•</span>
-                <span>{{ post.created_at.strftime('%B %d, %Y') }}</span>
+                <span>
+                    {% if post.created_at and post.created_at.strftime %}
+                        {{ post.created_at.strftime('%B %d, %Y') }}
+                    {% else %}
+                        {{ post.created_at or 'September 2026' }}
+                    {% endif %}
+                </span>
                 <span>•</span>
-                <span class="text-blue-600 dark:text-blue-400 font-semibold">{{ post.author }}</span>
+                <span class="text-blue-600 dark:text-blue-400 font-semibold">{{ post.author or 'ATS Pro Editorial' }}</span>
+                {% if post.views %}
+                <span>•</span>
+                <span class="inline-flex items-center gap-1 text-slate-500"><i class="far fa-eye"></i> {{ post.views }} views</span>
+                {% endif %}
             </div>
 
-            <h1 class="text-3xl md:text-5xl font-extrabold mb-8 text-gray-900 dark:text-white leading-tight">
+            <!-- Title -->
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-8 text-gray-900 dark:text-white leading-tight tracking-tight">
                 {{ post.title }}
             </h1>
 
-            <div class="rounded-2xl overflow-hidden shadow-2xl mb-10 border border-gray-200 dark:border-white/10">
+            <!-- Cover Image Container -->
+            <div class="rounded-3xl overflow-hidden shadow-2xl mb-12 border border-gray-200 dark:border-slate-800 bg-slate-900">
                  <img src="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg')) }}" 
-                 alt="{{ post.title }}"
-                 class="w-full h-[400px] object-cover rounded-2xl shadow-xl"
-                 referrerpolicy="no-referrer">
+                      alt="{{ post.title }}"
+                      class="w-full h-[260px] sm:h-[420px] object-cover"
+                      referrerpolicy="no-referrer"
+                      onerror="this.onerror=null; this.src='https://placehold.co/1200x630/0f172a/FFF?text=ATS+Resume+Pro+Article';">
             </div>
 
-            <div class="glass-panel p-8 md:p-12 rounded-3xl mb-12">
+            <!-- Blog HTML Content -->
+            <div class="glass-panel p-6 sm:p-10 md:p-12 rounded-3xl mb-12 shadow-xl">
                 <div class="blog-content">
                     {{ post.content | safe }}
                 </div>
             </div>
 
-            <div class="border-t border-gray-200 dark:border-gray-800 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div>
-                    <h4 class="font-bold mb-3 text-gray-900 dark:text-white">Share this article:</h4>
-                    <div class="flex space-x-4">
-                        <a href="https://twitter.com/intent/tweet?url={{ request.url }}" target="_blank" class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url }}" target="_blank" class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 flex items-center justify-center hover:bg-blue-700 hover:text-white transition-all">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="https://wa.me/?text={{ request.url }}" target="_blank" class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center hover:bg-green-600 hover:text-white transition-all">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
+            <!-- Pre-filled Article Sharing Hub -->
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl mb-12 shadow-xl border border-gray-200 dark:border-slate-800">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">
+                            Share this with other job seekers
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Spread the word to help developers and freshers pass mechanical ATS screenings.
+                        </p>
+                    </div>
+
+                    <!-- Custom Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- WhatsApp -->
+                        <button onclick="shareArticleOnWhatsApp()" 
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95" 
+                                title="Share on WhatsApp">
+                            <i class="fab fa-whatsapp text-sm"></i> WhatsApp
+                        </button>
+
+                        <!-- LinkedIn -->
+                        <button onclick="shareArticleOnLinkedIn()" 
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0a66c2] hover:bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all hover:scale-105 active:scale-95" 
+                                title="Share on LinkedIn">
+                            <i class="fab fa-linkedin-in text-sm"></i> LinkedIn
+                        </button>
+
+                        <!-- X / Twitter -->
+                        <button onclick="shareArticleOnX()" 
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold border border-slate-700 transition-all hover:scale-105 active:scale-95" 
+                                title="Share on X">
+                            <i class="fab fa-x-twitter text-sm"></i> Post
+                        </button>
+
+                        <!-- Copy Link -->
+                        <button onclick="copyArticleDirectLink()" 
+                                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 text-gray-800 dark:text-white text-xs font-bold transition-all active:scale-95">
+                            <i class="fas fa-link text-sm"></i> <span id="copyLinkBtnText">Copy Link</span>
+                        </button>
                     </div>
                 </div>
-                
-                <a href="{{ url_for('blog') }}" class="px-8 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-semibold transition-colors">
-                    Browse More Articles
+            </div>
+
+            <!-- Bottom Redirect -->
+            <div class="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-slate-800">
+                <a href="{{ url_for('blog') }}" class="px-6 py-3 rounded-xl bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 font-bold text-xs transition-colors">
+                    &larr; Back to All Articles
+                </a>
+                <a href="{{ url_for('builder') }}" class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg transition-transform hover:scale-105">
+                    Build ATS Resume Now &rarr;
                 </a>
             </div>
 
         </div>
     </article>
 
-    <footer class="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 pt-12 pb-8 text-center text-gray-500">
-        <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 pt-10 pb-8 text-center text-gray-500 text-xs">
+        <p>&copy; 2026 ATS Resume Builder Pro. All rights reserved.</p>
     </footer>
 
+    <!-- Interactive Script Layer -->
     <script>
+        // Theme Persistence Sync
         const themeToggle = document.getElementById('themeToggle');
-        const html = document.documentElement;
-        if (localStorage.getItem('theme') === 'light') html.classList.remove('dark');
-        else html.classList.add('dark');
+        const rootHtml = document.documentElement;
+
+        if (localStorage.getItem('theme') === 'light') {
+            rootHtml.classList.remove('dark');
+        } else {
+            rootHtml.classList.add('dark');
+        }
         
-        themeToggle.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-        });
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                rootHtml.classList.toggle('dark');
+                localStorage.setItem('theme', rootHtml.classList.contains('dark') ? 'dark' : 'light');
+            });
+        }
+
+        // Sharing Logic with Custom Messages
+        const pageTitle = {{ post.title | tojson }};
+        const shareUrl = window.location.href;
+
+        function shareArticleOnWhatsApp() {
+            const formattedMessage = `🚀 *Check out this career guide on ATS Resume Pro!* \n\n📖 *"${pageTitle}"*\n\nRead the complete breakdown here:\n${shareUrl}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(formattedMessage)}`, '_blank');
+        }
+
+        function shareArticleOnLinkedIn() {
+            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank');
+        }
+
+        function shareArticleOnX() {
+            const tweetText = `Just read "${pageTitle}" on @ATSResumePro.\n\nPractical breakdown on passing modern recruitment bots:\n${shareUrl}\n\n#TechJobs #ResumeTips #ATS #WebDevelopment`;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
+        }
+
+        function copyArticleDirectLink() {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                const btnLabel = document.getElementById('copyLinkBtnText');
+                if (btnLabel) {
+                    btnLabel.textContent = 'Link Copied!';
+                    setTimeout(() => {
+                        btnLabel.textContent = 'Copy Link';
+                    }, 2200);
+                }
+            }).catch(err => {
+                console.error("Clipboard copy failed:", err);
+            });
+        }
     </script>
 </body>
 </html>
