@@ -31,3 +31,5 @@ cloudinary
 
 dnspython>=2.6.1
 psycopg2-binary
+
+APScheduler
