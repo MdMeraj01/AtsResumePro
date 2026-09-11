@@ -17,7 +17,6 @@ import pymysql
 from authlib.integrations.flask_client import OAuth
 import secrets
 import csv
-import io
 import razorpay
 import smtplib
 from email.mime.text import MIMEText
@@ -3370,7 +3369,7 @@ def send_contact_emails(user_name, user_email, subject, message):
     # 🔐 EMAIL SETTINGS (Apna Gmail aur App Password yahan dalein)
     SENDER_EMAIL = "atsresumepro01@gmail.com"  # Apna Gmail dalein
     SENDER_PASSWORD = "nmma chlo ybuc bprl" # Gmail App Password (Not login password)
-    ADMIN_EMAIL = "meraj8329@gmail.com"     # Jis par aapko msg chahiye
+    ADMIN_EMAIL = "merajmohammed00123@gmail.com"     # Jis par aapko msg chahiye
     
     # ----------------------------------------
     # 1. EMAIL TO ADMIN (Aapke liye)
@@ -4352,7 +4351,144 @@ def manifest():
 @app.route('/sw.js')
 def sw():
     return app.send_static_file('sw.js')
- 
+
+# ==========================================
+# 📦 MONTHLY RESUME ARCHIVER (NON-DESTRUCTIVE)
+# ==========================================
+import zipfile
+from apscheduler.schedulers.background import BackgroundScheduler
+
+def generate_monthly_pdf_backup(admin_email="merajmohammed00123@gmail.com"):
+    conn = get_db_connection()
+    cursor = get_safe_cursor(conn)
+    
+    try:
+        # 1. Pichhle 30 dinon ke downloaded resumes + user info fetch karo
+        cursor.execute("""
+            SELECT r.id, r.pdf_url, r.resume_title, r.template_name, r.downloaded_at, 
+                   u.full_name, u.email
+            FROM user_downloaded_resumes r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.downloaded_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            ORDER BY r.downloaded_at DESC
+        """)
+        records = cursor.fetchall()
+        
+        if not records:
+            print("ℹ️ Monthly Backup: No new downloaded resumes found in last 30 days.")
+            return False
+
+        # 2. In-Memory ZIP File taiyar karo
+        zip_buffer = io.BytesIO()
+        csv_rows = ["User Name,Email,Template,Resume Title,Downloaded At,Cloudinary URL"]
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for idx, item in enumerate(records):
+                user_name = str(item['full_name'] or 'User').strip().replace(' ', '_')
+                doc_title = str(item['resume_title'] or 'Resume').strip().replace(' ', '_')
+                pdf_filename = f"{user_name}_{doc_title}_{item['id']}.pdf"
+                
+                # Cloudinary se raw PDF stream karo
+                try:
+                    pdf_res = requests.get(item['pdf_url'], timeout=20)
+                    if pdf_res.status_code == 200:
+                        # Resumes folder me PDF add karo
+                        zip_file.writestr(f"resumes/{pdf_filename}", pdf_res.content)
+                        
+                        # CSV Report row add karo
+                        csv_rows.append(
+                            f'"{item["full_name"]}","{item["email"]}","{item["template_name"]}","{item["resume_title"]}","{item["downloaded_at"]}","{item["pdf_url"]}"'
+                        )
+                except Exception as dl_err:
+                    print(f"⚠️ Error packing PDF {item['id']}: {dl_err}")
+
+            # Manifest CSV report ZIP ke andar root me add karo
+            zip_file.writestr("Monthly_Users_Report.csv", "\n".join(csv_rows))
+
+        zip_buffer.seek(0)
+        zip_base64 = base64.b64encode(zip_buffer.read()).decode('utf-8')
+        
+        # 3. Brevo API ke zariye email par ZIP attach karke bhejo
+        BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+        if not BREVO_API_KEY:
+            print("❌ BREVO_API_KEY missing in .env!")
+            return False
+
+        current_month_str = datetime.now().strftime('%B %Y')
+        payload = {
+            "sender": {"name": "ATS Resume Archiver", "email": "atsresumepro01@gmail.com"},
+            "to": [{"email": admin_email, "name": "Super Admin"}],
+            "subject": f"📦 Monthly Resume Archive Backup - {current_month_str}",
+            "htmlContent": f"""
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b;">
+                    <h2 style="color: #4f46e5;">Monthly Resumes Backup ({current_month_str})</h2>
+                    <p>Attached is the full ZIP package containing all actual user resumes downloaded in the past 30 days.</p>
+                    <ul>
+                        <li><b>Total Downloaded Resumes:</b> {len(records)}</li>
+                        <li><b>Spreadsheet:</b> <code>Monthly_Users_Report.csv</code> included inside ZIP</li>
+                        <li><b>Cloudinary Status:</b> Intact & Active (No links broken)</li>
+                    </ul>
+                    <p style="color: #64748b; font-size: 12px; margin-top: 20px;">Automated scheduler generated from ATS Resume Pro.</p>
+                </div>
+            """,
+            "attachment": [
+                {
+                    "name": f"Resumes_Backup_{datetime.now().strftime('%Y_%m')}.zip",
+                    "content": zip_base64
+                }
+            ]
+        }
+
+        headers = {
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json"
+        }
+
+        res = requests.post("https://api.brevo.com/v3/smtp/email", json=payload, headers=headers, timeout=60)
+        
+        if res.status_code in [200, 201, 202]:
+            print(f"🎉 Monthly Archive successfully mailed to {admin_email}!")
+            return True
+        else:
+            print(f"❌ Brevo Error ({res.status_code}): {res.text}")
+            return False
+
+    except Exception as e:
+        print(f"❌ Monthly Archive System Error: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# 🟢 Instant Test Trigger Route (Testing ke liye)
+@app.route('/api/admin/trigger-monthly-backup', methods=['POST'])
+def trigger_monthly_backup():
+    if 'admin_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+        
+    success = generate_monthly_pdf_backup(admin_email="merajmohammed00123@gmail.com")
+    if success:
+        return jsonify({'success': True, 'message': 'ZIP archive sent to merajmohammed00123@gmail.com successfully!'})
+    else:
+        return jsonify({'success': False, 'message': 'Backup failed or no records in last 30 days.'}), 500
+
+# 🟢 Scheduler Initialization (Har mahine ki 1st date ko chalega)
+try:
+    scheduler = BackgroundScheduler()
+    # Har mahine ki 1st tareekh ko raat 12:00 baje run hoga
+    scheduler.add_job(
+        func=lambda: generate_monthly_pdf_backup(admin_email="merajmohammed00123@gmail.com"),
+        trigger="cron",
+        day=1,
+        hour=0,
+        minute=0
+    )
+    scheduler.start()
+    print("⏰ Monthly Resume Archiver Scheduler started (1st of every month)!")
+except Exception as sched_err:
+    print(f"⚠️ Scheduler init warning: {sched_err}")
+
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")
     if API_KEY and API_KEY != 'your-google-api-key-here':

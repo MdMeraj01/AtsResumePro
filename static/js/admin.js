@@ -1205,3 +1205,35 @@ async function triggerNewsletter(mode) {
         targetBtn.disabled = false;
     }
 }
+
+async function triggerManualMonthlyBackup() {
+    const btn = document.getElementById('btnMonthlyBackup');
+    const originalText = btn ? btn.innerHTML : '';
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Packing & Sending...';
+    }
+
+    try {
+        const res = await fetch('/api/admin/trigger-monthly-backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            alert("🎉 " + data.message);
+        } else {
+            alert("⚠️ " + (data.message || "Failed to trigger backup"));
+        }
+    } catch (err) {
+        console.error("Backup Trigger Error:", err);
+        alert("Server error while triggering backup.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+}
