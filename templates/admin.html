@@ -136,6 +136,10 @@
                     <span class="font-medium">Newsletter</span>
                 </a>
 
+                <a href="#reviews" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all">
+                    <i class="fas fa-star w-5 h-5 mr-3"></i>
+                    <span class="font-medium">User Reviews</span>
+                </a>
                 <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">System</p>
 
                 <a href="#settings" class="nav-item flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all">
@@ -1230,6 +1234,88 @@
 
     </div>
 </section>
+
+<!-- Reviews Management Section -->
+<section id="reviews-section" class="content-section hidden space-y-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">User Reviews Moderation</h2>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Review, approve, or permanently remove abusive feedback.</p>
+        </div>
+        <button onclick="loadAdminReviews()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow">
+            <i class="fas fa-sync-alt"></i> Refresh Reviews
+        </button>
+    </div>
+
+    <div class="bg-white dark:bg-dark-card rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">
+                    <tr>
+                        <th class="px-6 py-4">User</th>
+                        <th class="px-6 py-4">Rating</th>
+                        <th class="px-6 py-4">Feedback / Comment</th>
+                        <th class="px-6 py-4">Date</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="adminReviewsTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-400">Loading reviews...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Abuse Review Delete & Warning Modal -->
+<div id="deleteReviewModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-red-500/30">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 flex items-center justify-center text-lg">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Delete Abusive Review</h3>
+                <p class="text-xs text-gray-500">Permanently remove review from platform.</p>
+            </div>
+        </div>
+
+        <input type="hidden" id="targetReviewId">
+        
+        <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Flagged Review</label>
+            <p id="targetReviewPreview" class="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 italic max-h-20 overflow-y-auto"></p>
+        </div>
+
+        <div class="space-y-3 mb-5">
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" id="sendWarningEmailCheckbox" checked class="w-4 h-4 rounded text-red-600 border-gray-600">
+                <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">Send Policy Warning Email to User</span>
+            </label>
+
+            <div id="warningReasonBox">
+                <label class="block text-xs font-medium text-gray-400 mb-1">Violation Reason</label>
+                <select id="warningReasonSelect" class="w-full bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white text-xs rounded-lg p-2.5 border border-gray-300 dark:border-gray-700 outline-none">
+                    <option value="Inappropriate, vulgar or abusive language.">Inappropriate or Abusive Language</option>
+                    <option value="Spam, promotional links or irrelevant text.">Spam or Irrelevant Text</option>
+                    <option value="Harassment and defamatory statement.">Harassment or Defamation</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-2.5">
+            <button onclick="closeDeleteReviewModal()" class="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 dark:hover:text-white">
+                Cancel
+            </button>
+            <button onclick="confirmDeleteAbusiveReview()" id="confirmDeleteReviewBtn" class="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold shadow-md transition-all">
+                Delete & Notify
+            </button>
+        </div>
+    </div>
+</div>
 
             <!-- Settings Section -->
             <section id="settings-section" class="content-section hidden space-y-8">

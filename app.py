@@ -4346,6 +4346,109 @@ def admin_toggle_review():
     finally:
         conn.close()
         
+# 1. Fetch all reviews for Admin Panel
+@app.route('/api/admin/reviews/all', methods=['GET'])
+def admin_get_all_reviews():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    cursor = get_safe_cursor(conn)
+    try:
+        cursor.execute("""
+            SELECT r.id, r.user_id, r.user_name, r.rating, r.comment, r.is_approved, 
+                   DATE_FORMAT(DATE_ADD(r.created_at, INTERVAL 330 MINUTE), '%%d %%b %%Y, %%h:%%i %%p') as formatted_date,
+                   u.email
+            FROM reviews r
+            LEFT JOIN users u ON r.user_id = u.id
+            ORDER BY r.id DESC
+        """)
+        reviews = cursor.fetchall() or []
+        return jsonify({'success': True, 'reviews': reviews})
+    except Exception as e:
+        print(f"Error fetching admin reviews: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# 2. Delete abusive review permanently
+# 🟢 Delete Abusive Review with Optional Warning Email
+@app.route('/api/admin/reviews/delete/<int:review_id>', methods=['POST'])
+def admin_delete_review_with_warning(review_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.get_json(silent=True) or {}
+    send_warning = data.get('send_warning', False)
+    warning_reason = data.get('reason', 'Violation of community guidelines and vulgar content.').strip()
+
+    conn = get_db_connection()
+    cursor = get_safe_cursor(conn)
+    
+    try:
+        # 1. Fetch user & review details before deletion
+        cursor.execute("""
+            SELECT r.id, r.comment, r.user_name, u.email 
+            FROM reviews r
+            LEFT JOIN users u ON r.user_id = u.id
+            WHERE r.id = %s
+        """, (review_id,))
+        review_item = cursor.fetchone()
+
+        if not review_item:
+            return jsonify({'success': False, 'message': 'Review not found'}), 404
+
+        target_email = review_item.get('email')
+        target_name = review_item.get('user_name') or 'User'
+        flagged_comment = review_item.get('comment')
+
+        # 2. Warning Email via Brevo (agar checkbox checked ho aur email valid ho)
+        if send_warning and target_email:
+            BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+            if BREVO_API_KEY:
+                mail_payload = {
+                    "sender": {"name": "ATS Resume Pro Trust & Safety", "email": "atsresumepro01@gmail.com"},
+                    "to": [{"email": target_email, "name": target_name}],
+                    "subject": "⚠️ Policy Violation Warning: Your Review Has Been Removed",
+                    "htmlContent": f"""
+                        <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                            <h2 style="color: #dc2626;">Content Removal Notice</h2>
+                            <p>Hi <b>{target_name}</b>,</p>
+                            <p>Your recent review submitted on <b>ATS Resume Pro</b> has been deleted by our moderation team due to a violation of our community standards.</p>
+                            
+                            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin: 16px 0;">
+                                <p style="margin: 0; font-size: 13px; color: #991b1b;"><b>Removed Content:</b><br>"{flagged_comment}"</p>
+                            </div>
+                            
+                            <p><b>Reason for Action:</b><br>{warning_reason}</p>
+                            <p style="font-size: 13px; color: #64748b; margin-top: 20px;">Continued violations may result in account suspension or loss of access to premium services.</p>
+                        </div>
+                    """
+                }
+                headers = {
+                    "accept": "application/json",
+                    "api-key": BREVO_API_KEY,
+                    "content-type": "application/json"
+                }
+                try:
+                    requests.post("https://api.brevo.com/v3/smtp/email", json=mail_payload, headers=headers, timeout=10)
+                except Exception as mail_err:
+                    print(f"Warning email dispatch failed: {mail_err}")
+
+        # 3. Delete from reviews table
+        cursor.execute("DELETE FROM reviews WHERE id = %s", (review_id,))
+        conn.commit()
+
+        return jsonify({'success': True, 'message': 'Review deleted successfully and user notified.'})
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Review delete error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 import cloudinary.uploader
 @app.route('/api/upload-downloaded-pdf', methods=['POST'])

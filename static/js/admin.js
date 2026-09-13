@@ -1285,3 +1285,135 @@ function renderActivityCalendar(activeDates = []) {
         `;
     }
 }
+
+// switchTab function ke andar add karein:
+// else if (targetHref === '#reviews') { loadAdminReviews(); }
+// Reviews ko memory me store rakhne ke liye variable
+let loadedReviewsRegistry = {};
+
+let currentReviewToDelete = null;
+
+async function loadAdminReviews() {
+    const tbody = document.getElementById('adminReviewsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading reviews...</td></tr>';
+
+    try {
+        const res = await fetch('/api/admin/reviews/all');
+        const data = await res.json();
+
+        if (!data.success || !data.reviews || !data.reviews.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">No user reviews submitted yet.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.reviews.map(r => {
+            const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+            const isApproved = r.is_approved === 1 || r.is_approved === true;
+
+            return `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-bold text-gray-900 dark:text-white">${r.user_name || 'Anonymous'}</div>
+                        <div class="text-xs text-gray-400">${r.email || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-yellow-400 font-bold text-base tracking-widest">${stars}</span>
+                    </td>
+                    <td class="px-6 py-4 max-w-md">
+                        <p class="text-gray-700 dark:text-gray-300 line-clamp-2">${r.comment || ''}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-400 font-mono">
+                        ${r.formatted_date || 'Recently'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button onclick="toggleReviewApproval(${r.id}, ${!isApproved})" class="px-3 py-1 text-xs font-bold rounded-full transition-all ${isApproved ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'}">
+                            ${isApproved ? '● Visible' : '○ Hidden'}
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <button onclick="openDeleteReviewModal(this, ${r.id})" 
+                                data-comment="${(r.comment || '').replace(/"/g, '&quot;')}" 
+                                class="px-3 py-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold transition-all">
+                            <i class="fas fa-trash-alt mr-1"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error("Failed to load reviews:", err);
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-400">Failed to load reviews.</td></tr>';
+    }
+}
+
+function openDeleteReviewModal(btnEl, reviewId) {
+    currentReviewToDelete = reviewId;
+    const commentText = btnEl.getAttribute('data-comment') || '';
+
+    document.getElementById('targetReviewId').value = reviewId;
+    document.getElementById('targetReviewPreview').innerText = `"${commentText}"`;
+    document.getElementById('deleteReviewModal').classList.remove('hidden');
+}
+
+async function toggleReviewApproval(reviewId, newStatus) {
+    try {
+        const res = await fetch('/api/admin/reviews/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review_id: reviewId, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            loadAdminReviews();
+        } else {
+            alert("Failed to update review status.");
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+
+function closeDeleteReviewModal() {
+    document.getElementById('deleteReviewModal').classList.add('hidden');
+    currentReviewToDelete = null;
+}
+
+async function confirmDeleteAbusiveReview() {
+    if (!currentReviewToDelete) return;
+
+    const btn = document.getElementById('confirmDeleteReviewBtn');
+    const originalText = btn.innerText;
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    const sendWarning = document.getElementById('sendWarningEmailCheckbox').checked;
+    const reason = document.getElementById('warningReasonSelect').value;
+
+    try {
+        const res = await fetch(`/api/admin/reviews/delete/${currentReviewToDelete}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                send_warning: sendWarning,
+                reason: reason
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            closeDeleteReviewModal();
+            loadAdminReviews();
+        } else {
+            alert("❌ Error: " + (data.message || "Failed to remove review"));
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server error while deleting review.");
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
