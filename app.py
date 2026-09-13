@@ -641,7 +641,10 @@ def track_activity():
         # 1. Premium check (Safety net)
         cursor.execute("SELECT is_premium FROM templates WHERE LOWER(name) = %s", (template_name,))
         t_row = cursor.fetchone()
-        
+
+        # /api/track-activity route ke try block me:
+        cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (session['user_id'],))
+
         is_prem = 0
         if t_row:
             is_prem = t_row.get('is_premium') if isinstance(t_row, dict) else t_row[0]
@@ -1207,9 +1210,9 @@ def signup():
 @app.route('/api/user/login', methods=['POST'])
 def login():
     try:
-        data = request.json
-        email = data.get('email')
-        password = data.get('password')
+        data = request.json or {}
+        email = str(data.get('email', '')).strip().lower()
+        password = str(data.get('password', '')).strip()
 
         if not email or not password:
             return jsonify({
@@ -1217,46 +1220,63 @@ def login():
                 'message': 'Email and password required'
             }), 400
 
-        # DB CONNECT
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = get_safe_cursor(conn)
 
-        cursor.execute(
-            "SELECT id, full_name, email, password_hash FROM users WHERE email = %s",
-            (email,)
-        )
-        user = cursor.fetchone()
+        try:
+            cursor.execute(
+                "SELECT id, full_name, email, password_hash, plan_type, status FROM users WHERE LOWER(email) = %s",
+                (email,)
+            )
+            user = cursor.fetchone()
 
-        cursor.close()
-        conn.close()
+            # USER NOT FOUND
+            if not user:
+                return jsonify({
+                    'success': False,
+                    'error_type': 'not_found',
+                    'message': 'Account not found. Please sign up.'
+                }), 404
 
-        # USER NOT FOUND
-        if not user:
-            return jsonify({
-                'success': False,
-                'error_type': 'not_found',
-                'message': 'Account not found. Please sign up.'
-            }), 404
+            # ACCOUNT BANNED CHECK
+            if user.get('status') == 'Banned':
+                return jsonify({
+                    'success': False,
+                    'message': 'Your account has been suspended. Please contact support.'
+                }), 403
 
-        # PASSWORD CHECK
-        if bcrypt.check_password_hash(user['password_hash'], password):
-            session['user_id'] = user['id']
-            session['user_name'] = user['full_name']
+            # PASSWORD CHECK
+            if bcrypt.check_password_hash(user['password_hash'], password):
+                session['user_id'] = user['id']
+                session['user_name'] = user['full_name']
+                session['email'] = user['email']
+                session['plan_type'] = user.get('plan_type', 'Free')
 
-            return jsonify({
-                'success': True,
-                'redirect_url': url_for('index'),
-                'user': {
-                    'name': user['full_name'],
-                    'email': user['email']
-                }
-            })
+                # 🟢 UPDATE LAST ACTIVE & CALENDAR HISTORY IN SAME TRANSACTION
+                cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (user['id'],))
+                cursor.execute("""
+                    INSERT IGNORE INTO user_login_history (user_id, activity_date) 
+                    VALUES (%s, DATE(DATE_ADD(NOW(), INTERVAL 330 MINUTE)))
+                """, (user['id'],))
+                conn.commit()
 
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Incorrect password'
-            }), 401
+                return jsonify({
+                    'success': True,
+                    'redirect_url': url_for('index'),
+                    'user': {
+                        'name': user['full_name'],
+                        'email': user['email']
+                    }
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Incorrect password'
+                }), 401
+
+        finally:
+            cursor.close()
+            conn.close()
 
     except Exception as e:
         print("LOGIN ERROR:", e)
@@ -1264,7 +1284,6 @@ def login():
             'success': False,
             'message': 'Server error'
         }), 500
-
 
 # ==========================================
 # 🏢 COMPANY PAGES ROUTES
@@ -3157,7 +3176,6 @@ def delete_admin(id):
 # ==========================================
 
 # 1. Get Single User Details (For Admin View)
-# app.py -> get_user_details route ke andar:
 @app.route('/api/admin/user-details/<int:user_id>', methods=['GET'])
 def get_user_details(user_id):
     if 'admin_id' not in session: 
@@ -3167,27 +3185,36 @@ def get_user_details(user_id):
     cursor = get_safe_cursor(conn)
     
     try:
-        # 1. User Basic Info
-        cursor.execute("SELECT id, full_name, email, plan_type, status, ai_credits, created_at, profile_pic FROM users WHERE id = %s", (user_id,))
+        # 1. User Basic Info (IST formatted)
+        cursor.execute("""
+            SELECT 
+                id, full_name, email, plan_type, status, ai_credits, profile_pic,
+                DATE_FORMAT(DATE_ADD(joined_at, INTERVAL 330 MINUTE), '%%b %%d, %%Y') as joined_date,
+                DATE_FORMAT(DATE_ADD(COALESCE(last_active, joined_at), INTERVAL 330 MINUTE), '%%b %%d, %%Y - %%h:%%i %%p') as formatted_last_active
+            FROM users 
+            WHERE id = %s
+        """, (user_id,))
         user = cursor.fetchone()
-        
+
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        joined_at_str = user.get('joined_date') or 'N/A'
+        last_active_str = user.get('formatted_last_active') or joined_at_str
 
         # 2. Resumes Created Count
         cursor.execute("SELECT COUNT(*) as count FROM saved_resumes WHERE user_id = %s", (user_id,))
         res_count_row = cursor.fetchone()
         resume_count = res_count_row['count'] if isinstance(res_count_row, dict) else res_count_row[0]
 
-        # 3. Last Activity
-        cursor.execute("SELECT created_at FROM resume_activity WHERE user_id = %s ORDER BY created_at DESC LIMIT 1", (user_id,))
-        last_active = cursor.fetchone()
-        
-        joined_at_str = user['created_at'].strftime('%b %d, %Y') if user.get('created_at') else 'N/A'
-        last_active_str = last_active['created_at'].strftime('%b %d, %Y - %I:%M %p') if last_active and last_active.get('created_at') else joined_at_str
-
-        # 4. Saved Documents (Drafts)
-        cursor.execute("SELECT id, title, template_name, updated_at FROM saved_resumes WHERE user_id = %s ORDER BY updated_at DESC", (user_id,))
+        # 3. Saved Documents
+        cursor.execute("""
+            SELECT id, title, template_name, 
+                   DATE_FORMAT(DATE_ADD(updated_at, INTERVAL 330 MINUTE), '%%d %%b %%Y, %%h:%%i %%p') as formatted_updated_at
+            FROM saved_resumes 
+            WHERE user_id = %s 
+            ORDER BY updated_at DESC
+        """, (user_id,))
         saved_docs_raw = cursor.fetchall() or []
         saved_docs = []
         for d in saved_docs_raw:
@@ -3195,12 +3222,13 @@ def get_user_details(user_id):
                 'id': d['id'],
                 'title': d['title'] or 'Untitled Resume',
                 'template_name': d['template_name'] or 'modern',
-                'updated_at': d['updated_at'].strftime('%d %b %Y, %I:%M %p') if d.get('updated_at') else 'Recently'
+                'updated_at': d.get('formatted_updated_at') or 'Recently'
             })
 
-        # 5. Cloudinary Downloaded PDFs
+        # 4. Downloaded PDFs
         cursor.execute("""
-            SELECT id, resume_title, template_name, pdf_url, downloaded_at 
+            SELECT id, resume_title, template_name, pdf_url, 
+                   DATE_FORMAT(DATE_ADD(downloaded_at, INTERVAL 330 MINUTE), '%%d %%b %%Y, %%h:%%i %%p') as formatted_downloaded_at
             FROM user_downloaded_resumes 
             WHERE user_id = %s 
             ORDER BY downloaded_at DESC
@@ -3213,14 +3241,15 @@ def get_user_details(user_id):
                 'resume_title': p['resume_title'] or 'Generated Resume',
                 'template_name': p['template_name'] or 'modern',
                 'pdf_url': p['pdf_url'],
-                'downloaded_at': p['downloaded_at'].strftime('%d %b %Y, %I:%M %p') if p.get('downloaded_at') else 'Recently'
+                'downloaded_at': p.get('formatted_downloaded_at') or 'Recently'
             })
 
-        # 6. Purchased Premium Templates
+        # 5. Purchased Premium Templates
         purchases = []
         try:
             cursor.execute("""
-                SELECT template_name, access_type, DATE_FORMAT(purchase_date, '%%d %%b %%Y') as purchase_date 
+                SELECT template_name, access_type, 
+                       DATE_FORMAT(DATE_ADD(purchase_date, INTERVAL 330 MINUTE), '%%d %%b %%Y') as purchase_date 
                 FROM user_purchases 
                 WHERE user_id = %s 
                 ORDER BY purchase_date DESC
@@ -3228,6 +3257,20 @@ def get_user_details(user_id):
             purchases = cursor.fetchall() or []
         except Exception:
             purchases = []
+
+        # 6. Active Dates for Calendar
+        active_dates = []
+        try:
+            cursor.execute("""
+                SELECT DISTINCT DATE_FORMAT(activity_date, '%%Y-%%m-%%d') as act_date 
+                FROM user_login_history 
+                WHERE user_id = %s
+            """, (user_id,))
+            date_rows = cursor.fetchall() or []
+            active_dates = [d['act_date'] if isinstance(d, dict) else d[0] for d in date_rows]
+        except Exception as e:
+            print("Error fetching active dates:", e)
+            active_dates = []
 
         return jsonify({
             'success': True,
@@ -3243,7 +3286,8 @@ def get_user_details(user_id):
                 'resume_count': resume_count,
                 'saved_docs': saved_docs,
                 'downloaded_pdfs': downloaded_pdfs,
-                'purchases': purchases
+                'purchases': purchases,
+                'active_dates': active_dates
             }
         })
     except Exception as e:
@@ -3252,6 +3296,39 @@ def get_user_details(user_id):
     finally:
         cursor.close()
         conn.close()
+
+@app.before_request
+def update_user_last_active():
+    # Admin routes aur static files ko bilkul chhod do
+    if request.path.startswith(('/static', '/furqan', '/api/admin', '/favicon', '/sw.js')):
+        return
+
+    # Sirf regular user session ke liye chalega
+    user_id = session.get('user_id')
+    if user_id:
+        conn = None
+        cursor = None
+        try:
+            conn = get_db_connection()
+            cursor = get_safe_cursor(conn)
+            
+            # 1. Sirf logged-in user ka time update karo
+            cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (user_id,))
+            
+            # 2. History table me entry commit karo
+            cursor.execute("""
+                INSERT IGNORE INTO user_login_history (user_id, activity_date) 
+                VALUES (%s, DATE(DATE_ADD(NOW(), INTERVAL 330 MINUTE)))
+            """, (user_id,))
+            
+            conn.commit()
+        except Exception as e:
+            print(f"Tracking error: {e}")
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])

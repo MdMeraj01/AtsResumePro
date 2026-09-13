@@ -657,11 +657,19 @@ async function openUserDetail(userId) {
         // Switch View
         document.getElementById('users-section').classList.add('hidden');
         document.getElementById('user-detail-view').classList.remove('hidden');
+        // Switch View
+        document.getElementById('users-section').classList.add('hidden');
+        document.getElementById('user-detail-view').classList.remove('hidden');
+
+        // 🟢 YAHAN CALL KARO CALENDAR KO:
+        renderActivityCalendar(user.active_dates || []);
 
     } catch (err) {
         console.error("User Detail Error:", err);
         alert("Failed to load user profile.");
     }
+
+
 }
 
 function closeUserDetailView() {
@@ -1235,5 +1243,45 @@ async function triggerManualMonthlyBackup() {
             btn.disabled = false;
             btn.innerHTML = originalText;
         }
+    }
+}
+
+function renderActivityCalendar(activeDates = []) {
+    const calendarEl = document.getElementById('userActivityCalendar');
+    if (!calendarEl) return;
+    calendarEl.innerHTML = '';
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth(); // 0-indexed: Sept = 8
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    // Clean dates array to match strings reliably
+    const cleanActiveDates = activeDates.map(d => String(d).trim());
+
+    // Empty cells before 1st day of month
+    for (let i = 0; i < firstDayIndex; i++) {
+        calendarEl.innerHTML += `<div class="h-9 rounded-xl bg-slate-900/30 opacity-20"></div>`;
+    }
+
+    // Days 1 to 30/31
+    for (let day = 1; day <= totalDays; day++) {
+        const formattedMonth = String(month + 1).padStart(2, '0');
+        const formattedDay = String(day).padStart(2, '0');
+        const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
+
+        const isActive = cleanActiveDates.includes(dateStr);
+
+        let boxStyle = isActive 
+            ? "bg-emerald-500 text-slate-950 font-black shadow-[0_0_15px_rgba(16,185,129,0.8)] border-2 border-emerald-300 scale-105" 
+            : "bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-800";
+
+        calendarEl.innerHTML += `
+            <div class="h-9 flex items-center justify-center rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer select-none ${boxStyle}" title="${dateStr}${isActive ? ' (Active)' : ''}">
+                ${day}
+            </div>
+        `;
     }
 }
