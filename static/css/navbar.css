@@ -1,0 +1,904 @@
+/* ============================================
+   ATS PRO — PREMIUM NAVBAR + MOBILE DRAWER
+   Full CSS (Dark/Light Mode + Animations)
+   ============================================ */
+
+/* --- Root Variables --- */
+:root {
+    --nav-blur: 24px;
+    --nav-transition: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --nav-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   BASE LAYOUT
+   ============================================ */
+.ats-header-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    padding: 0.5rem 0.75rem;
+    pointer-events: none;
+    transition: all 0.4s var(--nav-ease);
+}
+
+@media (min-width: 1024px) {
+    .ats-header-wrapper {
+        position: fixed;
+        padding: 0.85rem 1rem;
+    }
+}
+
+/* ============================================
+   BRAND LOGO
+   ============================================ */
+.ats-brand-img {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+    display: inline-block;
+    transition: transform 0.4s var(--nav-transition);
+}
+
+.ats-brand-logo:hover .ats-brand-img {
+    transform: rotate(-6deg) scale(1.08);
+}
+
+@media (min-width: 1024px) {
+    .ats-brand-img {
+        height: 36px;
+    }
+}
+
+/* ============================================
+   MAIN NAV PILL
+   ============================================ */
+.ats-nav-pill {
+    max-width: 1240px;
+    margin: 0 auto;
+    height: 56px;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 9999px;
+    pointer-events: auto;
+    position: relative;
+    overflow: visible;
+    transition: all 0.4s var(--nav-ease);
+}
+
+/* Animated gradient border ring */
+.ats-nav-pill::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 9999px;
+    padding: 1px;
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.6),
+        rgba(6, 182, 212, 0.5),
+        rgba(168, 85, 247, 0.5),
+        rgba(99, 102, 241, 0.6));
+    background-size: 300% 300%;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    animation: gradientShift 8s ease infinite;
+    pointer-events: none;
+    transition: opacity 0.4s var(--nav-ease);
+}
+
+.ats-nav-pill:hover::before {
+    opacity: 1;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+}
+
+/* 🌙 Dark Mode Pill */
+html.dark .ats-nav-pill,
+body:not(.light-mode) .ats-nav-pill {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(var(--nav-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--nav-blur)) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+        0 10px 30px -10px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+        0 -1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+html.dark .ats-nav-pill:hover,
+body:not(.light-mode) .ats-nav-pill:hover {
+    box-shadow:
+        0 20px 45px -12px rgba(0, 0, 0, 0.7),
+        0 0 30px -10px rgba(99, 102, 241, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+/* ☀️ Light Mode Pill */
+html:not(.dark) .ats-nav-pill,
+body.light-mode .ats-nav-pill {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(var(--nav-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--nav-blur)) saturate(180%);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow:
+        0 10px 25px -5px rgba(15, 23, 42, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+        0 -1px 0 rgba(15, 23, 42, 0.03) inset;
+}
+
+html:not(.dark) .ats-nav-pill:hover,
+body.light-mode .ats-nav-pill:hover {
+    box-shadow:
+        0 20px 45px -12px rgba(15, 23, 42, 0.15),
+        0 0 30px -10px rgba(99, 102, 241, 0.2);
+}
+
+/* ============================================
+   RESPONSIVE HIDE / SHOW
+   ============================================ */
+.ats-desktop-only { display: none !important; }
+.ats-mobile-only  { display: flex !important; align-items: center; gap: 0.35rem; }
+
+@media (min-width: 1024px) {
+    .ats-nav-pill {
+        height: 64px;
+        padding: 0 1.25rem;
+    }
+    .ats-desktop-only { display: flex !important; }
+    .ats-mobile-only  { display: none !important; }
+}
+
+/* ============================================
+   BRAND
+   ============================================ */
+.ats-brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: transform 0.3s var(--nav-transition);
+}
+
+.ats-brand-logo:hover {
+    transform: translateY(-1px);
+}
+
+
+/* Logo Brand Container */
+.ats-brand-logo {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+/* 🟢 Logo Image Size Fix */
+.ats-brand-img {
+    height: 40px;            /* Height badhai taaki icon aur text saaf dikhe */
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.ats-brand-logo:hover .ats-brand-img {
+    transform: scale(1.03);
+}
+
+/* Desktop screen par aur thoda clear */
+@media (min-width: 1024px) {
+    .ats-brand-img {
+        height: 46px;        /* Laptops par bold & readable */
+        max-width: 190px;
+    }
+}
+
+.ats-brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.4);
+    transition: all 0.3s var(--nav-transition);
+}
+
+.ats-brand-logo:hover .ats-brand-badge {
+    box-shadow: 0 6px 20px -2px rgba(79, 70, 229, 0.6);
+    transform: rotate(-8deg) scale(1.05);
+}
+
+.ats-brand-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    transition: color 0.3s var(--nav-ease);
+}
+
+html.dark .ats-brand-title,
+body:not(.light-mode) .ats-brand-title { color: #fff; }
+
+html:not(.dark) .ats-brand-title,
+body.light-mode .ats-brand-title { color: #0f172a; }
+
+.ats-brand-pro {
+    background: linear-gradient(135deg, #00d4ff 0%, #6366f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: gradientShift 4s ease infinite;
+}
+
+/* ============================================
+   DESKTOP LINKS
+   ============================================ */
+.ats-links-list {
+    align-items: center;
+    gap: 0.25rem;
+    background: transparent !important;
+}
+
+.ats-link-item {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    border-radius: 9999px;
+    text-decoration: none;
+    position: relative;
+    transition: all 0.25s var(--nav-ease);
+    overflow: hidden;
+}
+
+.ats-link-item::after {
+    content: "";
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #06b6d4);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: width 0.3s var(--nav-ease);
+}
+
+.ats-link-item:hover::after {
+    width: 40%;
+}
+
+html.dark .ats-link-item,
+body:not(.light-mode) .ats-link-item { color: #94a3b8; }
+
+html.dark .ats-link-item:hover,
+body:not(.light-mode) .ats-link-item:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+html:not(.dark) .ats-link-item,
+body.light-mode .ats-link-item { color: #475569; }
+
+html:not(.dark) .ats-link-item:hover,
+body.light-mode .ats-link-item:hover {
+    color: #0f172a;
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ============================================
+   NAV PILL BUTTON (Cover Letter / Sign Up)
+   ============================================ */
+.ats-nav-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.5rem 0.95rem;
+    border-radius: 9999px;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.15));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    transition: all 0.3s var(--nav-ease);
+    margin-left: 0.5rem;
+}
+
+.ats-nav-pill-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #6366f1, #06b6d4);
+    opacity: 0;
+    transition: opacity 0.3s var(--nav-ease);
+    z-index: -1;
+}
+
+.ats-nav-pill-btn:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.5);
+    border-color: transparent;
+}
+
+.ats-nav-pill-btn:hover::before {
+    opacity: 1;
+}
+
+.ats-tag-alert {
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #f43f5e, #ec4899);
+    color: #fff;
+    letter-spacing: 0.5px;
+    animation: pulseNew 2s ease-in-out infinite;
+}
+
+@keyframes pulseNew {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6); }
+    50%      { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+}
+
+/* ============================================
+   ICON BUTTONS
+   ============================================ */
+.ats-icon-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    position: relative;
+    transition: all 0.3s var(--nav-transition);
+}
+
+.ats-icon-btn:hover {
+    transform: rotate(15deg) scale(1.1);
+}
+
+html.dark .ats-icon-btn,
+body:not(.light-mode) .ats-icon-btn { color: #cbd5e1; }
+
+html.dark .ats-icon-btn:hover,
+body:not(.light-mode) .ats-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+html:not(.dark) .ats-icon-btn,
+body.light-mode .ats-icon-btn { color: #334155; }
+
+html:not(.dark) .ats-icon-btn:hover,
+body.light-mode .ats-icon-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #0f172a;
+}
+
+/* ============================================
+   THEME TOGGLE BUTTON
+   ============================================ */
+.theme-toggle-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s var(--nav-transition);
+}
+
+.theme-toggle-btn:hover {
+    transform: rotate(180deg) scale(1.1);
+}
+
+html.dark .theme-toggle-btn,
+body:not(.light-mode) .theme-toggle-btn {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.08);
+}
+
+html.dark .theme-toggle-btn:hover,
+body:not(.light-mode) .theme-toggle-btn:hover {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fcd34d;
+}
+
+html:not(.dark) .theme-toggle-btn,
+body.light-mode .theme-toggle-btn {
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+html:not(.dark) .theme-toggle-btn:hover,
+body.light-mode .theme-toggle-btn:hover {
+    background: rgba(99, 102, 241, 0.15);
+    color: #4f46e5;
+}
+
+/* ============================================
+   USER CAPSULE
+   ============================================ */
+.ats-user-capsule {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s var(--nav-ease);
+}
+
+html.dark .ats-user-capsule,
+body:not(.light-mode) .ats-user-capsule {
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .ats-user-capsule:hover,
+body:not(.light-mode) .ats-user-capsule:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+html:not(.dark) .ats-user-capsule,
+body.light-mode .ats-user-capsule {
+    color: #1e293b;
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .ats-user-capsule:hover,
+body.light-mode .ats-user-capsule:hover {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.ats-user-avatar-img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(99, 102, 241, 0.5);
+}
+
+.ats-user-avatar-text {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #06b6d4);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* Dropdown enhancement */
+.relative.group > .absolute {
+    animation: dropIn 0.25s var(--nav-transition);
+}
+
+@keyframes dropIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============================================
+   MOBILE DRAWER — Premium (FIXED)
+   ============================================ */
+
+/* --- Full-height fix for mobile browsers --- */
+#mobileMenu {
+    height: 100vh;
+    height: 100dvh;
+    transition: transform 0.45s var(--nav-transition);
+    overscroll-behavior: contain;
+}
+
+#mobileMenu a {
+    text-decoration: none;
+}
+
+.mobile-drawer {
+    background: #0B0F19;
+}
+
+html:not(.dark) .mobile-drawer,
+body.light-mode .mobile-drawer {
+    background: #ffffff;
+}
+
+.mobile-drawer-scroll {
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* --- Animated Background (subtle, no grid) --- */
+.mobile-drawer-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.35;
+    animation: floatOrb 14s ease-in-out infinite;
+}
+
+.glow-orb-1 {
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.8), transparent 70%);
+    top: -100px;
+    right: -100px;
+}
+
+.glow-orb-2 {
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.6), transparent 70%);
+    bottom: -80px;
+    left: -100px;
+    animation-delay: -7s;
+}
+
+html:not(.dark) .glow-orb,
+body.light-mode .glow-orb {
+    opacity: 0.15;
+}
+
+@keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(20px, -30px) scale(1.1); }
+}
+
+/* --- Stagger Animation --- */
+.drawer-item {
+    opacity: 0;
+    transform: translateX(24px);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#mobileMenu:not(.translate-x-full) .drawer-item {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: var(--delay, 0s);
+}
+
+/* --- Drawer Title / Text Colors --- */
+.mobile-drawer-title {
+    color: #ffffff;
+}
+
+html:not(.dark) .mobile-drawer-title,
+body.light-mode .mobile-drawer-title {
+    color: #0f172a;
+}
+
+/* --- Close Button --- */
+.mobile-close-btn {
+    color: #94a3b8;
+    background: transparent;
+}
+
+.mobile-close-btn:hover,
+.mobile-close-btn:active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html:not(.dark) .mobile-close-btn,
+body.light-mode .mobile-close-btn {
+    color: #475569;
+}
+
+html:not(.dark) .mobile-close-btn:hover,
+body.light-mode .mobile-close-btn:hover {
+    color: #0f172a;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* --- Border colors per theme --- */
+.mobile-drawer .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html:not(.dark) .mobile-drawer .border-white\/10,
+body.light-mode .mobile-drawer .border-white\/10 {
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+/* --- Mobile Nav Links --- */
+.mobile-nav-link {
+    color: #ffffff;
+    background: transparent;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+html:not(.dark) .mobile-nav-link,
+body.light-mode .mobile-nav-link {
+    color: #0f172a;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link:active {
+    transform: translateX(4px);
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+html:not(.dark) .mobile-nav-link:hover,
+body.light-mode .mobile-nav-link:hover,
+html:not(.dark) .mobile-nav-link:active,
+body.light-mode .mobile-nav-link:active {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* --- Icon Circle --- */
+.mobile-link-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav-link:hover .mobile-link-icon,
+.mobile-nav-link:active .mobile-link-icon {
+    transform: rotate(-6deg) scale(1.08);
+}
+
+/* --- Drawer Logo Pulse --- */
+.drawer-logo {
+    animation: logoPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+    0%, 100% { box-shadow: 0 4px 15px -3px rgba(99, 102, 241, 0.5); }
+    50%      { box-shadow: 0 4px 25px -3px rgba(99, 102, 241, 0.9); }
+}
+
+/* --- User Card (in drawer) --- */
+.mobile-user-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html:not(.dark) .mobile-user-card,
+body.light-mode .mobile-user-card {
+    background: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.12);
+}
+
+/* --- Login Button (in drawer) --- */
+.mobile-login-btn {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-login-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html:not(.dark) .mobile-login-btn,
+body.light-mode .mobile-login-btn {
+    color: #0f172a;
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+html:not(.dark) .mobile-login-btn:hover,
+body.light-mode .mobile-login-btn:hover {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+/* --- Drawer Scrollbar --- */
+.mobile-drawer-scroll::-webkit-scrollbar {
+    width: 3px;
+}
+
+.mobile-drawer-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mobile-drawer-scroll::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 3px;
+}
+
+/* --- Safe area for iPhones --- */
+@supports (padding: max(0px)) {
+    .mobile-drawer-scroll {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   ACTIVE PAGE HIGHLIGHT — Desktop + Mobile
+   ============================================ */
+
+/* --- Desktop: Active link --- */
+.ats-link-item.active {
+    position: relative;
+}
+
+/* Desktop dark mode active */
+html.dark .ats-link-item.active,
+body:not(.light-mode) .ats-link-item.active {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.12) !important;
+    box-shadow: 0 0 20px -8px rgba(99, 102, 241, 0.6);
+}
+
+/* Desktop light mode active */
+html:not(.dark) .ats-link-item.active,
+body.light-mode .ats-link-item.active {
+    color: #4f46e5;
+    background: rgba(99, 102, 241, 0.08) !important;
+    box-shadow: 0 0 20px -8px rgba(99, 102, 241, 0.4);
+}
+
+/* Active link bottom line (always visible) */
+.ats-link-item.active::after {
+    width: 60%;
+    background: linear-gradient(90deg, #6366f1, #06b6d4);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+    animation: activeLinePulse 2.4s ease-in-out infinite;
+}
+
+/* Text glow on active (dark only) */
+html.dark .ats-link-item.active,
+body:not(.light-mode) .ats-link-item.active {
+    text-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+}
+
+html:not(.dark) .ats-link-item.active,
+body.light-mode .ats-link-item.active {
+    text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes activeLinePulse {
+    0%, 100% { opacity: 1;    box-shadow: 0 0 10px rgba(99, 102, 241, 0.8); }
+    50%      { opacity: 0.85; box-shadow: 0 0 18px rgba(6, 182, 212, 0.9);  }
+}
+
+/* Small dot indicator under active (extra flair) */
+.ats-link-item.active::before {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #06b6d4);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.9);
+    animation: activeDotPulse 2s ease-in-out infinite;
+}
+
+@keyframes activeDotPulse {
+    0%, 100% { transform: translateX(-50%) scale(1);   opacity: 1;   }
+    50%      { transform: translateX(-50%) scale(1.4); opacity: 0.7; }
+}
+
+/* ============================================
+   MOBILE: Active link highlight
+   ============================================ */
+
+/* Dark mode mobile active */
+html.dark .mobile-nav-link.active,
+body:not(.light-mode) .mobile-nav-link.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.18), rgba(6, 182, 212, 0.06));
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: 0 0 24px -10px rgba(99, 102, 241, 0.6);
+}
+
+html.dark .mobile-nav-link.active .mobile-link-icon,
+body:not(.light-mode) .mobile-nav-link.active .mobile-link-icon {
+    box-shadow: 0 0 20px -4px rgba(99, 102, 241, 0.7);
+    transform: scale(1.05);
+}
+
+/* Light mode mobile active */
+html:not(.dark) .mobile-nav-link.active,
+body.light-mode .mobile-nav-link.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.10), rgba(6, 182, 212, 0.04));
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 24px -10px rgba(99, 102, 241, 0.3);
+}
+
+html:not(.dark) .mobile-nav-link.active .mobile-link-icon,
+body.light-mode .mobile-nav-link.active .mobile-link-icon {
+    box-shadow: 0 0 20px -4px rgba(99, 102, 241, 0.4);
+    transform: scale(1.05);
+}
+
+/* Left accent bar on mobile active link */
+.mobile-nav-link.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #6366f1, #06b6d4);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.9);
+    animation: accentBarPulse 2s ease-in-out infinite;
+}
+
+@keyframes accentBarPulse {
+    0%, 100% { opacity: 1;   transform: scaleY(1);   }
+    50%      { opacity: 0.6; transform: scaleY(0.85); }
+}
+
+/* Ensure chevron shows on active */
+.mobile-nav-link.active .fa-chevron-right {
+    opacity: 0.7 !important;
+    transform: translateX(2px);
+}
+
+/* ============================================
+   HOVER should NOT override active styles
+   ============================================ */
+.ats-link-item.active:hover {
+    transform: none;
+}
+
+.mobile-nav-link.active:hover {
+    transform: translateX(2px);
+}
