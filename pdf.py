@@ -1,10 +1,26 @@
 # pdf.py - Modular Backend PDF Generator (Pure Text-based for ATS)
+# pdf.py ke top par:
 import io
+try:
+    from playwright.sync_api import sync_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    PLAYWRIGHT_AVAILABLE = False
+    sync_playwright = None
+
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    XHTML2PDF_AVAILABLE = False
+    pisa = None
+
 import re
 from xhtml2pdf import pisa
 from flask import render_template
 
 from playwright.sync_api import sync_playwright
+
 
 def generate_text_based_pdf(full_html_content):
     """
