@@ -16,10 +16,17 @@ function toggleMobileMenu() {
 function toggleTheme() {
     const html = document.documentElement;
     const body = document.body;
-    const isDark = html.classList.toggle('dark');
-    body.classList.toggle('light-mode', !isDark);
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    updateThemeIcons(!isDark);
+
+    // Toggle states
+    const isDarkNow = html.classList.toggle('dark');
+    body.classList.toggle('light-mode', !isDarkNow);
+
+    // Save Preference
+    const currentTheme = isDarkNow ? 'dark' : 'light';
+    localStorage.setItem('theme', currentTheme);
+
+    // Sync all icons across desktop, mobile and bottom nav
+    updateThemeIcons(!isDarkNow);
 }
 
 function updateThemeIcons(isLight) {
@@ -27,7 +34,7 @@ function updateThemeIcons(isLight) {
     const addClass    = isLight ? 'fa-moon' : 'fa-sun';
 
     const allIcons = document.querySelectorAll(
-        '#themeIcon, #mobileThemeIcon, #bottomThemeToggle i, .theme-icon'
+        '#themeIcon, #mobileThemeIcon, #bottomThemeToggle i, .theme-icon, .theme-toggle-btn i'
     );
     allIcons.forEach(icon => {
         icon.classList.remove(removeClass);
@@ -36,12 +43,57 @@ function updateThemeIcons(isLight) {
 }
 
 /* ============================================
+   DESKTOP: Builder & Tools Dropdown (Click)
+   ============================================ */
+function toggleDesktopDropdown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn = e.currentTarget;
+    const dropdown = btn.parentElement.querySelector('.ats-dropdown-menu');
+    const allDropdowns = document.querySelectorAll('.ats-dropdown-menu');
+
+    // Close other dropdowns
+    allDropdowns.forEach(d => {
+        if (d !== dropdown) {
+            d.classList.add('hidden');
+            d.parentElement.classList.remove('dropdown-open');
+        }
+    });
+
+    // Toggle current
+    const isOpening = dropdown.classList.contains('hidden');
+    dropdown.classList.toggle('hidden');
+    btn.parentElement.classList.toggle('dropdown-open', isOpening);
+}
+
+/* ============================================
+   MOBILE: Builder & Tools Accordion
+   ============================================ */
+function toggleMobileToolsAccordion(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn = e.currentTarget;
+    const accordion = btn.nextElementSibling;
+    const chevron = btn.querySelector('.mobile-accordion-chevron');
+
+    if (!accordion) return;
+
+    const isOpening = accordion.classList.contains('hidden');
+    accordion.classList.toggle('hidden');
+    btn.classList.toggle('accordion-open', isOpening);
+
+    if (chevron) {
+        chevron.style.transform = isOpening ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
+/* ============================================
    ACTIVE PAGE HIGHLIGHT
    ============================================ */
 function setActiveNavLink() {
-    // Current path (trailing slash hata ke normalize karo)
     let currentPath = window.location.pathname.replace(/\/$/, '') || '/';
-    // Agar query string ya hash ho toh ignore
     currentPath = currentPath.split('?')[0].split('#')[0];
 
     const allNavLinks = document.querySelectorAll('[data-nav]');
@@ -49,9 +101,8 @@ function setActiveNavLink() {
     allNavLinks.forEach(link => {
         const navPath = link.getAttribute('data-nav').replace(/\/$/, '') || '/';
 
-        // Exact match OR sub-route match (jaise /builder/xyz bhi /builder ko match kare)
-        const isActive = navPath === '/' 
-            ? currentPath === '/' 
+        const isActive = navPath === '/'
+            ? currentPath === '/'
             : currentPath === navPath || currentPath.startsWith(navPath + '/');
 
         if (isActive) {
@@ -62,6 +113,15 @@ function setActiveNavLink() {
             link.removeAttribute('aria-current');
         }
     });
+
+    // If a dropdown child is active, also mark parent button
+    const activeChild = document.querySelector('.ats-dropdown-menu [data-nav].active');
+    if (activeChild) {
+        const parentWrap = activeChild.closest('.dropdown-parent');
+        if (parentWrap) {
+            parentWrap.querySelector('.ats-link-item')?.classList.add('active');
+        }
+    }
 }
 
 /* ============================================
@@ -76,19 +136,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.toggle('light-mode', isLight);
     updateThemeIcons(isLight);
 
-    // Active link init
+    // Active link
     setActiveNavLink();
 
-    // Theme toggle global click
+    // Theme toggle
+     // Theme toggle fallback listener
     document.addEventListener('click', (e) => {
-        if (e.target.closest('#darkModeToggle, #themeToggle, #bottomThemeToggle, .theme-toggle-btn')) {
-            toggleTheme();
+        const toggleBtn = e.target.closest('#darkModeToggle, #themeToggle, #mobileThemeToggle, #bottomThemeToggle, .theme-toggle-btn');
+        if (toggleBtn) {
+            // Agar button me inline onclick nahi hai to hi trigger karein
+            if (!toggleBtn.getAttribute('onclick')) {
+                toggleTheme();
+            }
+        }
+    });
+
+    // Close desktop dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown-parent')) {
+            document.querySelectorAll('.ats-dropdown-menu').forEach(d => {
+                d.classList.add('hidden');
+                d.parentElement.classList.remove('dropdown-open');
+            });
         }
     });
 
     // Auto-close mobile menu on link click
     document.querySelectorAll('#mobileMenu a').forEach(link => {
         link.addEventListener('click', () => {
+            // Don't auto-close if it's the accordion toggle
+            if (link.classList.contains('mobile-accordion-toggle')) return;
+
             const menu = document.getElementById('mobileMenu');
             if (menu && !menu.classList.contains('translate-x-full')) {
                 setTimeout(() => toggleMobileMenu(), 200);
@@ -96,16 +174,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Escape key closes drawer
+    // Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const menu = document.getElementById('mobileMenu');
             if (menu && !menu.classList.contains('translate-x-full')) {
                 toggleMobileMenu();
             }
+            document.querySelectorAll('.ats-dropdown-menu').forEach(d => {
+                d.classList.add('hidden');
+                d.parentElement.classList.remove('dropdown-open');
+            });
         }
     });
 });
 
-// SPA / Turbo / bfcache support (agar aage use kare)
 window.addEventListener('pageshow', setActiveNavLink);
+window.toggleTheme = toggleTheme;
+window.updateThemeIcons = updateThemeIcons;

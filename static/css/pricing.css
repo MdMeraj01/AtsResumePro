@@ -884,3 +884,130 @@ body.light-mode .bg-slate-900\/40 {
     background-color: #ffffff !important;
     border-color: #e2e8f0 !important;
 }
+
+/* =========================================
+   PRICING MOBILE LAYOUT
+   ========================================= */
+@media screen and (max-width: 640px) {
+    .pricing-page-content {
+        padding-top: 88px !important;
+        padding-bottom: 96px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .pricing-page-content > .text-center {
+        margin-bottom: 32px !important;
+    }
+
+    .pricing-page-content h1 {
+        font-size: 2.25rem !important;
+        line-height: 1.08 !important;
+        margin-bottom: 16px !important;
+    }
+
+    .pricing-page-content h1 + p {
+        font-size: 15px !important;
+        line-height: 1.5 !important;
+        margin-bottom: 24px !important;
+    }
+
+    .pricing-page-content .inline-flex.items-center.p-1 {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        margin-bottom: 32px !important;
+    }
+
+    .pricing-page-content .billing-toggle,
+    .pricing-page-content .inline-flex.items-center.p-1 > button {
+        min-height: 46px !important;
+    }
+
+    .pricing-page-content .inline-flex.items-center.p-1 > button {
+        flex: 1 1 0 !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+    }
+
+    .pricing-page-content .inline-flex.items-center.p-1 > span {
+        flex-basis: 100% !important;
+        margin: 2px 0 0 !important;
+        text-align: center !important;
+    }
+
+    .pricing-page-content .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        margin-bottom: 32px !important;
+    }
+
+    .pricing-page-content .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 > .glass-panel {
+        padding: 20px !important;
+        transform: none !important;
+    }
+
+    .pricing-page-content .price-display {
+        font-size: 2.75rem !important;
+    }
+
+    .pricing-comparison {
+        padding: 16px 10px !important;
+        margin-top: 0 !important;
+        margin-bottom: 32px !important;
+        border-radius: 20px !important;
+    }
+
+    .pricing-comparison h2 {
+        font-size: 1.65rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .comparison-scroll {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .comparison-scroll table {
+        min-width: 680px !important;
+        table-layout: fixed !important;
+    }
+
+    .comparison-scroll th:first-child,
+    .comparison-scroll td:first-child {
+        width: 170px !important;
+        min-width: 170px !important;
+        white-space: normal !important;
+        word-break: normal !important;
+    }
+
+    .comparison-scroll th:not(:first-child),
+    .comparison-scroll td:not(:first-child) {
+        width: 128px !important;
+        min-width: 128px !important;
+    }
+
+    .comparison-scroll th,
+    .comparison-scroll td {
+        padding: 12px 8px !important;
+        font-size: 12px !important;
+        line-height: 1.35 !important;
+    }
+
+    .comparison-scroll button {
+        min-height: 42px !important;
+        padding: 8px 5px !important;
+        font-size: 11px !important;
+        line-height: 1.15 !important;
+    }
+
+    .pricing-page-content .glass-panel.rounded-2xl.p-12 {
+        padding: 24px 16px !important;
+    }
+}

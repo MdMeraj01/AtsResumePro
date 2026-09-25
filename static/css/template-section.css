@@ -1424,6 +1424,137 @@ body.light-mode .bg-slate-950\/30 h4 {
     color: #0f172a !important;
 }
 
+/* ==========================================================
+   📱 MOBILE 2-COLUMN TEMPLATE CARD HOVER/TOUCH OVERLAY (FINAL FIX)
+   ========================================================== */
+@media screen and (max-width: 640px) {
+    #templatesGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    .template-card {
+        min-width: 0 !important;
+        border-radius: 16px !important;
+        transform: none !important;
+        overflow: hidden !important;
+        position: relative !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Template Image Container */
+    .template-card > div:first-child {
+        height: 200px !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    .template-card > div:first-child > img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: top !important;
+        padding: 0 !important;
+        transition: filter 0.3s ease, transform 0.3s ease !important;
+    }
+
+    /* Card Details Bottom */
+    .template-card > div:last-child {
+        padding: 10px !important;
+    }
+
+    .template-card h3 {
+        font-size: 13px !important;
+        line-height: 1.2 !important;
+    }
+
+    .template-card p {
+        font-size: 10px !important;
+        line-height: 1.3 !important;
+        margin-top: 3px !important;
+    }
+
+    /* 🟢 Absolute Centered Overlay for Eye & Action Buttons */
+    .template-card .template-card-actions {
+        position: absolute !important;
+        inset: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 10px !important;
+        background: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: opacity 0.25s ease, visibility 0.25s ease !important;
+        z-index: 30 !important;
+        padding: 8px !important;
+    }
+
+    /* 🟢 Tap Karne Par Active State (Show Buttons + Blurred Image) */
+    .template-card.is-touch-active .template-card-actions {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+    .template-card.is-touch-active > div:first-child > img {
+        filter: blur(3px) brightness(0.55) !important;
+        transform: scale(1.03) !important;
+    }
+
+    /* Preview (Eye) Button */
+    .template-card .template-card-actions .preview-template {
+        width: 42px !important;
+        height: 42px !important;
+        background: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 16px !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        touch-action: manipulation;
+    }
+
+    .template-card .template-card-actions .preview-template:active {
+        transform: scale(0.92) !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+    }
+
+    /* Use Template / Unlock Button */
+    .template-card .template-card-actions a,
+    .template-card .template-card-actions button:not(.preview-template) {
+        width: auto !important;
+        max-width: 95% !important;
+        padding: 7px 12px !important;
+        border-radius: 999px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        touch-action: manipulation;
+    }
+
+    .template-card .template-card-actions a span,
+    .template-card .template-card-actions button:not(.preview-template) span {
+        font-size: 11px !important;
+    }
+}
+
 body.light-mode .seo-card-glow p,
 body.light-mode .bg-slate-950\/50 p,
 body.light-mode .bg-slate-950\/40 p,
@@ -1438,6 +1569,7 @@ body.light-mode .bg-slate-900\/40 {
     background-color: #ffffff !important;
     border-color: #e2e8f0 !important;
 }
+
 
 /* ====================================================
    LIGHT / DARK THEME OVERRIDES (100% FORCED FIX)

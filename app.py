@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, redirect, url_for, session, Response, make_response, flash
 from werkzeug.utils import secure_filename
+from pdf import generate_text_based_pdf, build_resume_html
 from security import validate_full_name, validate_real_email, check_user_template_access
 import os
 from flask_cors import CORS  
@@ -23,7 +24,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import hashlib
 import base64
-import json
 import string
 import cloudinary
 import cloudinary.uploader
@@ -350,36 +350,47 @@ def check_and_deduct_credits(user_id):
     return False, 0  # Fail
 
 # ==========================================
-# 2. GLOBAL CONTEXT PROCESSOR (Inject User Data with Referral Code)
+# ⚡ ULTRA-FAST CONTEXT PROCESSOR (Session First)
 # ==========================================
 @app.context_processor
 def inject_user():
-    user = None
-    if 'user_id' in session:
-        conn = None
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor()
+    if 'user_id' not in session:
+        return dict(current_user=None)
+
+    # 🟢 Pehle Session me cached user check karo taaki har page par DB connection na kholna pade
+    cached_user = session.get('cached_user_info')
+    if cached_user and (time.time() - cached_user.get('cached_at', 0) < 600):
+        return dict(current_user=cached_user['data'])
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id, full_name, email, plan_type, profile_pic, referral_code FROM users WHERE id = %s", (session['user_id'],))
+        user = cursor.fetchone()
+        
+        if user and not user.get('referral_code'):
+            new_code = secrets.token_hex(4).upper()
+            cursor.execute("UPDATE users SET referral_code = %s WHERE id = %s", (new_code, session['user_id']))
+            conn.commit()
+            user['referral_code'] = new_code
             
-            # 🟢 FIX: Added 'referral_code' to the SELECT query
-            cursor.execute("SELECT id, full_name, email, plan_type, profile_pic, referral_code FROM users WHERE id = %s", (session['user_id'],))
-            user = cursor.fetchone()
-            
-            # Agar referral_code null ho toh dynamically generate karke update karo
-            if user and not user.get('referral_code'):
-                new_code = secrets.token_hex(4).upper()
-                cursor.execute("UPDATE users SET referral_code = %s WHERE id = %s", (new_code, session['user_id']))
-                conn.commit()
-                user['referral_code'] = new_code
-                
-            cursor.close()
-        except Exception as e:
-            print(f"Context Processor Error: {e}")
-        finally:
-            if conn:
-                conn.close()
-                
-    return dict(current_user=user)
+        cursor.close()
+        
+        # 10 minute ke liye session me cache karo
+        if user:
+            session['cached_user_info'] = {
+                'data': dict(user),
+                'cached_at': time.time()
+            }
+        return dict(current_user=user)
+    except Exception as e:
+        print(f"Context Processor Error: {e}")
+        return dict(current_user=None)
+    finally:
+        if conn:
+            conn.close()
 
 # ==========================================
 # 📊 USER DASHBOARD ROUTE (Fixed & Crash-Proof)
@@ -690,37 +701,45 @@ def index():
     return render_template('home.html')
 
 # 1. Builder Route (Template load hote waqt hi dynamic list inject hogi)
+# ==========================================
+# ⚡ OPTIMIZED FAST BUILDER ROUTE
+# ==========================================
 @app.route('/builder')
 def builder():
-    conn = get_db_connection()
-    cursor = conn.cursor(pymysql.cursors.DictCursor) if hasattr(pymysql, 'cursors') else conn.cursor()
-    
-    # Database se direct dynamic premium templates ki list nikalo
-    cursor.execute("SELECT name FROM templates WHERE is_premium = 1")
-    rows = cursor.fetchall()
-    
-    premium_templates = []
-    for r in rows:
-        val = r['name'] if isinstance(r, dict) else r[0]
-        premium_templates.append(val.lower())
-
-    # Check karo agar current user Pro plan par hai ya unhone koi template unlock kiya hai
+    user_id = session.get('user_id')
     user_unlocked = []
     is_pro_user = False
-    if 'user_id' in session:
-        cursor.execute("SELECT plan_type FROM users WHERE id = %s", (session['user_id'],))
-        u = cursor.fetchone()
-        if u and (u['plan_type'] if isinstance(u, dict) else u[0]) == 'Premium':
-            is_pro_user = True
-            
-        cursor.execute("SELECT template_name FROM user_purchases WHERE user_id = %s", (session['user_id'],))
-        p_rows = cursor.fetchall()
-        for p in p_rows:
-            p_val = p['template_name'] if isinstance(p, dict) else p[0]
-            user_unlocked.append(p_val.lower())
-            
-    cursor.close()
-    conn.close()
+    premium_templates = []
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = get_safe_cursor(conn)
+
+        # 1. Sirf premium template names nikalo
+        cursor.execute("SELECT LOWER(name) as name FROM templates WHERE is_premium = 1")
+        rows = cursor.fetchall()
+        premium_templates = [r['name'] if isinstance(r, dict) else r[0].lower() for r in rows]
+
+        # 2. Agar user logged in hai to Single Joined/Combined Query
+        if user_id:
+            cursor.execute("SELECT plan_type FROM users WHERE id = %s", (user_id,))
+            u = cursor.fetchone()
+            if u:
+                plan = (u['plan_type'] if isinstance(u, dict) else u[0]) or 'Free'
+                if plan.capitalize() in ['Premium', 'Lifetime', 'Standard']:
+                    is_pro_user = True
+
+            cursor.execute("SELECT LOWER(template_name) as t_name FROM user_purchases WHERE user_id = %s", (user_id,))
+            p_rows = cursor.fetchall()
+            user_unlocked = [p['t_name'] if isinstance(p, dict) else p[0].lower() for p in p_rows]
+
+    except Exception as e:
+        print(f"Builder route warning: {e}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
     return render_template(
         'builder.html', 
@@ -1596,85 +1615,6 @@ def generate_ai_description():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/ai/analyze-keywords', methods=['POST'])
-def analyze_keywords():
-    try:
-        data = request.json
-        job_description = data.get('job_description')
-        resume_data = data.get('resume_data')
-        
-        if not job_description:
-            return jsonify({'error': 'Job description is required'}), 400
-
-        prompt = f"""Analyze this job description and compare it with the resume data.
-        JOB DESCRIPTION: {job_description}
-        RESUME DATA: {json.dumps(resume_data)}
-        Return a valid JSON object."""
-
-        # --- CHANGED: Increased token limit to 4096 ---
-        analysis = call_gemini_ai(prompt, 4096)
-        
-        
-        try:
-            analysis = analysis.strip()
-            if analysis.startswith('```json'):
-                analysis = analysis[7:]
-            if analysis.endswith('```'):
-                analysis = analysis[:-3]
-            
-            keywords_data = json.loads(analysis)
-            return jsonify(keywords_data)
-        except json.JSONDecodeError as e:
-            return jsonify({
-                'matching_keywords': [],
-                'missing_keywords': [],
-                'score': compute_simple_ats_score(resume_data),
-                'suggestions': ['AI analysis unavailable - please try again']
-            })
-            
-    
-    except Exception as e:
-       return jsonify({
-        'matching_keywords': ['Python', 'Flask'], 
-        'missing_keywords': ['Docker'], 
-        'score': 85
-    })
-
-@app.route('/api/ai/ats-score', methods=['POST'])
-def calculate_ats_score():
-    try:
-        data = request.json
-        resume_data = data.get('resume_data')
-        job_description = data.get('job_description', '')
-        
-        prompt = f"""Evaluate this resume for ATS compatibility.
-        RESUME DATA: {json.dumps(resume_data)}
-        Return valid JSON."""
-
-        # --- CHANGED: Increased token limit to 4096 ---
-        score_result = call_gemini_ai(prompt, 4096)
-        
-        try:
-            score_result = score_result.strip()
-            if score_result.startswith('```json'):
-                score_result = score_result[7:]
-            if score_result.endswith('```'):
-                score_result = score_result[:-3]
-            
-            score_data = json.loads(score_result)
-            return jsonify(score_data)
-        except json.JSONDecodeError:
-            return jsonify({
-                'overall_score': compute_simple_ats_score(resume_data),
-                'breakdown': {'content': 0, 'keywords': 0, 'format': 0, 'completeness': 0},
-                'strengths': [],
-                'improvements': ['AI evaluation unavailable'],
-                'keyword_analysis': {'matched': [], 'missing': []}
-            })
-            
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/ai/suggestions', methods=['POST'])
 def get_ai_suggestions():
     try:
@@ -1703,18 +1643,6 @@ def get_ai_suggestions():
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-# (Keep helper functions like compute_simple_ats_score, export_pdf, export_docx unchanged)
-def compute_simple_ats_score(resume_data):
-    score = 20
-    personal = resume_data.get('personal', {})
-    if personal.get('fullName'): score += 15
-    if personal.get('jobTitle'): score += 10
-    if personal.get('summary'): score += 10
-    score += min(20, len(resume_data.get('experience', [])) * 5)
-    score += min(20, len(resume_data.get('education', [])) * 5)
-    if resume_data.get('skills', {}).get('technical'): score += 10
-    return min(100, score)
 
 def get_fallback_suggestions(step):
     fallback_suggestions = {
@@ -1812,56 +1740,79 @@ def get_resume(resume_id):
 # ==========================================
 # 📄 PDF EXPORT ROUTE (Fixed Version)
 # ==========================================
-# ==========================================
-# 📄 PDF EXPORT & DOWNLOAD COUNT FIX
-# ==========================================
+from pdf import generate_text_based_pdf
 @app.route('/api/export/pdf', methods=['POST'])
 def export_pdf():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_safe_cursor(conn)
     
     try:
         cursor.execute("SELECT COALESCE(plan_type, 'Free') as plan_type, COALESCE(resume_limit, 3) as resume_limit FROM users WHERE id = %s", (session['user_id'],))
         user = cursor.fetchone()
 
-        current_plan = str(user['plan_type']).strip().capitalize() 
-        current_limit = int(user['resume_limit'])
+        current_plan = str(user['plan_type']).strip().capitalize() if user else 'Free'
+        current_limit = int(user['resume_limit']) if user else 3
 
         if current_plan == 'Free' and current_limit <= 0:
-            return jsonify({
-                'success': False, 
-                'error': 'LIMIT_REACHED', 
-                'message': 'Your free download limit is over! Please upgrade to continue.'
-            }), 403
+            return jsonify({'success': False, 'error': 'LIMIT_REACHED', 'message': 'Free limit over'}), 403
 
-        # 🟢 FIX: Extract exact template name from request
-        data = request.json or {}
-        template_name = data.get('template_name') or 'modern'
-        template_name = str(template_name).strip().lower()
+        data = request.get_json(silent=True) or {}
+        # 🟢 Clean accurate template name
+        template_name = str(data.get('template_name', '')).strip().lower()
+        if not template_name or template_name in ['none', 'undefined', 'null']:
+            template_name = 'modern'
 
-        # Deduct Free limit
-        new_limit = current_limit
+        full_html = data.get('full_html', '')
+        candidate_name = data.get('candidate_name', 'Resume')
+
+        if not full_html:
+            return jsonify({'success': False, 'message': 'Resume HTML content missing'}), 400
+
+        # Fast Vector Text PDF
+        pdf_bytes = generate_text_based_pdf(full_html)
+
+        if not pdf_bytes:
+            return jsonify({'success': False, 'message': 'PDF generation failed on server.'}), 500
+
+        # Limit deduction
         if current_plan == 'Free':
-            new_limit = current_limit - 1
-            cursor.execute("UPDATE users SET resume_limit = %s WHERE id = %s", (new_limit, session['user_id']))
+            cursor.execute("UPDATE users SET resume_limit = %s WHERE id = %s", (current_limit - 1, session['user_id']))
 
-        # 🟢 FIX: Increment count in templates table AND log in resume_activity
-        cursor.execute("UPDATE templates SET downloads = downloads + 1 WHERE LOWER(name) = %s", (template_name,))
-        cursor.execute("INSERT INTO resume_activity (user_id, activity_type, details) VALUES (%s, 'downloaded_pdf', %s)", (session['user_id'], template_name))
-        
+        # 🟢 SIRF WOHI TEMPLATE INCREMENT HOGA JO CHUNA GAYA HAI
+        cursor.execute("""
+            UPDATE templates 
+            SET downloads = COALESCE(downloads, 0) + 1 
+            WHERE LOWER(name) = %s
+        """, (template_name,))
+
+        # 🟢 RESUME ACTIVITY ME BHI WOHI ACTUAL TEMPLATE NAME JAYEGA
+        cursor.execute("""
+            INSERT INTO resume_activity (user_id, activity_type, details, created_at) 
+            VALUES (%s, 'downloaded_pdf', %s, NOW())
+        """, (session['user_id'], template_name))
+
+        cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (session['user_id'],))
         conn.commit()
-        return jsonify({'success': True, 'message': 'Download logged successfully', 'new_limit': new_limit})
+
+        print(f"✅ Success Download Count: {template_name} for User {session['user_id']}")
+
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f"{candidate_name}.pdf"
+        )
 
     except Exception as e:
-        print(f"❌ Error in Export Track: {e}") 
+        print(f"❌ PDF Export Error: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
-        conn.close()        
- 
-
+        if cursor: cursor.close()
+        if conn: conn.close()
+        
 @app.route('/api/export/docx', methods=['POST'])
 def export_docx():
     # ... (Keep existing DOCX export logic) ...
@@ -3297,38 +3248,44 @@ def get_user_details(user_id):
         cursor.close()
         conn.close()
 
+# ==========================================
+# ⚡ ULTRA-FAST LAST ACTIVE TRACKER (Throttled to 5 mins)
+# ==========================================
 @app.before_request
 def update_user_last_active():
-    # Admin routes aur static files ko bilkul chhod do
+    # Static files aur admin routes par bilkul na chale
     if request.path.startswith(('/static', '/furqan', '/api/admin', '/favicon', '/sw.js')):
         return
 
-    # Sirf regular user session ke liye chalega
     user_id = session.get('user_id')
-    if user_id:
-        conn = None
-        cursor = None
-        try:
-            conn = get_db_connection()
-            cursor = get_safe_cursor(conn)
-            
-            # 1. Sirf logged-in user ka time update karo
-            cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (user_id,))
-            
-            # 2. History table me entry commit karo
-            cursor.execute("""
-                INSERT IGNORE INTO user_login_history (user_id, activity_date) 
-                VALUES (%s, DATE(DATE_ADD(NOW(), INTERVAL 330 MINUTE)))
-            """, (user_id,))
-            
-            conn.commit()
-        except Exception as e:
-            print(f"Tracking error: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
+    if not user_id:
+        return
+
+    # 🟢 SPEED FIX: Agar pichhle 5 minute (300 sec) me update ho chuka hai, to DB connection MAT kholo!
+    now_ts = time.time()
+    last_tracked = session.get('last_activity_tracked', 0)
+    
+    if now_ts - last_tracked < 300:
+        return  # ⚡ Instant bypass (0.001 ms)
+
+    conn = None
+    cursor = None
+    try:
+        session['last_activity_tracked'] = now_ts
+        conn = get_db_connection()
+        cursor = get_safe_cursor(conn)
+        
+        cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (user_id,))
+        cursor.execute("""
+            INSERT IGNORE INTO user_login_history (user_id, activity_date) 
+            VALUES (%s, DATE(DATE_ADD(NOW(), INTERVAL 330 MINUTE)))
+        """, (user_id,))
+        conn.commit()
+    except Exception as e:
+        print(f"Tracking error: {e}")
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])
@@ -3559,45 +3516,40 @@ def contact_us():
 # app.py -> /api/check-download-limit
 @app.route('/api/check-download-limit', methods=['POST'])
 def check_download_limit():
-    # silent=True lagane se agar body empty bhi ho to Flask 400 HTML crash nahi karega
     data = request.get_json(silent=True) or {}
     template_name = data.get('template_name', 'modern')
 
-    # Agar user session check karna hai
     if 'user_id' not in session:
-        # Guest user ko allow karna hai ya login mangna hai (Aapki choice)
         return jsonify({'success': True, 'message': 'Guest download allowed'})
 
     user_id = session['user_id']
     conn = None
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True) if hasattr(conn, 'cursor') else conn.cursor()
+        # 🟢 FIX: get_safe_cursor use karo taaki 'dictionary' keyword error na aaye
+        cursor = get_safe_cursor(conn)
 
-        # Check user plan / limits
-        cursor.execute("SELECT plan_type, download_count FROM users WHERE id = %s", (user_id,))
+        cursor.execute("SELECT plan_type, resume_limit FROM users WHERE id = %s", (user_id,))
         user = cursor.fetchone()
 
-        # Free tier download limit check (e.g., max 3 downloads)
         plan = (user.get('plan_type') or 'Free').capitalize() if user else 'Free'
-        downloads = user.get('download_count', 0) if user else 0
+        limits_left = user.get('resume_limit', 3) if user else 3
 
-        if plan == 'Free' and downloads >= 3:
+        if plan == 'Free' and limits_left <= 0:
             return jsonify({
                 'success': False, 
                 'error': 'LIMIT_REACHED', 
                 'message': 'Your free download limit is over.'
             })
 
-        return jsonify({'success': True, 'downloads_left': max(0, 3 - downloads)})
+        return jsonify({'success': True, 'downloads_left': limits_left})
 
     except Exception as e:
         print(f"Limit Check Error: {e}")
-        return jsonify({'success': True})  # Error par download block na ho
+        return jsonify({'success': True})
     finally:
         if conn:
             conn.close()
-
 # ==========================================
 # 💳 PAYMENT & CHECKOUT ROUTES
 # ==========================================
@@ -4641,6 +4593,586 @@ def generate_monthly_pdf_backup(admin_email="merajmohammed00123@gmail.com"):
         cursor.close()
         conn.close()
 
+
+# ==========================================
+# 🛡️ ATS RESUME SCANNER & AUDIT TOOL (AI-POWERED)
+# ==========================================
+
+import re
+
+
+
+# ==========================================
+# ⚡ SUPER-FAST ATS RESUME SCANNER (NO TIMEOUT)
+# ==========================================
+ 
+def build_resume_scan_fallback(extracted_text, target_role='', job_description='', score=20):
+    text = extracted_text or ''
+    lowered = text.lower()
+    combined = f'{target_role} {job_description}'.lower()
+
+    role_groups = {
+        'Frontend Developer': ['html', 'css', 'javascript', 'react', 'vue', 'angular'],
+        'Backend Developer': ['python', 'java', 'node.js', 'django', 'flask', 'api', 'sql'],
+        'Data Analyst': ['python', 'sql', 'excel', 'tableau', 'power bi', 'statistics'],
+        'DevOps Engineer': ['docker', 'kubernetes', 'aws', 'azure', 'jenkins', 'ci/cd'],
+        'QA Engineer': ['selenium', 'testing', 'qa', 'test case', 'automation'],
+        'UI/UX Designer': ['figma', 'user experience', 'wireframe', 'prototype', 'user interface']
+    }
+    role_scores = {
+        role: sum(1 for keyword in keywords if keyword in lowered or keyword in combined)
+        for role, keywords in role_groups.items()
+    }
+    inferred_role = target_role or max(role_scores, key=role_scores.get)
+    if not target_role and not role_scores.get(inferred_role):
+        inferred_role = 'Technology Professional'
+
+    role_keywords = role_groups.get(inferred_role, [])
+    matched = [keyword for keyword in role_keywords if keyword in lowered]
+    missing = [keyword for keyword in role_keywords if keyword not in lowered]
+    email = re.search(r'[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}', text)
+    phone = re.search(r'(?:\+?\d[\d\s().-]{7,}\d)', text)
+    first_lines = [line.strip() for line in text.splitlines() if line.strip()]
+    full_name = first_lines[0] if first_lines and len(first_lines[0].split()) <= 5 else ''
+    summary = (
+        f'This resume shows evidence for {inferred_role} based on {len(matched)} relevant keyword(s). '
+        f'It contains approximately {len(text)} extracted characters. '
+        f'The strongest demonstrated areas are {", ".join(matched[:4]) or "not yet clear"}. '
+        f'Add measurable achievements and verify the missing requirements before applying.'
+    )
+    recommendations = [
+        f'Add verified {keyword} experience to Skills or Projects.' for keyword in missing[:4]
+    ]
+    if not recommendations:
+        recommendations.append('Add measurable results to your experience bullets.')
+
+    return {
+        'ats_score': score,
+        'summary_verdict': summary,
+        'inferred_role': inferred_role,
+        'job_fit_percent': min(95, max(15, score + len(matched) * 5)),
+        'job_fit_verdict': f'{inferred_role} fit is estimated from the uploaded resume. {len(matched)} relevant skill(s) were found and {len(missing)} should be strengthened.',
+        'matched_strengths': matched or ['Resume text was extracted, but role-specific strengths were not clear.'],
+        'missing_requirements': missing or ['Quantified achievements and role-specific evidence'],
+        'recommended_additions': recommendations,
+        'application_advice': 'This is an evidence-based estimate, not a hiring guarantee. Apply after addressing the listed gaps.',
+        'formatting_status': 'Needs review',
+        'section_scores': {
+            'contact': 80 if email else 25,
+            'summary': 70 if len(text) > 400 else 30,
+            'skills': min(95, 35 + len(matched) * 10),
+            'experience': 75 if 'experience' in lowered or 'work' in lowered else 30,
+            'education': 75 if any(word in lowered for word in ('education', 'university', 'degree')) else 30,
+            'formatting': min(95, score)
+        },
+        'ats_checklist': [
+            {'label': 'Contact information', 'status': 'pass' if email else 'fail', 'detail': 'Email detected.' if email else 'No email address was detected.'},
+            {'label': 'Phone number', 'status': 'pass' if phone else 'warning', 'detail': 'Phone number detected.' if phone else 'Add a reachable phone number.'},
+            {'label': 'Role keywords', 'status': 'pass' if matched else 'warning', 'detail': f'{len(matched)} relevant keyword(s) found for {inferred_role}.'},
+            {'label': 'Quantified achievements', 'status': 'warning', 'detail': 'Add numbers, percentages, scale, or time saved to experience bullets.'}
+        ],
+        'critical_issues': [{'issue': 'Resume-specific improvements', 'suggestion': item} for item in recommendations[:3]],
+        'missing_keywords': missing[:8],
+        'keyword_evidence': [
+            {'keyword': keyword, 'status': 'present', 'where': 'Extracted resume text', 'suggestion': 'Keep this evidence specific in the relevant section.'}
+            for keyword in matched
+        ] + [
+            {'keyword': keyword, 'status': 'missing', 'where': 'Not detected', 'suggestion': f'Add {keyword} only if you have real experience.'}
+            for keyword in missing[:8]
+        ],
+        'rewrite_suggestions': {
+            'summary': summary,
+            'skills': ', '.join(matched + missing[:4]) or 'Add verified role-specific skills.'
+        },
+        'resume_data': {
+            'personal': {'fullName': full_name, 'jobTitle': inferred_role, 'email': email.group(0) if email else '', 'phone': phone.group(0) if phone else '', 'location': '', 'summary': summary, 'linkedin': '', 'github': '', 'portfolio': ''},
+            'education': [], 'experience': [], 'projects': [], 'skills': {'technical': ', '.join(matched), 'soft': '', 'tools': ''},
+            'extraInfo': ([{'title': 'Imported Resume Content', 'category': 'Other', 'desc': text[:12000]}] if text else []),
+            'certifications': []
+        },
+        'bullet_improvements': []
+    }
+
+def scan_resume_pdf():
+    if 'resume_pdf' not in request.files:
+        return jsonify({'success': False, 'message': 'PDF file missing'}), 400
+    
+    file = request.files['resume_pdf']
+    if not file or not file.filename.lower().endswith('.pdf'):
+        return jsonify({'success': False, 'message': 'Only valid PDF files are allowed.'}), 400
+
+    if not API_KEY or len(API_KEY) < 10:
+        return jsonify({'success': False, 'message': 'API Key missing in environment.'}), 500
+
+    try:
+        pdf_bytes = file.read()
+        if len(pdf_bytes) == 0:
+            return jsonify({'success': False, 'message': 'Uploaded PDF file is empty.'}), 400
+
+        target_role = request.form.get('target_role', '').strip()
+        job_description = request.form.get('job_description', '').strip()
+
+        # ⚡ 1. FAST ATTEMPT: Text Extraction First
+        extracted_text = ""
+        try:
+            pdf_reader = PdfReader(io.BytesIO(pdf_bytes))
+            for page in pdf_reader.pages:
+                t = page.extract_text()
+                if t:
+                    extracted_text += t + "\n"
+            extracted_text = extracted_text.strip()
+        except Exception as read_err:
+            print(f"Text extract warning: {read_err}")
+            extracted_text = ""
+
+        # Content-based fallback score used only when the AI response cannot be parsed.
+        text_lower = extracted_text.lower()
+        score_parts = [
+            min(20, 5 if re.search(r'@[\w.-]+\.[a-z]{2,}', text_lower) else 0),
+            min(20, 10 if any(word in text_lower for word in ('experience', 'work history')) else 0),
+            min(20, 10 if 'skills' in text_lower else 0),
+            min(20, 10 if any(word in text_lower for word in ('education', 'university', 'degree')) else 0),
+            min(20, 10 if len(extracted_text) >= 1200 else 5 if len(extracted_text) >= 500 else 0)
+        ]
+        fallback_score = max(15, min(95, sum(score_parts) + (10 if len(extracted_text) >= 2000 else 0)))
+
+        # Optimized Prompt Schema
+        system_instruction = f"""
+You are an expert ATS Auditor and Technical Recruiter.
+Analyze this resume for the target role: "{target_role or 'No target role provided; infer the best-fit role or roles from the resume.'}".
+
+Strictly return ONLY a valid, parseable JSON object with no trailing commas, no unescaped quotes, matching this exact structure:
+{{
+    "ats_score": 0,
+    "summary_verdict": "A clear 4-6 sentence explanation of the resume quality, strongest evidence, main risks, and what the user should do next.",
+    "inferred_role": "Best matching role inferred from the resume, or the provided target role.",
+    "job_fit_percent": 78,
+    "job_fit_verdict": "Good potential, but improve the listed gaps before applying.",
+    "matched_strengths": ["Relevant experience", "Required technical skills"],
+    "missing_requirements": ["A requirement not demonstrated in the resume"],
+    "recommended_additions": ["Add a quantified achievement", "Add a relevant keyword only if truthful"],
+    "application_advice": "Apply after addressing the highest-impact gaps.",
+    "resume_data": {{
+        "personal": {{"fullName": "", "jobTitle": "", "email": "", "phone": "", "location": "", "summary": "", "linkedin": "", "github": "", "portfolio": ""}},
+        "education": [], "experience": [], "projects": [],
+        "skills": {{"technical": "", "soft": "", "tools": ""}},
+        "extraInfo": [], "certifications": []
+    }},
+    "formatting_status": "Pass",
+    "section_scores": {{"contact": 90, "summary": 80, "skills": 85, "experience": 78, "education": 88, "formatting": 82}},
+    "ats_checklist": [
+        {{"label": "Contact information", "status": "pass", "detail": "Email and phone are easy to find."}},
+        {{"label": "Standard headings", "status": "warning", "detail": "Use common headings such as Experience and Skills."}}
+    ],
+    "critical_issues": [
+        {{"issue": "Brief issue title", "suggestion": "Clear action to fix"}}
+    ],
+    "missing_keywords": ["Keyword1", "Keyword2", "Tool1", "Framework1"],
+    "keyword_evidence": [
+        {{"keyword": "Docker", "status": "missing", "where": "Not found", "suggestion": "Add Docker to Skills or a relevant project bullet."}}
+    ],
+    "rewrite_suggestions": {{
+        "summary": "An improved professional summary tailored to the target role.",
+        "skills": "A prioritized skills line using the strongest relevant keywords."
+    }},
+    "bullet_improvements": [
+        {{
+            "original": "Weak bullet point from resume",
+            "improved": "High impact quantified rewrite"
+        }}
+    ]
+}}
+
+Return 5-8 checklist items, one keyword_evidence item for every important missing or matched keyword, useful rewrite text, and a complete resume_data object populated from the uploaded resume. Calculate ats_score from the actual evidence in the resume; do not reuse the example values above.
+If no target role or job description is provided, infer the best-fit role(s) from the resume and explain what skills or evidence would improve the user's chances. Never guarantee employment; describe the fit as an estimate based only on the supplied resume.
+"""
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+
+        # ⚡ 2. Payload Construction
+        job_context = f"\n\nTARGET JOB DESCRIPTION:\n{job_description[:5000]}" if job_description else ''
+
+        if len(extracted_text) > 40:
+            print("🚀 Using Fast Text-based Analysis (Super Fast)")
+            # Clean text to prevent breaking strings in prompt
+            safe_text = extracted_text[:4000].replace('"', "'")
+            prompt_content = f"{system_instruction}\n\nRESUME CONTENT:\n{safe_text}{job_context}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [{"text": prompt_content}]
+                    }
+                ],
+                "generation_config": {
+                    "temperature": 0.2,
+                    "max_output_tokens": 4096,
+                    "response_mime_type": "application/json"
+                }
+            }
+        else:
+            print("🖼️ Using Vision PDF Analysis (Image/Canvas PDF fallback)")
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": system_instruction + job_context},
+                            {
+                                "inline_data": {
+                                    "mime_type": "application/pdf",
+                                    "data": pdf_base64
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "generation_config": {
+                    "temperature": 0.2,
+                    "max_output_tokens": 4096,
+                    "response_mime_type": "application/json"
+                }
+            }
+
+        # ⚡ 3. Request execution
+        response = requests.post(url, json=payload, timeout=60)
+
+        if response.status_code != 200:
+            print(f"Gemini API Error ({response.status_code}): {response.text}")
+            return jsonify({'success': False, 'message': 'AI service busy. Please retry.'}), 500
+
+        result = response.json()
+        candidates = result.get('candidates', [])
+        if not candidates:
+            return jsonify({'success': False, 'message': 'No analysis generated.'}), 500
+
+        raw_ai_text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '').strip()
+
+        # Clean JSON String safely
+        cleaned = raw_ai_text
+        if cleaned.startswith("```json"): 
+            cleaned = cleaned[7:]
+        elif cleaned.startswith("```"): 
+            cleaned = cleaned[3:]
+        if cleaned.endswith("```"): 
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+
+        # JSON Extractor Regex
+        match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+        if match:
+            cleaned = match.group(0)
+
+        # 🛡️ Safe JSON Parser with Fallback
+        try:
+            audit_data = json.loads(cleaned)
+        except json.JSONDecodeError:
+            # Fallback agar unescaped character ho
+            cleaned_safe = re.sub(r'[\r\n\t]', ' ', cleaned)
+            try:
+                audit_data = json.loads(cleaned_safe)
+            except Exception:
+                audit_data = build_resume_scan_fallback(extracted_text, target_role, job_description, fallback_score)
+
+        # Guard against the model returning the old example/demo response unchanged.
+        generic_verdict = 'Your resume has been parsed successfully and shows strong core skills aligned with the target role.'
+        summary_text = str(audit_data.get('summary_verdict') or '').lower()
+        if audit_data.get('summary_verdict') == generic_verdict or audit_data.get('job_fit_percent') == 72 or ('parsed successfully' in summary_text and 'strong core skills' in summary_text):
+            audit_data = build_resume_scan_fallback(extracted_text, target_role, job_description, fallback_score)
+
+        resume_data = audit_data.get('resume_data')
+        def has_resume_values(value):
+            if isinstance(value, dict):
+                return any(has_resume_values(item) for item in value.values())
+            if isinstance(value, list):
+                return any(has_resume_values(item) for item in value)
+            return bool(str(value or '').strip())
+
+        structured_sections = ('education', 'experience', 'projects', 'extraInfo', 'certifications')
+        has_structured_content = isinstance(resume_data, dict) and (
+            any(resume_data.get(section) for section in structured_sections)
+            or has_resume_values(resume_data.get('skills', {}))
+        )
+        if not isinstance(resume_data, dict) or not has_resume_values(resume_data) or not has_structured_content:
+            fallback_data = build_resume_scan_fallback(extracted_text, target_role, job_description, fallback_score)
+            audit_data['resume_data'] = fallback_data['resume_data']
+
+        return jsonify({'success': True, 'audit': audit_data})
+
+    except requests.exceptions.Timeout:
+        print("❌ Request Timed Out with Gemini")
+        return jsonify({
+            'success': False, 
+            'message': 'AI analysis took longer than expected. Please retry.'
+        }), 504
+
+    except Exception as e:
+        print(f"❌ Scan Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+
+from pypdf import PdfReader
+from docx import Document
+# ==========================================================
+# 🚀 100% BULLETPROOF JSON PARSER (STRICT=FALSE)
+# ==========================================================
+# ==========================================================
+# 🚀 100% BULLETPROOF JSON REPAIR & AI CALLER ENGINE
+# ==========================================================
+def repair_and_parse_json(raw_text):
+    if not raw_text:
+        return None
+
+    text = str(raw_text).strip()
+    
+    # 1. Clean Markdown
+    if text.startswith("```json"): text = text[7:]
+    elif text.startswith("```"): text = text[3:]
+    if text.endswith("```"): text = text[:-3]
+    text = text.strip()
+
+    first_brace = text.find('{')
+    if first_brace == -1:
+        return None
+    text = text[first_brace:]
+
+    # 2. Direct parse attempt (strict=False)
+    try:
+        return json.loads(text, strict=False)
+    except Exception:
+        pass
+
+    # 3. Handle Truncated JSON (Auto-Close Strings, Arrays & Objects)
+    cleaned = text
+    # Agar trailing unterminated quote ho
+    quote_count = cleaned.count('"') - cleaned.count(r'\"')
+    if quote_count % 2 != 0:
+        cleaned += '"'
+
+    # Auto balance brackets
+    open_brackets = cleaned.count('[') - cleaned.count(']')
+    open_braces = cleaned.count('{') - cleaned.count('}')
+
+    cleaned += ']' * max(0, open_brackets)
+    cleaned += '}' * max(0, open_braces)
+
+    try:
+        return json.loads(cleaned, strict=False)
+    except Exception:
+        pass
+
+    # 4. Aggressive Regex Sanitization
+    try:
+        sanitized = re.sub(r'[\r\n\t]+', ' ', cleaned)
+        sanitized = re.sub(r',\s*([\]}])', r'\1', sanitized) # Remove trailing commas
+        return json.loads(sanitized, strict=False)
+    except Exception as e:
+        print(f"⚠️ JSON repair failed completely: {e}")
+        return None
+
+
+def call_gemini_json(prompt, max_tokens=8192):
+    clean_key = str(API_KEY or '').strip()
+    if not clean_key or len(clean_key) < 10:
+        print("❌ API_KEY missing or invalid in call_gemini_json")
+        return None
+
+    # 🟢 DIRECT CLEAN URL (No markdown brackets or parentheses)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={clean_key}"
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generation_config": {
+            "temperature": 0.1,
+            "max_output_tokens": max_tokens,
+            "response_mime_type": "application/json"
+        }
+    }
+    headers = {"Content-Type": "application/json"}
+    
+    try:
+        res = requests.post(url, json=payload, headers=headers, timeout=75)
+        if res.status_code == 200:
+            result = res.json()
+            candidates = result.get('candidates', [])
+            if candidates:
+                return candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+        else:
+            print(f"Gemini API Error: {res.status_code} - {res.text}")
+    except Exception as e:
+        print(f"Gemini Call Failed: {e}")
+    return None
+
+@app.route('/api/import-and-audit-resume', methods=['POST'])
+def import_and_audit_resume():
+    if 'resume_file' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+
+    file = request.files['resume_file']
+    filename = file.filename.lower()
+    extracted_text = ""
+    extracted_photo_base64 = ""
+
+    try:
+        # 1. Text & Profile Photo Extraction
+        if filename.endswith('.pdf'):
+            reader = PdfReader(file)
+            for page in reader.pages:
+                t = page.extract_text()
+                if t:
+                    extracted_text += t + "\n"
+
+            # Profile Photo Extraction
+            try:
+                if len(reader.pages) > 0:
+                    first_page = reader.pages[0]
+                    if hasattr(first_page, 'images') and first_page.images:
+                        for img in first_page.images:
+                            img_bytes = img.data
+                            if len(img_bytes) > 3072:
+                                mime_ext = "png" if img.name.lower().endswith('.png') else "jpeg"
+                                b64_str = base64.b64encode(img_bytes).decode('utf-8')
+                                extracted_photo_base64 = f"data:image/{mime_ext};base64,{b64_str}"
+                                print(f"✅ Extracted profile image ({len(img_bytes)} bytes)")
+                                break
+            except Exception as img_err:
+                print(f"⚠️ Image extraction note: {img_err}")
+
+        elif filename.endswith('.docx'):
+            doc = Document(file)
+            extracted_text = "\n".join([p.text for p in doc.paragraphs if p.text])
+        else:
+            return jsonify({'success': False, 'message': 'Please upload PDF or DOCX format'}), 400
+
+        extracted_text = extracted_text.strip()
+        if not extracted_text:
+            return jsonify({'success': False, 'message': 'Could not extract readable text.'}), 400
+
+        clean_text = extracted_text[:8000].replace('"', "'").replace('\\', ' ')
+
+        # 2. Optimized Prompt (Short & concise mistakes to prevent token cut-off)
+        prompt = f"""You are an ATS Resume Parser and Auditor.
+Extract resume content into JSON and provide an ATS score (0-100) and top 3 short mistake descriptions.
+
+RESUME CONTENT:
+{clean_text}
+
+Return strictly a valid JSON matching this schema:
+{{
+    "ats_score": 75,
+    "is_ats_friendly": true,
+    "mistakes": [
+        "Short mistake 1",
+        "Short mistake 2",
+        "Short mistake 3"
+    ],
+    "raw_data": {{
+        "personal": {{
+            "fullName": "",
+            "jobTitle": "",
+            "email": "",
+            "phone": "",
+            "location": "",
+            "linkedin": "",
+            "github": "",
+            "portfolio": "",
+            "summary": ""
+        }},
+        "education": [
+            {{"school": "", "degree": "", "field": "", "year": "", "desc": ""}}
+        ],
+        "experience": [
+            {{"company": "", "position": "", "start": "", "end": "", "desc": ""}}
+        ],
+        "projects": [
+            {{"name": "", "tech": "", "desc": ""}}
+        ],
+        "skills": {{
+            "technical": "",
+            "soft": "",
+            "tools": ""
+        }},
+        "certifications": [
+            {{"name": "", "org": "", "date": "", "id": ""}}
+        ]
+    }}
+}}"""
+
+        # 3. AI Execution with 8192 Tokens
+        raw_response = call_gemini_json(prompt, max_tokens=8192)
+        parsed_data = repair_and_parse_json(raw_response)
+
+        # 4. Fallback if AI fails
+        if not parsed_data or not isinstance(parsed_data, dict) or not parsed_data.get('raw_data'):
+            print("⚠️ Running Regex fallback extractor...")
+            email_match = re.search(r'[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}', extracted_text)
+            phone_match = re.search(r'(?:\+?\d[\d\s().-]{8,}\d)', extracted_text)
+            lines = [l.strip() for l in extracted_text.splitlines() if l.strip()]
+            
+            cand_name = lines[0] if lines and len(lines[0].split()) <= 4 else "Candidate Name"
+            cand_title = lines[1] if len(lines) > 1 and len(lines[1].split()) <= 5 else "Software Professional"
+
+            parsed_data = {
+                "ats_score": 70,
+                "is_ats_friendly": True,
+                "mistakes": [
+                    "Resume bullet points lack quantifiable impact metrics.",
+                    "Skills section needs to include more targeted technical keywords.",
+                    "Summary should be specifically tailored to the target role."
+                ],
+                "raw_data": {
+                    "personal": {
+                        "fullName": cand_name,
+                        "jobTitle": cand_title,
+                        "email": email_match.group(0) if email_match else "",
+                        "phone": phone_match.group(0) if phone_match else "",
+                        "location": "",
+                        "linkedin": "",
+                        "github": "",
+                        "portfolio": "",
+                        "summary": extracted_text[:350]
+                    },
+                    "education": [],
+                    "experience": [],
+                    "projects": [],
+                    "skills": {"technical": "", "soft": "", "tools": ""},
+                    "certifications": []
+                }
+            }
+
+        # 5. Build AI Improved Data
+        raw = parsed_data.get("raw_data", {})
+        improved = json.loads(json.dumps(raw))
+        job_t = improved.get("personal", {}).get("jobTitle") or "Software Professional"
+        improved["personal"]["summary"] = f"Results-driven {job_t} with demonstrated experience in designing scalable architectures, streamlining development workflows, and delivering high-impact solutions."
+        
+        # Mirror sections
+        for sec in ['education', 'experience', 'projects', 'certifications']:
+            if not improved.get(sec) and raw.get(sec):
+                improved[sec] = raw[sec]
+        if not improved.get("skills", {}).get("technical") and raw.get("skills", {}).get("technical"):
+            improved["skills"] = raw["skills"]
+
+        # Attach Photo
+        if extracted_photo_base64:
+            if "raw_data" in parsed_data and "personal" in parsed_data["raw_data"]:
+                parsed_data["raw_data"]["personal"]["profilePhoto"] = extracted_photo_base64
+            if "personal" in improved:
+                improved["personal"]["profilePhoto"] = extracted_photo_base64
+
+        parsed_data["improved_data"] = improved
+
+        return jsonify({
+            'success': True, 
+            'data': parsed_data,
+            'extracted_photo': extracted_photo_base64
+        })
+
+    except Exception as e:
+        print(f"❌ Resume import error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+         
 # 🟢 Instant Test Trigger Route (Testing ke liye)
 @app.route('/api/admin/trigger-monthly-backup', methods=['POST'])
 def trigger_monthly_backup():
@@ -4669,6 +5201,17 @@ try:
 except Exception as sched_err:
     print(f"⚠️ Scheduler init warning: {sched_err}")
 
+from playwright.sync_api import sync_playwright
+
+def generate_text_based_pdf(full_html):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.set_content(full_html, wait_until="networkidle")
+        pdf_bytes = page.pdf(format="A4", print_background=True, margin={"top": "0", "bottom": "0", "left": "0", "right": "0"})
+        browser.close()
+        return pdf_bytes
+    
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")
     if API_KEY and API_KEY != 'your-google-api-key-here':

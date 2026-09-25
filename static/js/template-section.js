@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (typeof addColorSwatches === 'function') addColorSwatches();
         if (typeof addHeartButton === 'function') addHeartButton();
         initAnimations();
+        initTouchCardActions();
 
     } catch (error) {
         console.error("Failed to load templates:", error);
@@ -56,7 +57,7 @@ function renderTemplatesGrid(templates) {
     const grid = document.getElementById('templatesGrid');
     if (!grid) return;
 
-    grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 w-full";
+    grid.className = "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 w-full";
 
     const noResultsHTML = `
     <div id="noResults" class="hidden col-span-full text-center py-20">
@@ -111,7 +112,7 @@ function renderTemplatesGrid(templates) {
                      alt="${t.display_name}" 
                      class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                      onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'300\\' height=\\'400\\' viewBox=\\'0 0 300 400\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%231e293b\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2394a3b8\\' font-family=\\'sans-serif\\' font-size=\\'18\\'>${t.display_name}</text></svg>'">
-                <div class="absolute inset-0 bg-slate-950/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm z-20">
+                <div class="template-card-actions absolute inset-0 bg-slate-950/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm z-20">
                     <button onclick="previewTemplate('${t.name}')" 
                             class="preview-template w-11 h-11 bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-full flex items-center justify-center backdrop-blur-md transition-all transform hover:scale-110"
                             title="Preview Template" data-template="${t.name}">
@@ -322,6 +323,36 @@ function initModals() {
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeModal();
+    });
+}
+
+function initTouchCardActions() {
+    if (window.templateTouchActionsBound) return;
+    window.templateTouchActionsBound = true;
+
+    // Mobile screen par tap toggle logic
+    document.addEventListener('click', (event) => {
+        // Desktop par hover automatically kaam karega
+        if (window.innerWidth > 640) return;
+
+        // Agar user ne Eye button ya Use Template button par tap kiya hai, to card band mat karo
+        if (event.target.closest('.preview-template, .template-card-actions a, .template-card-actions button')) {
+            return;
+        }
+
+        const clickedCard = event.target.closest('.template-card');
+
+        // Sabhi open cards ko pehle band karo
+        document.querySelectorAll('.template-card.is-touch-active').forEach(activeCard => {
+            if (activeCard !== clickedCard) {
+                activeCard.classList.remove('is-touch-active');
+            }
+        });
+
+        // Current clicked card ko toggle karo
+        if (clickedCard) {
+            clickedCard.classList.toggle('is-touch-active');
+        }
     });
 }
 

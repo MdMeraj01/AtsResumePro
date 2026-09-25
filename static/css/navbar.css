@@ -902,3 +902,146 @@ body.light-mode .mobile-nav-link.active .mobile-link-icon {
 .mobile-nav-link.active:hover {
     transform: translateX(2px);
 }
+
+/* ============================================
+   BUILDER & TOOLS DROPDOWN (Desktop Click)
+   ============================================ */
+
+.dropdown-parent.dropdown-open .dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+.ats-dropdown-menu {
+    animation: dropIn 0.2s var(--nav-transition);
+}
+
+/* Active state for parent when child is active */
+.dropdown-parent .ats-link-item.active {
+    color: #ffffff;
+    background: rgba(99, 102, 241, 0.12) !important;
+    box-shadow: 0 0 20px -8px rgba(99, 102, 241, 0.6);
+}
+
+html:not(.dark) .dropdown-parent .ats-link-item.active,
+body.light-mode .dropdown-parent .ats-link-item.active {
+    color: #4f46e5;
+    background: rgba(99, 102, 241, 0.08) !important;
+    box-shadow: 0 0 20px -8px rgba(99, 102, 241, 0.4);
+}
+
+.dropdown-parent .ats-link-item.active::after {
+    width: 60%;
+    background: linear-gradient(90deg, #6366f1, #06b6d4);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+}
+
+/* ============================================
+   MOBILE ACCORDION (Builder & Tools)
+   ============================================ */
+
+.mobile-accordion-toggle.accordion-open {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+html:not(.dark) .mobile-accordion-toggle.accordion-open,
+body.light-mode .mobile-accordion-toggle.accordion-open {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.mobile-accordion-content {
+    animation: accordionSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes accordionSlide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Smaller icon for nested accordion items */
+.mobile-link-icon.sm-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    font-size: 0.75rem;
+}
+
+/* Keep mobile accordion open when navigating within it */
+.mobile-accordion .mobile-nav-link.active {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* ============================================
+   ☀️ FIX: DROPDOWN THEME-AWARE STYLES (Light & Dark)
+   ============================================ */
+
+/* 🌙 DARK MODE DROPDOWN */
+html.dark .ats-dropdown-menu,
+body:not(.light-mode) .ats-dropdown-menu,
+html.dark .ats-user-dropdown-menu,
+body:not(.light-mode) .ats-user-dropdown-menu {
+    background: rgba(11, 15, 25, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+}
+
+html.dark .dropdown-item-title,
+body:not(.light-mode) .dropdown-item-title,
+html.dark .user-menu-name,
+body:not(.light-mode) .user-menu-name {
+    color: #ffffff;
+}
+
+html.dark .dropdown-item-sub,
+body:not(.light-mode) .dropdown-item-sub {
+    color: #94a3b8;
+}
+
+html.dark .ats-dropdown-item,
+body:not(.light-mode) .ats-dropdown-item {
+    color: #cbd5e1;
+}
+
+html.dark .ats-dropdown-item:hover,
+body:not(.light-mode) .ats-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+/* ☀️ LIGHT MODE DROPDOWN (Matches Screenshot 3) */
+html:not(.dark) .ats-dropdown-menu,
+body.light-mode .ats-dropdown-menu,
+html:not(.dark) .ats-user-dropdown-menu,
+body.light-mode .ats-user-dropdown-menu {
+    background: #ffffff !important;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.15) !important;
+}
+
+html:not(.dark) .dropdown-item-title,
+body.light-mode .dropdown-item-title,
+html:not(.dark) .user-menu-name,
+body.light-mode .user-menu-name {
+    color: #0f172a !important; /* Bold crisp black */
+}
+
+html:not(.dark) .dropdown-item-sub,
+body.light-mode .dropdown-item-sub {
+    color: #64748b !important; /* Muted readable gray */
+}
+
+html:not(.dark) .ats-dropdown-item,
+body.light-mode .ats-dropdown-item {
+    color: #334155 !important;
+}
+
+html:not(.dark) .ats-dropdown-item:hover,
+body.light-mode .ats-dropdown-item:hover {
+    background: #f1f5f9 !important; /* Smooth light hover */
+    color: #2563eb !important;
+}

@@ -3,8 +3,15 @@
 // ---------- CONFIGURATION ----------
 const BACKEND_API_URL = '';
 const STORAGE_KEY = 'ats_resume_v3';
-const STEPS = ['personal', 'education', 'experience', 'projects', 'skills', 'certifications', 'finish'];
+const STEPS = ['personal', 'education', 'experience', 'projects', 'skills', 'extras', 'certifications', 'finish'];
 let currentStepIndex = 0;
+let isBatchUpdating = false;
+let isSummaryGenerating = false;
+let entrySequence = 0;
+const persistAndRefresh = debounce(() => {
+    saveToLocalStorage();
+    updatePreview();
+}, 180);
 // Function to stop lag (Wait 300ms before updating)
 function debounce(func, wait) {
     let timeout;
@@ -31,12 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUI();
     
     // 3. Drag & Drop
-    ['educationList', 'experienceList', 'projectsList', 'certificationsList'].forEach(id => {
+    ['educationList', 'experienceList', 'projectsList', 'extraInfoList', 'certificationsList'].forEach(id => {
         if (typeof initDragAndDrop === 'function') initDragAndDrop(id);
     });
     
     // 4. Auto-save & Animations
-    initAutoSave();
     setTimeout(() => {
         document.querySelectorAll('.fade-in-up').forEach((el, index) => {
             el.style.animationDelay = `${index * 100}ms`;
@@ -210,7 +216,7 @@ function prevStep() {
 }
 
 function updateProgressBar(step) {
-    const steps = ['personal', 'education', 'experience', 'projects', 'skills', 'certifications', 'finish'];
+    const steps = ['personal', 'education', 'experience', 'projects', 'skills', 'extras', 'certifications', 'finish'];
     const currentIndex = steps.indexOf(step);
     const progressPercent = ((currentIndex + 1) / steps.length) * 100;
     
@@ -238,8 +244,9 @@ function updateGuidanceText(step) {
         experience: 'List your work experience with detailed descriptions of responsibilities and achievements.',
         projects: 'Showcase your projects with technologies used, your role, and outcomes achieved.',
         skills: 'Highlight your technical and soft skills relevant to the job you\'re targeting.',
+        extras: 'Add optional sections like languages, volunteer work, publications, awards, and portfolio highlights.',
         certifications: 'Add any certifications, awards, or achievements that demonstrate your expertise.',
-        finish: 'Review your resume, get ATS score, and download it in multiple formats.'
+        finish: 'Review your resume and download it in multiple formats.'
     };
     
     const guidanceElement = document.querySelector('#sectionGuidance p');
@@ -251,12 +258,17 @@ function updateGuidanceText(step) {
     }
 }
 
+function createEntryId(prefix) {
+    entrySequence += 1;
+    return `${prefix}-${Date.now()}-${entrySequence}`;
+}
+
 // ---------- DYNAMIC ENTRIES ----------
 function addEducationEntry() {
     const container = document.getElementById('educationList');
     if (!container) return;
     
-    const id = 'edu-' + Date.now();
+    const id = createEntryId('edu');
     // draggable="true" add kiya gaya hai drag and drop support ke liye
     const html = `
         <div class="entry-card glass-panel p-5 rounded-xl mb-4 relative group cursor-grab active:cursor-grabbing" 
@@ -267,30 +279,30 @@ function addEducationEntry() {
                 <i class="fas fa-grip-vertical text-lg"></i>
             </div>
 
-            <button onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100 z-10">
+            <button type="button" onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100 z-10">
                 <i class="fas fa-trash text-sm"></i>
             </button>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">School/University</label>
-                    <input type="text" class="edu-school form-input w-full" placeholder="Harvard University" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="edu-school form-input w-full" placeholder="Harvard University">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Degree</label>
-                    <input type="text" class="edu-degree form-input w-full" placeholder="B.Sc. Computer Science" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="edu-degree form-input w-full" placeholder="B.Sc. Computer Science">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Field of Study</label>
-                    <input type="text" class="edu-field form-input w-full" placeholder="Computer Science" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="edu-field form-input w-full" placeholder="Computer Science">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Graduation Year</label>
-                    <input type="text" class="edu-year form-input w-full" placeholder="2022" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="edu-year form-input w-full" placeholder="2022">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Achievements/Coursework</label>
-                    <textarea class="edu-desc form-input w-full" rows="2" placeholder="Relevant coursework, honors, or achievements..." oninput="saveToLocalStorage(); updatePreview();"></textarea>
+                    <textarea class="edu-desc form-input w-full" rows="2" placeholder="Relevant coursework, honors, or achievements..."></textarea>
                 </div>
             </div>
         </div>
@@ -298,12 +310,10 @@ function addEducationEntry() {
     
     container.insertAdjacentHTML('beforeend', html);
     
-    // Nayi entry add hone ke baad Drag & Drop listeners ko refresh karna zaroori hai
-    initDragAndDrop('educationList'); 
-    
-    saveToLocalStorage();
-    updatePreview();
-    calculateBasicAtsScore();
+    if (!isBatchUpdating) {
+        saveToLocalStorage();
+        updatePreview();
+    }
     showToast('Education entry added');
 }
 
@@ -311,33 +321,33 @@ function addExperienceEntry() {
     const container = document.getElementById('experienceList');
     if (!container) return;
     
-    const id = 'exp-' + Date.now();
+    const id = createEntryId('exp');
     const html = `
         <div class="entry-card glass-panel p-5 rounded-xl mb-4 relative group" data-id="${id}">
-            <button onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
+            <button type="button" onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
                 <i class="fas fa-trash text-sm"></i>
             </button>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Company</label>
-                    <input type="text" class="exp-company form-input w-full" placeholder="Google" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="exp-company form-input w-full" placeholder="Google">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Job Title</label>
-                    <input type="text" class="exp-position form-input w-full" placeholder="Senior Software Engineer" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="exp-position form-input w-full" placeholder="Senior Software Engineer">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Start Date</label>
-                    <input type="text" class="exp-start form-input w-full" placeholder="Jan 2020" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="exp-start form-input w-full" placeholder="Jan 2020">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">End Date</label>
-                    <input type="text" class="exp-end form-input w-full" placeholder="Present" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="exp-end form-input w-full" placeholder="Present">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Responsibilities & Achievements</label>
-                    <textarea class="exp-desc form-input w-full" rows="3" placeholder="Describe your role, responsibilities, and key achievements..." oninput="saveToLocalStorage(); updatePreview();"></textarea>
+                    <textarea class="exp-desc form-input w-full" rows="3" placeholder="Describe your role, responsibilities, and key achievements..."></textarea>
                   <button type="button" class="mt-2 px-4 py-1.5 text-sm rounded-lg glass-panel text-blue-400 hover:bg-white/5 auth-lock" onclick="generateAIDescription(this, 'experience')">
                     <i class="fas fa-robot mr-1"></i> Generate with AI
                   </button>
@@ -347,9 +357,10 @@ function addExperienceEntry() {
     `;
     
     container.insertAdjacentHTML('beforeend', html);
-    saveToLocalStorage();
-    updatePreview();
-    calculateBasicAtsScore();
+    if (!isBatchUpdating) {
+        saveToLocalStorage();
+        updatePreview();
+    }
     showToast('Experience entry added');
 }
 
@@ -357,25 +368,25 @@ function addProjectEntry() {
     const container = document.getElementById('projectsList');
     if (!container) return;
     
-    const id = 'proj-' + Date.now();
+    const id = createEntryId('proj');
     const html = `
         <div class="entry-card glass-panel p-5 rounded-xl mb-4 relative group" data-id="${id}">
-            <button onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
+            <button type="button" onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
                 <i class="fas fa-trash text-sm"></i>
             </button>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Project Name</label>
-                    <input type="text" class="proj-name form-input w-full" placeholder="E-commerce Platform" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="proj-name form-input w-full" placeholder="E-commerce Platform">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Technologies Used</label>
-                    <input type="text" class="proj-tech form-input w-full" placeholder="React, Node.js, MongoDB" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="proj-tech form-input w-full" placeholder="React, Node.js, MongoDB">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-300 mb-2">Project Description</label>
-                    <textarea class="proj-desc form-input w-full" rows="3" placeholder="Describe the project, your role, and the outcomes..." oninput="saveToLocalStorage(); updatePreview();"></textarea>
+                    <textarea class="proj-desc form-input w-full" rows="3" placeholder="Describe the project, your role, and the outcomes..."></textarea>
                    <button type="button" class="mt-2 px-4 py-1.5 text-sm rounded-lg glass-panel text-blue-400 hover:bg-white/5 auth-lock" onclick="generateAIDescription(this, 'project')">
                     <i class="fas fa-robot mr-1"></i> Generate with AI
                   </button>
@@ -385,48 +396,95 @@ function addProjectEntry() {
     `;
     
     container.insertAdjacentHTML('beforeend', html);
-    saveToLocalStorage();
-    updatePreview();
-    calculateBasicAtsScore();
+    if (!isBatchUpdating) {
+        saveToLocalStorage();
+        updatePreview();
+    }
     showToast('Project entry added');
+}
+
+function addExtraInfoEntry() {
+    const container = document.getElementById('extraInfoList');
+    if (!container) return;
+
+    const id = createEntryId('extra');
+    const html = `
+        <div class="entry-card glass-panel p-5 rounded-xl mb-4 relative group" data-id="${id}">
+            <button type="button" onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
+                <i class="fas fa-trash text-sm"></i>
+            </button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Section Title</label>
+                    <input type="text" class="extra-title form-input w-full" placeholder="Languages">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Category</label>
+                    <select class="extra-category form-input w-full">
+                        <option value="">Select</option>
+                        <option value="Languages">Languages</option>
+                        <option value="Volunteer Work">Volunteer Work</option>
+                        <option value="Publications">Publications</option>
+                        <option value="Awards">Awards</option>
+                        <option value="Portfolio">Portfolio</option>
+                        <option value="Interests">Interests</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Details</label>
+                    <textarea class="extra-desc form-input w-full" rows="3" placeholder="Write details, list items, or key highlights here..."></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', html);
+    if (!isBatchUpdating) {
+        saveToLocalStorage();
+        updatePreview();
+    }
+    showToast('Extra information added');
 }
 
 function addCertificationEntry() {
     const container = document.getElementById('certificationsList');
     if (!container) return;
     
-    const id = 'cert-' + Date.now();
+    const id = createEntryId('cert');
     const html = `
         <div class="entry-card glass-panel p-5 rounded-xl mb-4 relative group" data-id="${id}">
-            <button onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
+            <button type="button" onclick="removeEntry('${id}')" class="absolute top-3 right-3 p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors opacity-0 group-hover:opacity-100">
                 <i class="fas fa-trash text-sm"></i>
             </button>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Certification Name</label>
-                    <input type="text" class="cert-name form-input w-full" placeholder="AWS Certified Solutions Architect" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="cert-name form-input w-full" placeholder="AWS Certified Solutions Architect">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Issuing Organization</label>
-                    <input type="text" class="cert-org form-input w-full" placeholder="Amazon Web Services" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="cert-org form-input w-full" placeholder="Amazon Web Services">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Issue Date</label>
-                    <input type="text" class="cert-date form-input w-full" placeholder="2023" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="cert-date form-input w-full" placeholder="2023">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Credential ID (Optional)</label>
-                    <input type="text" class="cert-id form-input w-full" placeholder="ABC123XYZ" oninput="saveToLocalStorage(); updatePreview();">
+                    <input type="text" class="cert-id form-input w-full" placeholder="ABC123XYZ">
                 </div>
             </div>
         </div>
     `;
     
     container.insertAdjacentHTML('beforeend', html);
-    saveToLocalStorage();
-    updatePreview();
-    calculateBasicAtsScore();
+    if (!isBatchUpdating) {
+        saveToLocalStorage();
+        updatePreview();
+    }
     showToast('Certification entry added');
 }
 
@@ -436,214 +494,314 @@ function removeEntry(id) {
         element.remove();
         saveToLocalStorage();
         updatePreview();
-        calculateBasicAtsScore();
         showToast('Entry removed');
     }
 }
 
 // ---------- PREVIEW GENERATION ----------
+// ==========================================
+// 🚀 100% COMPLETE & LIVE PREVIEW ENGINE
+// ==========================================
 function updatePreview() {
-    console.log("Updating Preview (Final Layout)...");
+    const getVal = (id) => { 
+        const el = document.getElementById(id); 
+        return el ? el.value.trim() : ''; 
+    };
 
-    const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    const setTxt = (id, val) => { const el = document.getElementById(`preview-${id}`); if (el) el.innerText = val; };
+    const fadePreviewElement = (element) => {
+        if (!element) return;
+        element.classList.remove('preview-fade-in');
+        void element.offsetWidth;
+        element.classList.add('preview-fade-in');
+    };
+
+    const setTxt = (id, val) => {
+        const el = document.getElementById(`preview-${id}`);
+        if (el) {
+            const wasEmpty = !el.textContent.trim();
+            el.innerText = val;
+            if (wasEmpty && val) fadePreviewElement(el);
+        }
+    };
     
-    // Strong Toggle Function: Hides element completely if val is empty
     const toggle = (id, show) => { 
         const el = document.getElementById(id); 
         if (el) {
-            el.style.display = show ? 'block' : 'none';
+            el.style.display = show ? '' : 'none';
         }
     };
 
-    // 1. PERSONAL INFO
-    const name = getVal('fullName');
-    const title = getVal('jobTitle');
-    const phone = getVal('phone');
-    const email = getVal('email');
-    const address = getVal('location') || getVal('address');
-    const profile = getVal('summary') || getVal('profileSummary');
+   // ====================================================
+    // 1. PERSONAL INFO & CLICKABLE LINKS (100% ATS COMPLIANT)
+    // ====================================================
+    const name      = getVal('fullName');
+    const title     = getVal('jobTitle');
+    const phone     = getVal('phone');
+    const email     = getVal('email');
+    const address   = getVal('location');
+    const linkedin  = getVal('linkedin');
+    const github    = getVal('github');
+    const portfolio = getVal('portfolio');
+    const profile   = getVal('summary');
 
     setTxt('name', name);
     setTxt('title', title);
     setTxt('phone', phone);
-    setTxt('email', email);
     setTxt('address', address);
     setTxt('profile', profile);
 
-    // Hide wrappers if empty
-    toggle('wrap-phone', phone);
-    toggle('wrap-email', email);
-    toggle('wrap-address', address);
-    
-    // Hide separators logic (Optional: Advanced CSS handles gap, but this is cleaner)
-    const separators = document.querySelectorAll('.separator');
-    separators.forEach(sep => sep.style.display = (phone && email) ? 'inline' : 'none'); 
-
-    toggle('section-summary', profile);
-
-   // 2. SKILLS (Universal Pills Logic)
-    const renderPills = (elementId, value) => {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        
-        if (!value) {
-            el.innerHTML = '';
-            return;
+    // Email ko clickable 'mailto:' link banana
+    const emailEl = document.getElementById('preview-email');
+    if (emailEl) {
+        emailEl.innerText = email;
+        if (emailEl.tagName === 'A') {
+            emailEl.href = email ? `mailto:${email}` : '#';
         }
+    }
+    toggle('wrap-email', Boolean(email));
 
-        const items = value.split(',').map(item => item.trim()).filter(i => i);
+    // Helper: Har link ko clickable <a> tag banana aur 'https://' auto-format karna
+    const setClickableLink = (id, url, defaultLabel) => {
+        const el = document.getElementById(`preview-${id}`);
+        const wrap = document.getElementById(`wrap-${id}`);
         
-        // CSS Style Inject for Pills (Elegant & Bold Themes)
-        el.innerHTML = items.map(item => 
-            `<span style="
-                background: #ecf0f1; 
-                color: #2c3e50; 
-                padding: 6px 15px; 
-                border-radius: 20px; 
-                font-weight: 600; 
-                font-size: 11px; 
-                display: inline-block; 
-                margin-bottom: 5px;
-                border: 1px solid #dee2e6;">
-                ${item}
-            </span>`
-        ).join(' ');
-    };
+        if (el) {
+            if (!url) {
+                el.innerText = '';
+                if (el.tagName === 'A') el.removeAttribute('href');
+            } else {
+                // Short display text: "https://linkedin.com/in/abc" -> "linkedin.com/in/abc"
+                const cleanDisplay = url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+                el.innerText = cleanDisplay || defaultLabel;
 
-    // ---------------------------------------------------------
-    // 2. SKILLS LOGIC (Universal Handler)
-    // ---------------------------------------------------------
-    
-    const renderUniversalSkills = (elementId, value) => {
-        const el = document.getElementById(elementId);
-        const previewArea = document.getElementById('resume-preview-area');
-        
-        if (!el) return;
-        if (!value) { el.innerHTML = ''; return; }
+                // Actual functional URL for Click & PDF Output
+                const validUrl = url.startsWith('http://') || url.startsWith('https://') 
+                    ? url 
+                    : `https://${url}`;
 
-        const items = value.split(',').map(item => item.trim()).filter(i => i);
-        
-        // Default Class
-        let itemClass = 'pill-badge'; 
-        let wrapperClass = '';
-
-        // Check Theme
-        if (previewArea) {
-            if (previewArea.classList.contains('professional-theme')) {
-                itemClass = 'skill-box'; // Square Box
-            } else if (previewArea.classList.contains('luxury-theme')) {
-                itemClass = 'gold-skill-item'; // Gold Text with Bullet
-                wrapperClass = 'gold-skill-container'; // Flex container
+                if (el.tagName === 'A') {
+                    el.href = validUrl;
+                    el.target = '_blank';
+                    el.rel = 'noopener noreferrer';
+                }
             }
         }
 
-        // Apply HTML
-        el.className = wrapperClass || 'pill-container';
-        el.innerHTML = items.map(item => 
-            `<span class="${itemClass}">${item}</span>`
-        ).join('');
+        // Agar input khali ho toh template me uska icon/dabba gayab ho jaye
+        toggle(`wrap-${id}`, Boolean(url));
     };
 
-    // Apply Logic
-    renderUniversalSkills('preview-skills', getVal('technicalSkills') || getVal('skills'));
-    renderUniversalSkills('preview-soft-skills', getVal('softSkills'));
-    renderUniversalSkills('preview-tools-skills', getVal('tools'));
-    renderUniversalSkills('preview-languages', getVal('languages'));
-    renderUniversalSkills('preview-hobbies', getVal('hobbies'));
+    // Teeno social links ko dynamically set karein
+    setClickableLink('linkedin', linkedin, 'LinkedIn');
+    setClickableLink('github', github, 'GitHub');
+    setClickableLink('portfolio', portfolio, 'Portfolio');
 
-    // Apply pills to Skills, Tools, and Languages
-    renderPills('preview-skills', getVal('technicalSkills') || getVal('skills'));
-    renderPills('preview-tools-skills', getVal('tools'));
-    renderPills('preview-languages', getVal('languages'));
+    // Phone & Address toggles
+    toggle('wrap-phone', Boolean(phone));
+    toggle('wrap-address', Boolean(address));
+    toggle('section-summary', Boolean(profile));
     
-    // Toggles
-    toggle('wrap-tech-skills', getVal('technicalSkills') || getVal('skills'));
-    toggle('wrap-tools-skills', getVal('tools'));
-    toggle('section-languages', getVal('languages'));
+    // ----------------------------------------------------
+    // 2. SKILLS (Technical, Soft, Tools, Languages, Hobbies)
+    // ----------------------------------------------------
+    const renderUniversalSkills = (elementId, value) => {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        if (!value) { 
+            el.innerHTML = ''; 
+            return; 
+        }
 
+        // Agar array ya comma string ho to clean array banayein
+        const items = (Array.isArray(value) ? value : value.split(','))
+            .map(item => String(item).trim())
+            .filter(Boolean);
 
+        const wasEmpty = !el.textContent.trim();
 
-    // 3. LANGUAGES & HOBBIES (Fix: Only show if NOT empty)
+        // 🟢 Sahi formatting: Comma separated text with spaces OR Clean inline pills
+        // Yeh ATS aur visually dono ke liye 100% readable rahega
+        el.innerHTML = items.map((item, idx) => `
+            <span class="skill-item" style="display: inline-block; margin-right: 6px; margin-bottom: 4px;">
+                ${item}${idx < items.length - 1 ? ',' : ''}
+            </span>
+        `).join(' ');
+
+        if (wasEmpty && value) fadePreviewElement(el);
+    };
+
+    const techSkills = getVal('technicalSkills') || getVal('skills');
+    const softSkills = getVal('softSkills');
+    const tools = getVal('tools');
     const langs = getVal('languages');
     const hobbies = getVal('hobbies');
 
+    renderUniversalSkills('preview-skills', techSkills);
+    renderUniversalSkills('preview-soft-skills', softSkills);
+    renderUniversalSkills('preview-tools-skills', tools);
+    renderUniversalSkills('preview-languages', langs);
+    renderUniversalSkills('preview-hobbies', hobbies);
+
+    toggle('wrap-tech-skills', Boolean(techSkills));
+    toggle('wrap-soft-skills', Boolean(softSkills));
+    toggle('wrap-tools-skills', Boolean(tools));
+    toggle('section-skills', Boolean(techSkills || softSkills || tools));
+
+    // List rendering for simple bullet sections
     const setList = (id, val) => {
         const el = document.getElementById(`preview-${id}`);
-        if (el) el.innerHTML = val ? val.split(',').map(s => `<li>${s.trim()}</li>`).join('') : '';
+        if (el) {
+            const wasEmpty = !el.textContent.trim();
+            el.innerHTML = val ? val.split(',').map(s => `<li>${s.trim()}</li>`).join('') : '';
+            if (wasEmpty && val) fadePreviewElement(el);
+        }
     };
 
     setList('languages', langs);
     setList('hobbies', hobbies);
+    toggle('section-languages', Boolean(langs));
+    toggle('section-hobbies', Boolean(hobbies));
 
-    // Ye line magic karegi: Agar 'langs' khali hai to section gayab
-    toggle('section-languages', langs && langs.length > 0);
-    toggle('section-hobbies', hobbies && hobbies.length > 0);
+    // ----------------------------------------------------
+    // 3. DYNAMIC REPEATER SECTIONS (Robust Class Extraction)
+    // ----------------------------------------------------
+    
+    // Experience
+    const expItems = document.querySelectorAll('#experienceList .entry-card');
+    const expPreview = document.getElementById('preview-experience');
+    if (expPreview) {
+        let expHtml = '';
+        expItems.forEach(card => {
+            const company = card.querySelector('.exp-company')?.value.trim() || '';
+            const position = card.querySelector('.exp-position')?.value.trim() || '';
+            const start = card.querySelector('.exp-start')?.value.trim() || '';
+            const end = card.querySelector('.exp-end')?.value.trim() || '';
+            const desc = card.querySelector('.exp-desc')?.value.trim() || '';
 
-    // 4. DYNAMIC SECTIONS
-    const renderSection = (listId, previewId, sectionId, templateFn) => {
-        const container = document.getElementById(listId);
-        const previewEl = document.getElementById(`preview-${previewId}`);
-        if (!container || !previewEl) return;
-
-        const items = container.querySelectorAll('.entry-card');
-        let html = '';
-        let hasContent = false;
-
-        items.forEach(item => {
-            const data = {};
-            item.querySelectorAll('input, textarea').forEach(input => {
-                let key = input.className.split(' ').find(c => c.includes('-'));
-                if(key && key.includes('-')) key = key.split('-')[1];
-                data[key] = input.value.trim();
-            });
-
-            // Validation: Show only if valid data exists
-            const isEdu = sectionId === 'section-education';
-            const isValid = isEdu ? (data.school || data.degree) : (data.position || data.company || data.name);
-
-            if (isValid) {
-                hasContent = true;
-                html += templateFn(data);
+            if (company || position) {
+                const dates = start ? `${start} ${end ? ' - ' + end : ''}` : '';
+                expHtml += `
+                    <div class="template-experience-item" style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h3 style="margin: 0; font-weight: 700;">${position}</h3>
+                            <span style="font-size: 0.85em; opacity: 0.8;">${dates}</span>
+                        </div>
+                        <div class="sub-text" style="font-weight: 600; opacity: 0.9;">${company}</div>
+                        ${desc ? `<ul>${desc.split(/\r?\n/).filter(Boolean).map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
+                    </div>
+                `;
             }
         });
+        expPreview.innerHTML = expHtml;
+        toggle('section-experience', Boolean(expHtml));
+    }
 
-        previewEl.innerHTML = html;
-        toggle(sectionId, hasContent);
-    };
+    // Education
+    const eduItems = document.querySelectorAll('#educationList .entry-card');
+    const eduPreview = document.getElementById('preview-education');
+    if (eduPreview) {
+        let eduHtml = '';
+        eduItems.forEach(card => {
+            const school = card.querySelector('.edu-school')?.value.trim() || '';
+            const degree = card.querySelector('.edu-degree')?.value.trim() || '';
+            const field = card.querySelector('.edu-field')?.value.trim() || '';
+            const year = card.querySelector('.edu-year')?.value.trim() || '';
+            const desc = card.querySelector('.edu-desc')?.value.trim() || '';
 
-    renderSection('experienceList', 'experience', 'section-experience', (data) => `
-        <div class="template-experience-item">
-            <h3>${data.position} <span>${data.start ? data.start + (data.end ? ' - ' + data.end : '') : ''}</span></h3>
-            <div class="sub-text">${data.company}</div>
-            ${data.desc ? `<ul>${data.desc.split('\n').map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
-        </div>
-    `);
+            if (school || degree) {
+                eduHtml += `
+                    <div class="template-education-item" style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h3 style="margin: 0; font-weight: 700;">${degree} ${field ? 'in ' + field : ''}</h3>
+                            <span style="font-size: 0.85em; opacity: 0.8;">${year}</span>
+                        </div>
+                        <div class="sub-text" style="font-weight: 600; opacity: 0.9;">${school}</div>
+                        ${desc ? `<ul>${desc.split(/\r?\n/).filter(Boolean).map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
+                    </div>
+                `;
+            }
+        });
+        eduPreview.innerHTML = eduHtml;
+        toggle('section-education', Boolean(eduHtml));
+    }
 
-    renderSection('educationList', 'education', 'section-education', (data) => `
-        <div class="template-education-item">
-            <h3>${data.degree} <span>${data.year}</span></h3>
-            <div class="sub-text">${data.school}${data.field ? ', ' + data.field : ''}</div>
-            ${data.desc ? `<ul>${data.desc.split('\n').map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
-        </div>
-    `);
+    // Projects
+    const projItems = document.querySelectorAll('#projectsList .entry-card');
+    const projPreview = document.getElementById('preview-projects');
+    if (projPreview) {
+        let projHtml = '';
+        projItems.forEach(card => {
+            const name = card.querySelector('.proj-name')?.value.trim() || '';
+            const tech = card.querySelector('.proj-tech')?.value.trim() || '';
+            const desc = card.querySelector('.proj-desc')?.value.trim() || '';
 
-    renderSection('projectsList', 'projects', 'section-projects', (data) => `
-        <div class="template-project-item">
-            <h3>${data.name}</h3>
-            ${data.tech ? `<div class="sub-text">${data.tech}</div>` : ''}
-            ${data.desc ? `<ul>${data.desc.split('\n').map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
-        </div>
-    `);
+            if (name) {
+                projHtml += `
+                    <div class="template-project-item" style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h3 style="margin: 0; font-weight: 700;">${name}</h3>
+                            ${tech ? `<span style="font-size: 0.85em; opacity: 0.8;">${tech}</span>` : ''}
+                        </div>
+                        ${desc ? `<ul>${desc.split(/\r?\n/).filter(Boolean).map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
+                    </div>
+                `;
+            }
+        });
+        projPreview.innerHTML = projHtml;
+        toggle('section-projects', Boolean(projHtml));
+    }
 
-    renderSection('certificationsList', 'certifications', 'section-certifications', (data) => `
-        <div class="certification-item" style="margin-bottom: 15px;">
-            <h3>${data.name} <span>${data.date}</span></h3>
-            <div class="sub-text">${data.org} ${data.id ? `| ID: ${data.id}` : ''}</div>
-        </div>
-    `);
+    // Certifications
+    const certItems = document.querySelectorAll('#certificationsList .entry-card');
+    const certPreview = document.getElementById('preview-certifications');
+    if (certPreview) {
+        let certHtml = '';
+        certItems.forEach(card => {
+            const name = card.querySelector('.cert-name')?.value.trim() || '';
+            const org = card.querySelector('.cert-org')?.value.trim() || '';
+            const date = card.querySelector('.cert-date')?.value.trim() || '';
+            const id = card.querySelector('.cert-id')?.value.trim() || '';
+
+            if (name) {
+                certHtml += `
+                    <div class="certification-item" style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h3 style="margin: 0; font-weight: 700;">${name}</h3>
+                            <span style="font-size: 0.85em; opacity: 0.8;">${date}</span>
+                        </div>
+                        <div class="sub-text">${org} ${id ? `| ID: ${id}` : ''}</div>
+                    </div>
+                `;
+            }
+        });
+        certPreview.innerHTML = certHtml;
+        toggle('section-certifications', Boolean(certHtml));
+    }
+
+    // Extras (Additional Info)
+    const extraItems = document.querySelectorAll('#extraInfoList .entry-card');
+    const extraPreview = document.getElementById('preview-extra');
+    if (extraPreview) {
+        let extraHtml = '';
+        extraItems.forEach(card => {
+            const title = card.querySelector('.extra-title')?.value.trim() || '';
+            const category = card.querySelector('.extra-category')?.value.trim() || '';
+            const desc = card.querySelector('.extra-desc')?.value.trim() || '';
+
+            if (title || desc) {
+                extraHtml += `
+                    <div class="template-extra-item" style="margin-bottom: 10px;">
+                        <h3 style="margin: 0; font-weight: 700;">${title || category}</h3>
+                        ${category && title ? `<div class="sub-text">${category}</div>` : ''}
+                        ${desc ? `<ul>${desc.split(/\r?\n/).filter(Boolean).map(line => `<li>${line}</li>`).join('')}</ul>` : ''}
+                    </div>
+                `;
+            }
+        });
+        extraPreview.innerHTML = extraHtml;
+        toggle('section-extra', Boolean(extraHtml));
+    }
 }
-
 
 function generateResumeHTML(data, template, isLightMode) {
     // Default color scheme based on mode
@@ -696,6 +854,8 @@ function generateResumeHTML(data, template, isLightMode) {
         return section && section.trim();
     };
     
+    const extraInfoSections = (data.extraInfo || []).filter(item => item && (item.title || item.category || item.desc));
+
     return `
         <div class="resume-template ${template}" style="
             font-family: ${style.fontFamily};
@@ -863,6 +1023,29 @@ function generateResumeHTML(data, template, isLightMode) {
                     </div>
                 </div>
             ` : ''}
+
+            <!-- Additional Information -->
+            ${extraInfoSections.length ? `
+                <div style="margin-bottom: ${style.spacing};">
+                    <h2 style="
+                        color: ${style.accentColor};
+                        font-size: 1.2rem;
+                        border-bottom: 2px solid ${style.accentColor};
+                        padding-bottom: 0.3rem;
+                        margin-bottom: 0.8rem;
+                        font-weight: 600;
+                    ">
+                        ADDITIONAL INFORMATION
+                    </h2>
+                    ${extraInfoSections.map(item => `
+                        <div style="margin-bottom: 0.8rem;">
+                            <div style="font-weight: 600; margin-bottom: 0.2rem;">${item.title || item.category || 'Additional Information'}</div>
+                            ${item.category ? `<div style="color: ${colors.light}; font-size: 0.85rem; margin-bottom: 0.2rem;">${item.category}</div>` : ''}
+                            ${item.desc ? `<div style="font-size: 0.95rem; white-space: pre-line;">${item.desc}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
             
             <!-- Certifications -->
             ${hasContent(data.certifications) ? `
@@ -963,6 +1146,11 @@ function gatherResumeData() {
             soft: getValue('softSkills'),
             tools: getValue('tools')
         },
+        extraInfo: Array.from(document.querySelectorAll('#extraInfoList .entry-card')).map(card => ({
+            title: card.querySelector('.extra-title')?.value || '',
+            category: card.querySelector('.extra-category')?.value || '',
+            desc: card.querySelector('.extra-desc')?.value || ''
+        })),
         certifications: Array.from(document.querySelectorAll('#certificationsList .entry-card')).map(card => ({
             name: card.querySelector('.cert-name')?.value || '',
             org: card.querySelector('.cert-org')?.value || '',
@@ -981,48 +1169,9 @@ function saveToLocalStorage() {
     const data = gatherResumeData();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     
-    // Update ATS score
-    calculateBasicAtsScore();
 }
 
-function loadFromLocalStorage() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    
-    try {
-        const data = JSON.parse(saved);
-        
-        // Restore personal info
-        if (data.personal) {
-            setValue('fullName', data.personal.fullName);
-            setValue('jobTitle', data.personal.jobTitle);
-            setValue('email', data.personal.email);
-            setValue('phone', data.personal.phone);
-            setValue('location', data.personal.location);
-            setValue('summary', data.personal.summary);
-            setValue('linkedin', data.personal.linkedin);
-            setValue('github', data.personal.github);
-            setValue('portfolio', data.personal.portfolio);
-        }
-        
-        // Restore skills
-        if (data.skills) {
-            setValue('technicalSkills', data.skills.technical);
-            setValue('softSkills', data.skills.soft);
-            setValue('tools', data.skills.tools);
-        }
-
-        
-        // Note: Dynamic entries (education, experience, etc.) need to be recreated
-        // when their respective steps are loaded
-        
-    } catch (e) {
-        console.error('Error loading saved data:', e);
-    }
-}
-
-
-    // 1. Updated Load Function to handle Dynamic Entries
+// Restore saved resume data, including dynamic entries.
 function loadFromLocalStorage() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
@@ -1037,67 +1186,20 @@ function loadFromLocalStorage() {
 
 function setValue(id, value) {
     const element = document.getElementById(id);
-    if (element && value !== undefined) {
-        element.value = value;
-    }
-}
+    if (!element || value === undefined) return;
 
-// ---------- ATS SCORE CALCULATION ----------
-function calculateBasicAtsScore() {
-    const data = gatherResumeData();
-    let score = 20; // Base score
-    
-    // Personal info (max 30 points)
-    if (data.personal.fullName?.trim()) score += 5;
-    if (data.personal.jobTitle?.trim()) score += 5;
-    if (data.personal.email?.trim()) score += 5;
-    if (data.personal.phone?.trim()) score += 5;
-    if (data.personal.summary?.trim()) score += 10;
-    
-    // Education (max 20 points)
-    score += Math.min(20, data.education.length * 5);
-    
-    // Experience (max 25 points)
-    score += Math.min(25, data.experience.length * 5);
-    
-    // Skills (max 15 points)
-    if (data.skills.technical?.trim()) score += 5;
-    if (data.skills.soft?.trim()) score += 5;
-    if (data.skills.tools?.trim()) score += 5;
-    
-    // Projects & Certifications (max 10 points)
-    score += Math.min(5, data.projects.length * 2);
-    score += Math.min(5, data.certifications.length * 2);
-    
-    // Cap at 100
-    score = Math.min(100, score);
-    
-    // Update UI
-    const scoreElement = document.getElementById('basicAtsScorePreview');
-    const barElement = document.getElementById('basicAtsScoreBarPreview');
-    
-    if (scoreElement) {
-        scoreElement.textContent = score;
+    // 🟢 Security Check: File input par kabhi value string set mat karo
+    if (element.type === 'file') {
+        return;
     }
-    
-    if (barElement) {
-        barElement.style.width = `${score}%`;
-        
-        // Update color based on score
-        if (score >= 80) {
-            barElement.style.background = 'linear-gradient(to right, #10b981, #34d399)';
-        } else if (score >= 60) {
-            barElement.style.background = 'linear-gradient(to right, #f59e0b, #fbbf24)';
-        } else {
-            barElement.style.background = 'linear-gradient(to right, #ef4444, #f87171)';
-        }
-    }
-    
-    return score;
+
+    element.value = value;
 }
 
 // ---------- AI INTEGRATION ----------
 async function generateAISummary() {
+    if (isSummaryGenerating) return;
+
     const fullName = getValue('fullName');
     const jobTitle = getValue('jobTitle');
     const skeleton = document.getElementById('summarySkeleton');
@@ -1106,6 +1208,14 @@ async function generateAISummary() {
     if (!fullName || !jobTitle) {
         showToast('Please enter your name and job title first', 'error');
         return;
+    }
+
+    isSummaryGenerating = true;
+    const summaryBtn = document.getElementById('generateSummaryBtn');
+    const originalButtonHtml = summaryBtn?.innerHTML;
+    if (summaryBtn) {
+        summaryBtn.disabled = true;
+        summaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
     }
 
     // Show Skeleton & Hide Text
@@ -1136,12 +1246,23 @@ async function generateAISummary() {
         textarea.style.color = '';
         saveToLocalStorage();
         updatePreview();
+        isSummaryGenerating = false;
+        if (summaryBtn) {
+            summaryBtn.disabled = false;
+            summaryBtn.innerHTML = originalButtonHtml;
+        }
     }
 }
 
+const aiDescriptionRequests = new WeakSet();
 async function generateAIDescription(button, type) {
     const entry = button.closest('.entry-card');
-    if (!entry) return;
+    if (!entry || aiDescriptionRequests.has(button)) return;
+
+    aiDescriptionRequests.add(button);
+    const originalButtonHtml = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Generating...';
     
     showLoader();
     
@@ -1190,119 +1311,11 @@ async function generateAIDescription(button, type) {
         showToast('Using fallback description', 'error');
     } finally {
         hideLoader();
+        aiDescriptionRequests.delete(button);
+        button.disabled = false;
+        button.innerHTML = originalButtonHtml;
     }
 }
-
-async function analyzeKeywords() {
-    const jobDescription = document.getElementById('jobDescription')?.value;
-    
-    if (!jobDescription?.trim()) {
-        showToast('Please paste a job description first', 'error');
-        return;
-    }
-    
-    showLoader();
-    
-    try {
-        const resumeData = gatherResumeData();
-        
-        const response = await fetch(`${BACKEND_API_URL}/api/ai/analyze-keywords`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                job_description: jobDescription,
-                resume_data: resumeData
-            })
-        });
-        
-        const data = await response.json();
-        
-        // Display results
-        displayKeywordResults(data);
-        showToast('Keyword analysis complete!');
-        
-    } catch (error) {
-        console.error('Keyword Analysis Error:', error);
-        showToast('Failed to analyze keywords', 'error');
-        
-        // Show demo results
-        displayDemoKeywordResults();
-    } finally {
-        hideLoader();
-    }
-}
-
-function displayKeywordResults(data) {
-    const matchingContainer = document.getElementById('matchingKeywords');
-    const missingContainer = document.getElementById('missingKeywords');
-    const resultsContainer = document.getElementById('keywordResults');
-    
-    if (!matchingContainer || !missingContainer || !resultsContainer) return;
-
-    // Clear and Show
-    matchingContainer.innerHTML = '';
-    missingContainer.innerHTML = '';
-    resultsContainer.classList.remove('hidden');
-
-    // Display Matching
-    const matches = data.matching_keywords || [];
-    document.getElementById('matchCount').textContent = matches.length;
-    matches.forEach(kw => {
-        const tag = document.createElement('span');
-        tag.className = 'keyword-tag matching';
-        tag.innerHTML = `<i class="fas fa-check"></i> ${kw}`;
-        matchingContainer.appendChild(tag);
-    });
-
-    // Display Missing
-    const missing = data.missing_keywords || [];
-    document.getElementById('missCount').textContent = missing.length;
-    missing.forEach(kw => {
-        const tag = document.createElement('span');
-        tag.className = 'keyword-tag missing';
-        tag.innerHTML = `<i class="fas fa-plus"></i> ${kw}`;
-        missingContainer.appendChild(tag);
-    });
-
-    // Scroll to results
-    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function displayDemoKeywordResults() {
-    const resultsContainer = document.getElementById('keywordResults');
-    const matchingContainer = document.getElementById('matchingKeywords');
-    const missingContainer = document.getElementById('missingKeywords');
-    
-    if (!resultsContainer || !matchingContainer || !missingContainer) return;
-    
-    // Demo data
-    const matchingKeywords = ['JavaScript', 'React', 'Node.js', 'HTML5', 'CSS3'];
-    const missingKeywords = ['TypeScript', 'AWS', 'Docker', 'MongoDB', 'GraphQL'];
-    
-    // Clear previous results
-    matchingContainer.innerHTML = '';
-    missingContainer.innerHTML = '';
-    
-    // Display matching keywords
-    matchingKeywords.forEach(keyword => {
-        const tag = document.createElement('span');
-        tag.className = 'keyword-tag';
-        tag.textContent = keyword;
-        matchingContainer.appendChild(tag);
-    });
-    
-    // Display missing keywords
-    missingKeywords.forEach(keyword => {
-        const tag = document.createElement('span');
-        tag.className = 'keyword-tag missing';
-        tag.textContent = keyword;
-        missingContainer.appendChild(tag);
-    });
-    
-    // Show results container
-    resultsContainer.classList.remove('hidden');
-}
-
 
 function importJSON(event) {
     const file = event.target.files[0];
@@ -1332,81 +1345,115 @@ function importJSON(event) {
 function importResumeData(data) {
     if (!data) return;
 
-    // Clear existing dynamic entries first
-    clearDynamicEntries();
+    isBatchUpdating = true;
+    try {
+        // Clear existing dynamic entries first
+        clearDynamicEntries();
 
-    // Restore personal info
-    if (data.personal) {
-        Object.keys(data.personal).forEach(key => {
-            setValue(key, data.personal[key]);
+        // 1. Restore personal info (excluding file input)
+        if (data.personal) {
+            Object.keys(data.personal).forEach(key => {
+                if (key !== 'profilePhoto') {
+                    setValue(key, data.personal[key]);
+                }
+            });
+
+            // 🟢 Photo ko preview tags me safe tarike se lagao
+            const photoUrl = data.personal.profilePhoto || data.extracted_photo;
+            if (photoUrl) {
+                const formImg = document.getElementById('profilePhotoPreview');
+                const templateImg = document.getElementById('preview-image');
+
+                if (formImg) {
+                    formImg.src = photoUrl;
+                }
+                if (templateImg) {
+                    templateImg.src = photoUrl;
+                    templateImg.style.display = 'block';
+                    if (templateImg.parentElement) {
+                        templateImg.parentElement.style.display = 'block';
+                    }
+                }
+            }
+        }
+        
+        // 2. Restore skills
+        if (data.skills) {
+            setValue('technicalSkills', data.skills.technical);
+            setValue('softSkills', data.skills.soft);
+            setValue('tools', data.skills.tools);
+        }
+
+        // 3. Restore Extra Info
+        if (data.extraInfo) data.extraInfo.forEach(extra => {
+            addExtraInfoEntry();
+            const lastEntry = document.querySelector('#extraInfoList .entry-card:last-child');
+            if(lastEntry) {
+                lastEntry.querySelector('.extra-title').value = extra.title || '';
+                lastEntry.querySelector('.extra-category').value = extra.category || '';
+                lastEntry.querySelector('.extra-desc').value = extra.desc || '';
+            }
         });
+
+        // 4. Restore Education
+        if (data.education) data.education.forEach(edu => {
+            addEducationEntry();
+            const lastEntry = document.querySelector('#educationList .entry-card:last-child');
+            if(lastEntry) {
+                lastEntry.querySelector('.edu-school').value = edu.school || '';
+                lastEntry.querySelector('.edu-degree').value = edu.degree || '';
+                lastEntry.querySelector('.edu-field').value = edu.field || '';
+                lastEntry.querySelector('.edu-year').value = edu.year || '';
+                lastEntry.querySelector('.edu-desc').value = edu.desc || '';
+            }
+        });
+
+        // 5. Restore Experience
+        if (data.experience) data.experience.forEach(exp => {
+            addExperienceEntry();
+            const lastEntry = document.querySelector('#experienceList .entry-card:last-child');
+            if(lastEntry) {
+                lastEntry.querySelector('.exp-company').value = exp.company || '';
+                lastEntry.querySelector('.exp-position').value = exp.position || '';
+                lastEntry.querySelector('.exp-start').value = exp.start || '';
+                lastEntry.querySelector('.exp-end').value = exp.end || '';
+                lastEntry.querySelector('.exp-desc').value = exp.desc || '';
+            }
+        });
+
+        // 6. Restore Projects
+        if (data.projects) data.projects.forEach(proj => {
+            addProjectEntry();
+            const lastEntry = document.querySelector('#projectsList .entry-card:last-child');
+            if(lastEntry) {
+                lastEntry.querySelector('.proj-name').value = proj.name || '';
+                lastEntry.querySelector('.proj-tech').value = proj.tech || '';
+                lastEntry.querySelector('.proj-desc').value = proj.desc || '';
+            }
+        });
+
+        // 7. Restore Certifications
+        if (data.certifications) data.certifications.forEach(cert => {
+            addCertificationEntry();
+            const lastEntry = document.querySelector('#certificationsList .entry-card:last-child');
+            if(lastEntry) {
+                lastEntry.querySelector('.cert-name').value = cert.name || '';
+                lastEntry.querySelector('.cert-org').value = cert.org || '';
+                lastEntry.querySelector('.cert-date').value = cert.date || '';
+                lastEntry.querySelector('.cert-id').value = cert.id || '';
+            }
+        });
+        
+    } finally {
+        isBatchUpdating = false;
+        saveToLocalStorage();
+        updatePreview();
     }
-    
-    // Restore skills
-    if (data.skills) {
-        setValue('technicalSkills', data.skills.technical);
-        setValue('softSkills', data.skills.soft);
-        setValue('tools', data.skills.tools);
-    }
-
-    // IMPORTANT: Recreate Dynamic Entries
-    if (data.education) data.education.forEach(edu => {
-        addEducationEntry();
-        const lastEntry = document.querySelector('#educationList .entry-card:last-child');
-        if(lastEntry) {
-            lastEntry.querySelector('.edu-school').value = edu.school || '';
-            lastEntry.querySelector('.edu-degree').value = edu.degree || '';
-            lastEntry.querySelector('.edu-field').value = edu.field || '';
-            lastEntry.querySelector('.edu-year').value = edu.year || '';
-            lastEntry.querySelector('.edu-desc').value = edu.desc || '';
-        }
-    });
-
-    if (data.experience) data.experience.forEach(exp => {
-        addExperienceEntry();
-        const lastEntry = document.querySelector('#experienceList .entry-card:last-child');
-        if(lastEntry) {
-            lastEntry.querySelector('.exp-company').value = exp.company || '';
-            lastEntry.querySelector('.exp-position').value = exp.position || '';
-            lastEntry.querySelector('.exp-start').value = exp.start || '';
-            lastEntry.querySelector('.exp-end').value = exp.end || '';
-            lastEntry.querySelector('.exp-desc').value = exp.desc || '';
-        }
-    });
-
-
-    // Projects loading logic
-if (data.projects) data.projects.forEach(proj => {
-    addProjectEntry();
-    const lastEntry = document.querySelector('#projectsList .entry-card:last-child');
-    if(lastEntry) {
-        lastEntry.querySelector('.proj-name').value = proj.name || '';
-        lastEntry.querySelector('.proj-tech').value = proj.tech || '';
-        lastEntry.querySelector('.proj-desc').value = proj.desc || '';
-    }
-});
-
-// Certifications loading logic
-if (data.certifications) data.certifications.forEach(cert => {
-    addCertificationEntry();
-    const lastEntry = document.querySelector('#certificationsList .entry-card:last-child');
-    if(lastEntry) {
-        lastEntry.querySelector('.cert-name').value = cert.name || '';
-        lastEntry.querySelector('.cert-org').value = cert.org || '';
-        lastEntry.querySelector('.cert-date').value = cert.date || '';
-        lastEntry.querySelector('.cert-id').value = cert.id || '';
-    }
-});
-
-    // Projects aur Certifications ke liye bhi same pattern follow karein...
-    
-    updatePreview();
-    calculateBasicAtsScore();
 }
 
 function clearDynamicEntries() {
     // Clear all dynamic entry containers
-    ['educationList', 'experienceList', 'projectsList', 'certificationsList'].forEach(id => {
+    ['educationList', 'experienceList', 'projectsList', 'extraInfoList', 'certificationsList'].forEach(id => {
         const container = document.getElementById(id);
         if (container) container.innerHTML = '';
     });
@@ -1433,30 +1480,6 @@ function openPDFPreview() {
 
 function closePDFPreview() {
     const modal = document.getElementById('pdfPreviewModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
-}
-
-function openAIScoreModal() {
-    const modal = document.getElementById('aiScoreModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        // Calculate and display score
-        const score = calculateBasicAtsScore();
-        const scoreElement = document.getElementById('aiAtsScore');
-        const barElement = document.getElementById('aiAtsScoreBar');
-        
-        if (scoreElement) scoreElement.textContent = score;
-        if (barElement) barElement.style.width = `${score}%`;
-    }
-}
-
-function closeAIScoreModal() {
-    const modal = document.getElementById('aiScoreModal');
     if (modal) {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
@@ -1508,32 +1531,9 @@ function hideLoader() {
     if (loader) loader.classList.add('hidden');
 }
 
-function initAutoSave() {
-    // Auto-save on input
-    document.querySelectorAll('input, textarea, select').forEach(element => {
-        element.addEventListener('input', () => {
-            saveToLocalStorage();
-            updatePreview();
-        });
-    });
-    
-    // Auto-save on change (for select elements)
-    document.querySelectorAll('select').forEach(element => {
-        element.addEventListener('change', () => {
-            saveToLocalStorage();
-            updatePreview();
-        });
-    });
-}
-
 // ---------- EVENT LISTENERS INITIALIZATION ----------
 function initEventListeners() {
     console.log("Initializing Event Listeners...");
-    
-    // Debounce setup for typing
-    const debouncedUpdate = (typeof debounce === 'function') 
-        ? debounce(updatePreview, 300) 
-        : updatePreview;
 
     // 1. Navigation (Next/Prev)
     document.getElementById('nextStepBtn')?.addEventListener('click', window.nextStep);
@@ -1543,7 +1543,6 @@ function initEventListeners() {
     document.querySelectorAll('.step-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const step = btn.dataset.step;
-            // Global STEPS array use kar rahe hain
             const index = (typeof STEPS !== 'undefined') ? STEPS.indexOf(step) : -1;
             if (index !== -1) {
                 currentStepIndex = index;
@@ -1552,54 +1551,92 @@ function initEventListeners() {
         });
     });
 
-    // 3. Form Inputs (Real-time Preview)
-    const form = document.getElementById('resumeForm');
-    if (form) {
+    // 3. Form Inputs (Real-time Instant Preview across ALL fields)
+    const form = document.querySelector('.editor-panel') || document.body;
+    if (form && form.dataset.previewBound !== 'true') {
+        form.dataset.previewBound = 'true';
+
+        // Har type hone wale input par instantly updatePreview chalega
         form.addEventListener('input', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                debouncedUpdate();
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+                if (typeof updatePreview === 'function') {
+                    updatePreview();
+                }
+                if (typeof persistAndRefresh === 'function') {
+                    persistAndRefresh();
+                }
+            }
+        });
+
+        // Dropdowns, selects aur checkboxes ke change par
+        form.addEventListener('change', (e) => {
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+                if (typeof updatePreview === 'function') {
+                    updatePreview();
+                }
+                if (typeof persistAndRefresh === 'function') {
+                    persistAndRefresh();
+                }
             }
         });
     }
 
-    // 4. Add Entry Buttons
+    // 4. Add Entry Buttons (Dynamic Card Creation + Instant Preview Sync)
     const bindAddBtn = (id, func) => {
         const btn = document.getElementById(id);
-        if(btn) btn.addEventListener('click', func);
-    }
+        if (btn && btn.dataset.builderBound !== 'true') {
+            btn.dataset.builderBound = 'true';
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                func();
+                setTimeout(() => {
+                    if (typeof updatePreview === 'function') updatePreview();
+                }, 50);
+            });
+        }
+    };
+
     bindAddBtn('addEducationBtn', () => typeof addEducationEntry === 'function' && addEducationEntry());
     bindAddBtn('addExperienceBtn', () => typeof addExperienceEntry === 'function' && addExperienceEntry());
     bindAddBtn('addProjectBtn', () => typeof addProjectEntry === 'function' && addProjectEntry());
+    bindAddBtn('addExtraInfoBtn', () => typeof addExtraInfoEntry === 'function' && addExtraInfoEntry());
     bindAddBtn('addCertificationBtn', () => typeof addCertificationEntry === 'function' && addCertificationEntry());
 
-    // 5. DOWNLOAD BUTTONS (ULTIMATE FIX - Anti Double Click)
+    // 5. Save Resume Buttons
+    ['saveResumeBtn', 'saveResumeFinalBtn'].forEach(id => {
+        const saveBtn = document.getElementById(id);
+        if (saveBtn && saveBtn.dataset.builderBound !== 'true') {
+            saveBtn.dataset.builderBound = 'true';
+            saveBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (typeof saveResume === 'function') saveResume(saveBtn);
+            });
+        }
+    });
+
+    // 6. Download Buttons (Anti-Double Click)
     const setupDownloadButton = (id, actionFunction) => {
         const oldBtn = document.getElementById(id);
         if (oldBtn) {
-            // Clone karke purane listeners hataye
             const newBtn = oldBtn.cloneNode(true);
-            
-            // HTML onclick attribute remove kiya
             newBtn.removeAttribute('onclick');
-            
             oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
             newBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 
-                // Button Disable Logic
                 newBtn.disabled = true;
                 const originalHtml = newBtn.innerHTML;
-                newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                newBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
 
-                // Action Call
                 if (typeof actionFunction === 'function') {
                     actionFunction();
+                } else if (typeof window.downloadPDF === 'function') {
+                    window.downloadPDF();
                 } else {
                     alert("Download function missing!");
                 }
 
-                // Re-enable after 3 seconds
                 setTimeout(() => {
                     newBtn.disabled = false;
                     newBtn.innerHTML = originalHtml;
@@ -1613,77 +1650,41 @@ function initEventListeners() {
     setupDownloadButton('downloadPdfFinalBtn', window.exportResumePDF);
     setupDownloadButton('downloadDocxFinalBtn', window.exportResumeDOCX);
 
-    // 6. Photo Upload
+    // 7. Photo Upload Handler
     const photoInput = document.getElementById('profilePhoto') || document.getElementById('profilePhotoInput');
     if (photoInput && typeof handlePhotoUpload === 'function') {
         photoInput.addEventListener('change', handlePhotoUpload);
     }
 
-    // 7. TEMPLATE SELECTOR (CRITICAL FIX)
-     // 🟢 NAYA UNIFIED BLOCK (builder.js ke initEventListeners function ke andar)
-const templateSelector = document.getElementById('templateSelector');
-if (templateSelector) {
-    templateSelector.addEventListener('change', (e) => {
-        const newTemplate = e.target.value;
-        
-        // 1. Pehle instant dynamic permission check karo
-        if (typeof checkAndLockTemplate === 'function') {
-            const isAllowed = checkAndLockTemplate(newTemplate);
-            if (!isAllowed) return; // Agar locked hai toh yahi ruk jao
-        }
+    // 8. Template Selector with Permission Check
+    const templateSelector = document.getElementById('templateSelector');
+    if (templateSelector) {
+        templateSelector.addEventListener('change', (e) => {
+            const newTemplate = e.target.value;
+            
+            if (typeof checkAndLockTemplate === 'function') {
+                const isAllowed = checkAndLockTemplate(newTemplate);
+                if (!isAllowed) return;
+            }
 
-        // 2. Agar allowed hai tabhi template load karo
-        console.log("Template Changed to:", newTemplate);
-        document.body.setAttribute('data-template', newTemplate);
-        if (typeof loadTemplate === 'function') {
-            loadTemplate(newTemplate);
-        }
-    });
-}
+            console.log("Template Changed to:", newTemplate);
+            document.body.setAttribute('data-template', newTemplate);
+            if (typeof loadTemplate === 'function') {
+                loadTemplate(newTemplate);
+            }
+        });
+    }
 
-    // ==========================================
-    // 8. AI BUTTONS FIX (Yeh Naya Code Hai)
-    // ==========================================
-    
-    // 1. Summary Generator Button
+    // 9. AI Buttons Handler
     const summaryBtn = document.getElementById('generateSummaryBtn');
     if (summaryBtn) {
-        summaryBtn.addEventListener('click', function() {
-            console.log("Generating Summary...");
+        summaryBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("Generating AI Summary...");
             if (typeof generateAISummary === 'function') {
                 generateAISummary();
             } else {
                 alert("Error: AI function not loaded.");
-            }
-        });
-    }
-
-    // 2. Keyword Analysis Button
-    const analyzeBtn = document.getElementById('analyzeKeywordsBtn');
-    if (analyzeBtn) {
-        analyzeBtn.addEventListener('click', function() {
-            if (typeof analyzeKeywords === 'function') {
-                analyzeKeywords();
-            }
-        });
-    }
-
-    // 3. ATS Score Button (Keyword Section)
-    const atsBtn = document.getElementById('aiAtsAnalysisBtn');
-    if (atsBtn) {
-        atsBtn.addEventListener('click', function() {
-            if (typeof openAIScoreModal === 'function') {
-                openAIScoreModal();
-            }
-        });
-    }
-
-    // 4. ATS Score Button (Finish Step)
-    const runAiAnalysisBtn = document.getElementById('runAiAnalysisBtn');
-    if (runAiAnalysisBtn) {
-        runAiAnalysisBtn.addEventListener('click', function() {
-            if (typeof openAIScoreModal === 'function') {
-                openAIScoreModal();
             }
         });
     }
@@ -1783,13 +1784,10 @@ window.addProjectEntry = addProjectEntry;
 window.addCertificationEntry = addCertificationEntry;
 window.removeEntry = removeEntry;
 window.generateAIDescription = generateAIDescription;
-window.analyzeKeywords = analyzeKeywords;
 window.exportJSON = exportJSON;
 window.importJSON = importJSON;
 window.openPDFPreview = openPDFPreview;
 window.closePDFPreview = closePDFPreview;
-window.openAIScoreModal = openAIScoreModal;
-window.closeAIScoreModal = closeAIScoreModal;
 /* builder.js के सबसे नीचे (Bottom) यह पेस्ट करें */
 
 
@@ -1877,7 +1875,7 @@ async function loadTemplate(templateId) {
         const html = await response.text();
         previewArea.innerHTML = html;
 
-        // 2. CSS SWAP KARO (FORCE RELOAD)
+        // 2. CSS swap karo and let the browser reuse cached templates.
         // Purana CSS hatao
         const oldLink = document.getElementById('template-css');
         if (oldLink) oldLink.remove();
@@ -1886,8 +1884,7 @@ async function loadTemplate(templateId) {
         const link = document.createElement('link');
         link.id = 'template-css';
         link.rel = 'stylesheet';
-        // ?v=Date.now() lagane se browser cache use nahi karega
-        link.href = `/static/css/templates/${templateId}.css?v=${Date.now()}`; 
+        link.href = `/static/css/templates/${templateId}.css`;
         
         // Error Check
         link.onerror = () => {
@@ -2136,8 +2133,8 @@ function updateCreditDisplay(count) {
 // ==========================================
 // 💾 SAVE RESUME FUNCTION (Corrected)
 // ==========================================
-async function saveResume() {
-    const saveBtn = document.getElementById('saveBtn') || document.querySelector('.save-btn');
+async function saveResume(clickedButton) {
+    const saveBtn = clickedButton || document.getElementById('saveResumeBtn') || document.getElementById('saveResumeFinalBtn');
     const originalText = saveBtn ? saveBtn.innerHTML : 'Save';
     
     // 1. Loading State दिखाएं

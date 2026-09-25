@@ -80,3 +80,18 @@ body.light-mode .group:hover button,
 body.light-mode .group:hover a {
     box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.5) !important;
 }
+
+/* Clean Spacing for Skills & Tags across all templates */
+.skill-item, .pill-badge, .skill-box {
+    display: inline-block !important;
+    font-size: 0.9em;
+    line-height: 1.4;
+    word-break: normal;
+}
+
+#preview-skills, #preview-soft-skills, #preview-tools-skills {
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 4px;
+    word-spacing: 2px;
+}

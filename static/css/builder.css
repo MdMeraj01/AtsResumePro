@@ -1,4 +1,17 @@
 /* ========== BUILDER SPECIFIC STYLES ========== */
+.preview-fade-in {
+    animation: previewFadeIn 180ms ease-out;
+}
+
+@keyframes previewFadeIn {
+    from { opacity: 0.2; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preview-fade-in { animation: none; }
+}
+
 :root {
     --primary: #4f46e5;
     --primary-dark: #4338ca;
@@ -1524,6 +1537,66 @@ body.light-mode .bg-slate-950\/40 h4 {
 }
 
 /* ============================================
+   BUILDER MOBILE FORM POLISH
+   ============================================ */
+@media screen and (max-width: 768px) {
+    .builder-layout {
+        margin-left: -4px !important;
+        margin-right: -4px !important;
+    }
+
+    .editor-panel {
+        padding: 8px !important;
+        padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .editor-panel > .glass-panel {
+        padding: 16px !important;
+        border-radius: 18px !important;
+    }
+
+    .editor-panel .form-input,
+    .editor-panel select {
+        min-height: 56px !important;
+        font-size: 17px !important;
+        line-height: 1.35 !important;
+        padding: 14px 15px !important;
+    }
+
+    .editor-panel textarea.form-input {
+        min-height: 132px !important;
+        resize: vertical !important;
+    }
+
+    .editor-panel .entry-card {
+        padding: 16px !important;
+    }
+
+    .editor-panel .flex.justify-between.mt-8 {
+        gap: 12px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .editor-panel #prevStepBtn,
+    .editor-panel #nextStepBtn {
+        flex: 1 1 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 64px !important;
+        margin-left: 0 !important;
+        padding: 12px 14px !important;
+        border-radius: 16px !important;
+        font-size: 17px !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+    }
+
+    .editor-panel #prevStepBtn.hidden ~ #nextStepBtn {
+        flex-basis: 100% !important;
+    }
+}
+
+/* ============================================
    DISABLE FORM HOVER EFFECTS
    ============================================ */
 
@@ -1567,4 +1640,502 @@ body.light-mode #modalReferralLink {
 body.light-mode #referralCenterModal button[onclick="closeReferralModal()"]:first-of-type {
     background-color: #f1f5f9 !important;
     color: #64748b !important;
+}
+
+/* ==========================================================
+   START CHOICE MODAL - LIGHT & DARK MODE THEME SUPPORT
+   ========================================================== */
+
+/* Dark Mode Defaults */
+.start-choice-card {
+    background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: #ffffff;
+}
+
+.modal-glow-top { background: #3b82f6; }
+.modal-glow-bottom { background: #8b5cf6; }
+
+.logo-wrapper {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.choice-title { color: #f8fafc; }
+.choice-desc { color: #94a3b8; }
+
+.feature-badge {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+}
+
+.choice-btn {
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.choice-btn:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: #3b82f6;
+}
+
+.btn-icon-box {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+.btn-icon-box.purple {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+.btn-heading { color: #ffffff; }
+.choice-btn:hover .btn-heading { color: #60a5fa; }
+.btn-subtext { color: #94a3b8; }
+.skip-link { color: #64748b; }
+.skip-link:hover { color: #e2e8f0; }
+
+/* 🟢 LIGHT MODE SUPPORT */
+body.light-mode .start-choice-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-color: rgba(226, 232, 240, 1);
+    color: #0f172a;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .logo-wrapper {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .choice-title { color: #0f172a; }
+body.light-mode .choice-desc { color: #475569; }
+
+body.light-mode .feature-badge {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #334155;
+}
+
+body.light-mode .choice-btn {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+body.light-mode .choice-btn:hover {
+    background: #f8fafc;
+    border-color: #2563eb;
+    box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.1);
+}
+
+body.light-mode .btn-icon-box {
+    background: #eff6ff;
+    color: #2563eb;
+}
+body.light-mode .btn-icon-box.purple {
+    background: #faf5ff;
+    color: #9333ea;
+}
+
+body.light-mode .btn-heading { color: #0f172a; }
+body.light-mode .choice-btn:hover .btn-heading { color: #2563eb; }
+body.light-mode .btn-subtext { color: #64748b; }
+body.light-mode .skip-link { color: #64748b; }
+body.light-mode .skip-link:hover { color: #0f172a; }
+
+/* Mobile Specific Enhancements */
+@media (max-width: 640px) {
+    #startChoiceModal .start-choice-card {
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    
+    .choice-btn {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+}
+
+/* ==========================================================
+   🚀 COMMERCIAL SAAS PDF RESUME IMPORT MODAL STYLING
+   ========================================================== */
+
+/* 1. Backdrop & Panel Entrance */
+.import-modal-backdrop {
+    animation: importFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.import-modal-panel {
+    transform: translate3d(0, 16px, 0) scale(0.96);
+    animation: importPanelSlide 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes importFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes importPanelSlide {
+    to {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+/* 2. Dark Mode Theme (Default) */
+.import-modal-panel {
+    background: linear-gradient(180deg, #0e1526 0%, #090d16 100%);
+    border-color: rgba(59, 130, 246, 0.22);
+    color: #f8fafc;
+}
+
+.import-glow-top { background: #3b82f6; }
+.import-glow-bottom { background: #6366f1; }
+
+.import-header-icon-box {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.import-title { color: #ffffff; }
+.import-subtitle { color: #94a3b8; }
+
+.import-close-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.import-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.import-dropzone {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+.import-dropzone:hover {
+    border-color: #3b82f6;
+    background: rgba(30, 58, 138, 0.15);
+}
+.import-dropzone.drag-active {
+    border-color: #60a5fa !important;
+    background: rgba(37, 99, 235, 0.18) !important;
+    transform: scale(1.01);
+}
+
+.import-floating-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    animation: iconFloat 3s ease-in-out infinite;
+}
+.import-dropzone:hover .import-floating-icon,
+.import-dropzone.drag-active .import-floating-icon {
+    transform: translate3d(0, -4px, 0) scale(1.08);
+    color: #93c5fd;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -4px, 0); }
+}
+
+.import-drop-text { color: #e2e8f0; }
+.import-drop-meta { color: #64748b; }
+
+.import-file-card {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(59, 130, 246, 0.3);
+    animation: cardPopIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardPopIn {
+    from { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.97); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.import-pdf-badge {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.import-card-name { color: #ffffff; }
+
+.import-cta-btn {
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+    color: #ffffff;
+    box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.4);
+}
+.import-cta-btn:hover:not(:disabled) {
+    transform: translate3d(0, -1px, 0);
+    box-shadow: 0 12px 28px -4px rgba(37, 99, 235, 0.55);
+}
+.import-cta-btn:active:not(:disabled) {
+    transform: translate3d(0, 1px, 0);
+}
+.import-cta-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.import-secondary-btn {
+    background: rgba(15, 23, 42, 0.7);
+    color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.import-secondary-btn:hover {
+    background: rgba(30, 41, 59, 0.9);
+    color: #ffffff;
+}
+
+/* 3. Laser Scanner Animation */
+.import-scanner-container {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+.import-laser-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #38bdf8, #60a5fa, transparent);
+    box-shadow: 0 0 14px #38bdf8;
+    animation: laserScan 2s ease-in-out infinite alternate;
+}
+
+@keyframes laserScan {
+    0% { top: 6%; opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { top: 92%; opacity: 0.4; }
+}
+
+.import-score-card {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.import-chip {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+}
+
+.import-success-checkmark {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.import-error-icon {
+    background: rgba(244, 63, 94, 0.12);
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.import-shake {
+    animation: shakeOnce 450ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shakeOnce {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+    40%, 60% { transform: translate3d(3px, 0, 0); }
+}
+
+/* 4. Light Mode Adaptations */
+body.light-mode .import-modal-panel {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #0f172a;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18);
+}
+
+body.light-mode .import-header-icon-box {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+body.light-mode .import-title { color: #0f172a; }
+body.light-mode .import-subtitle { color: #475569; }
+
+body.light-mode .import-close-btn {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+body.light-mode .import-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+body.light-mode .import-dropzone {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+body.light-mode .import-dropzone:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+body.light-mode .import-dropzone.drag-active {
+    border-color: #2563eb !important;
+    background: #dbeafe !important;
+}
+
+body.light-mode .import-drop-text { color: #1e293b; }
+body.light-mode .import-drop-meta { color: #64748b; }
+
+body.light-mode .import-file-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .import-card-name { color: #0f172a; }
+
+body.light-mode .import-secondary-btn {
+    background: #f8fafc;
+    color: #334155;
+    border-color: #e2e8f0;
+}
+body.light-mode .import-secondary-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+body.light-mode .import-scanner-container {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+body.light-mode .import-score-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+body.light-mode .import-chip {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #334155;
+}
+
+/* 5. Mobile Adjustments */
+@media (max-width: 640px) {
+    .import-modal-panel {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        padding-bottom: env(safe-area-inset-bottom, 24px);
+    }
+}
+
+/* 6. Reduced Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .import-modal-backdrop,
+    .import-modal-panel,
+    .import-file-card,
+    .import-floating-icon,
+    .import-laser-line,
+    .import-shake {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ==========================================================
+   📊 EXECUTIVE ATS AUDIT REPORT ENHANCEMENTS
+   ========================================================== */
+
+/* Dark Mode Colors (Default) */
+.report-score-panel {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.report-issue-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.report-issue-card:hover {
+    transform: translate3d(2px, 0, 0);
+}
+
+/* Dynamic Grade Color Themes */
+.score-theme-red {
+    background: rgba(244, 63, 94, 0.12) !important;
+    border-color: rgba(244, 63, 94, 0.35) !important;
+    color: #fb7185 !important;
+}
+
+.score-theme-amber {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #fbbf24 !important;
+}
+
+.score-theme-green {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+    color: #34d399 !important;
+}
+
+/* Light Mode Overrides */
+body.light-mode .report-score-panel {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .report-issue-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+body.light-mode .report-issue-card:hover {
+    background: #f1f5f9;
+}
+
+/* ==========================================================
+   MODAL POSITIONING & SCROLLBAR OVERFLOW FIX
+   ========================================================== */
+
+/* Navbar ke peeche modal dabne se rokne ke liye */
+#importAuditModal {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 5rem) !important;
+    padding-bottom: 2.5rem !important;
+}
+
+/* Modal box width and layout */
+.import-modal-panel {
+    width: 95% !important;
+    max-width: 760px !important; /* Proper chauda layout */
+    margin: auto !important;
+}
+
+/* Double scrollbar hatayein */
+.import-modal-body::-webkit-scrollbar,
+#reportMistakesList::-webkit-scrollbar {
+    width: 5px;
+}
+
+.import-modal-body::-webkit-scrollbar-thumb,
+#reportMistakesList::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+}
+
+body.light-mode .import-modal-body::-webkit-scrollbar-thumb,
+body.light-mode #reportMistakesList::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.3);
+}
+
+/* Light mode text colors for readability */
+body.light-mode #reportScoreDisplay,
+body.light-mode .import-title {
+    color: #0f172a !important;
+}
+
+body.light-mode .report-issue-card p {
+    color: #334155 !important;
 }

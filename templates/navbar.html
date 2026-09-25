@@ -8,29 +8,66 @@
             <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
         </a>
 
-        <!-- Desktop Links (No White Box, Clean Typography) -->
-         <!-- Desktop Links -->
-    <nav class="hidden lg:flex ats-links-list">
-    <a href="/" data-nav="/" class="ats-link-item">Home</a>
-    <a href="/builder" data-nav="/builder" class="ats-link-item">Builder</a>
-    <a href="/templates" data-nav="/templates" class="ats-link-item">Templates</a>
-    <a href="/interview-prep" data-nav="/interview-prep" class="ats-link-item">Interview Prep</a>
-    <a href="/pricing" data-nav="/pricing" class="ats-link-item">Pricing</a>
-    
-    <a href="/cover-letter" class="ats-nav-pill-btn">
-        <i class="fas fa-pen-nib text-cyan-400"></i>
-        <span>Cover Letter</span>
-        <span class="ats-tag-alert">NEW</span>
-    </a>
-</nav>
+        <!-- Desktop Links -->
+        <nav class="hidden lg:flex ats-links-list">
+            <a href="/" data-nav="/" class="ats-link-item">Home</a>
+
+            <!-- 🟢 Builder & Tools Dropdown (Click-based) -->
+            <div class="relative dropdown-parent">
+                <button type="button"
+                        onclick="toggleDesktopDropdown(event)"
+                        class="ats-link-item flex items-center gap-1.5 focus:outline-none cursor-pointer">
+                    <span>Builder & Tools</span>
+                    <i class="fas fa-chevron-down text-[10px] opacity-60 dropdown-chevron transition-transform duration-200"></i>
+                </button>
+
+                <!-- Dropdown Popup Card (Clean Theme-Aware Classes) -->
+                <div class="ats-dropdown-menu absolute left-0 mt-2 w-64 rounded-2xl shadow-2xl py-2 hidden transition-all z-50">
+                    <a href="/builder" data-nav="/builder" class="ats-dropdown-item flex items-center gap-3 px-4 py-2.5 transition-colors">
+                        <div class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
+                            <i class="fas fa-pen text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="dropdown-item-title font-bold text-xs">Resume Builder</div>
+                            <div class="dropdown-item-sub text-[10px]">Create ATS resume from scratch</div>
+                        </div>
+                    </a>
+
+
+                    <a href="/cover-letter" data-nav="/cover-letter" class="ats-dropdown-item flex items-center gap-3 px-4 py-2.5 transition-colors">
+                        <div class="w-8 h-8 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center shrink-0">
+                            <i class="fas fa-pen-nib text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="dropdown-item-title font-bold text-xs">Cover Letter AI</div>
+                            <div class="dropdown-item-sub text-[10px]">Generate job-specific pitches</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <a href="/templates" data-nav="/templates" class="ats-link-item">Templates</a>
+            <a href="/interview-prep" data-nav="/interview-prep" class="ats-link-item">Interview Prep</a>
+            <a href="/pricing" data-nav="/pricing" class="ats-link-item">Pricing</a>
+            
+            <a href="/cover-letter" class="ats-nav-pill-btn">
+                <i class="fas fa-pen-nib text-cyan-400"></i>
+                <span>Cover Letter</span>
+                <span class="ats-tag-alert">NEW</span>
+            </a>
+        </nav>
 
         <!-- Right Controls -->
         <div class="hidden lg:flex items-center gap-3">
-            
             <!-- Theme Toggle -->
-            <button class="theme-toggle-btn p-2 rounded-xl text-gray-400 hover:text-white transition-colors" title="Toggle Theme">
-                <i class="theme-icon fas fa-sun"></i>
-            </button>
+            <!-- Desktop Theme Toggle -->
+            <button type="button" 
+                id="themeToggle"
+                onclick="toggleTheme()" 
+                class="theme-toggle-btn p-2 rounded-xl text-gray-400 hover:text-white transition-colors cursor-pointer" 
+                title="Toggle Theme">
+               <i class="theme-icon fas fa-sun"></i>
+           </button>
 
             {% if current_user %}
                 <!-- User Capsule Dropdown -->
@@ -50,20 +87,20 @@
                         <i class="fas fa-chevron-down text-[9px] opacity-50 ml-1"></i>
                     </button>
 
-                    <!-- Dropdown Options -->
-                    <div class="absolute right-0 mt-2 w-52 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl py-2 hidden group-hover:block transition-all z-50">
-                        <div class="px-4 py-2 border-b border-white/5">
-                            <p class="text-xs font-bold text-white truncate">{{ current_user.full_name }}</p>
-                            <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">{{ current_user.plan_type or 'Free' }} Plan</span>
+                    <!-- User Dropdown Options -->
+                    <div class="ats-user-dropdown-menu absolute right-0 mt-2 w-52 rounded-2xl shadow-2xl py-2 hidden group-hover:block transition-all z-50">
+                        <div class="px-4 py-2 border-b border-inherit">
+                            <p class="text-xs font-bold truncate user-menu-name">{{ current_user.full_name }}</p>
+                            <span class="text-[10px] text-cyan-500 font-bold uppercase tracking-wider">{{ current_user.plan_type or 'Free' }} Plan</span>
                         </div>
-                        <a href="/dashboard" class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-300 hover:text-white hover:bg-white/5">
+                        <a href="/dashboard" class="ats-dropdown-item flex items-center gap-2.5 px-4 py-2.5 text-xs">
                             <i class="fas fa-columns text-blue-400"></i> My Dashboard
                         </a>
-                        <a href="/builder" class="flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-300 hover:text-white hover:bg-white/5">
+                        <a href="/builder" class="ats-dropdown-item flex items-center gap-2.5 px-4 py-2.5 text-xs">
                             <i class="fas fa-file-signature text-purple-400"></i> Create Resume
                         </a>
-                        <div class="border-t border-white/5 my-1"></div>
-                        <a href="/logout" class="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10">
+                        <div class="border-t border-inherit my-1"></div>
+                        <a href="/logout" class="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
                     </div>
@@ -76,8 +113,13 @@
 
         <!-- Mobile Toggles -->
         <div class="flex items-center gap-1 lg:hidden">
-            <button class="theme-toggle-btn p-2 text-gray-400 hover:text-white">
-                <i class="theme-icon fas fa-sun"></i>
+             <!-- Mobile Theme Toggle -->
+            <button type="button" 
+                id="mobileThemeToggle"
+                onclick="toggleTheme()" 
+                class="theme-toggle-btn p-2 text-gray-400 hover:text-white cursor-pointer" 
+                title="Toggle Theme">
+             <i class="theme-icon fas fa-sun"></i>
             </button>
             <button onclick="toggleMobileMenu()" class="p-2 text-gray-300 hover:text-white">
                 <i class="fas fa-bars text-xl"></i>
@@ -88,99 +130,100 @@
 </div>
 
 <!-- Mobile Drawer -->
- <!-- Mobile Drawer -->
 <div id="mobileMenu"
      class="mobile-drawer fixed inset-0 z-[9999] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex flex-col overflow-hidden">
 
-    <!-- Animated Background (subtle) -->
     <div class="mobile-drawer-bg" aria-hidden="true">
         <div class="glow-orb glow-orb-1"></div>
         <div class="glow-orb glow-orb-2"></div>
     </div>
 
-    <!-- SCROLLABLE CONTENT -->
     <div class="mobile-drawer-scroll relative z-10 flex flex-col h-full overflow-y-auto">
-
-        <!-- Header -->
         <div class="flex items-center justify-between px-5 py-5 border-b border-white/10 flex-shrink-0">
-            <!-- Brand Logo -->
-         <a href="/" class="ats-brand-logo">
-            <img src="https://res.cloudinary.com/lvdqyicr/image/upload/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
-            <span class="ats-brand-title">ATS<span class="ats-brand-pro">Pro</span></span>
-        </a>
+            <a href="/" class="ats-brand-logo">
+                <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+            </a>
             <button onclick="toggleMobileMenu()"
                     class="drawer-item w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:rotate-90 mobile-close-btn"
                     style="--delay: 0.1s"
                     aria-label="Close menu">
-                <i class="fas fa-times text-lg"></i>
+                <i class="fas fa-times text-lg text-gray-300"></i>
             </button>
         </div>
 
-        <!-- Nav Links -->
-         <!-- Nav Links -->
-<nav class="flex flex-col gap-2 px-4 py-5 flex-1">
-    <a href="/" data-nav="/" onclick="toggleMobileMenu()"
-       class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
-       style="--delay: 0.15s">
-        <span class="mobile-link-icon bg-blue-500/15 text-blue-400 group-hover:bg-blue-500 group-hover:text-white">
-            <i class="fas fa-home"></i>
-        </span>
-        <span class="flex-1">Home</span>
-        <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
-    </a>
+        <nav class="flex flex-col gap-2 px-4 py-5 flex-1">
+            <a href="/" data-nav="/" onclick="toggleMobileMenu()"
+               class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
+               style="--delay: 0.15s">
+                <span class="mobile-link-icon bg-blue-500/15 text-blue-400 group-hover:bg-blue-500 group-hover:text-white">
+                    <i class="fas fa-home"></i>
+                </span>
+                <span class="flex-1">Home</span>
+                <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
+            </a>
 
-    <a href="/builder" data-nav="/builder" onclick="toggleMobileMenu()"
-       class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
-       style="--delay: 0.18s">
-        <span class="mobile-link-icon bg-purple-500/15 text-purple-400 group-hover:bg-purple-500 group-hover:text-white">
-            <i class="fas fa-pen"></i>
-        </span>
-        <span class="flex-1">Resume Builder</span>
-        <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
-    </a>
+            <div class="drawer-item mobile-accordion" style="--delay: 0.18s">
+                <button type="button"
+                        onclick="toggleMobileToolsAccordion(event)"
+                        class="mobile-accordion-toggle w-full mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden">
+                    <span class="mobile-link-icon bg-indigo-500/15 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white">
+                        <i class="fas fa-tools"></i>
+                    </span>
+                    <span class="flex-1 text-left">Builder & Tools</span>
+                    <i class="fas fa-chevron-down text-[10px] opacity-60 mobile-accordion-chevron transition-transform duration-300"></i>
+                </button>
 
-    <a href="/templates" data-nav="/templates" onclick="toggleMobileMenu()"
-       class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
-       style="--delay: 0.21s">
-        <span class="mobile-link-icon bg-emerald-500/15 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white">
-            <i class="fas fa-layer-group"></i>
-        </span>
-        <span class="flex-1">Templates</span>
-        <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
-    </a>
+                <div class="mobile-accordion-content hidden mt-1 ml-3 pl-4 border-l-2 border-indigo-500/30 flex flex-col gap-1">
+                    <a href="/builder" data-nav="/builder" onclick="toggleMobileMenu()"
+                       class="mobile-nav-link group flex items-center gap-3 py-2.5 px-3 rounded-xl text-xs font-semibold relative overflow-hidden">
+                        <span class="mobile-link-icon sm-icon bg-purple-500/15 text-purple-400 group-hover:bg-purple-500 group-hover:text-white">
+                            <i class="fas fa-pen text-xs"></i>
+                        </span>
+                        <span class="flex-1">Resume Builder</span>
+                    </a>
 
-    <a href="/cover-letter" data-nav="/cover-letter" onclick="toggleMobileMenu()"
-       class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
-       style="--delay: 0.24s">
-        <span class="mobile-link-icon bg-pink-500/15 text-pink-400 group-hover:bg-pink-500 group-hover:text-white">
-            <i class="fas fa-envelope"></i>
-        </span>
-        <span class="flex-1">Cover Letter AI</span>
-        <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-500/40">NEW</span>
-    </a>
+                    <a href="/cover-letter" data-nav="/cover-letter" onclick="toggleMobileMenu()"
+                       class="mobile-nav-link group flex items-center gap-3 py-2.5 px-3 rounded-xl text-xs font-semibold relative overflow-hidden">
+                        <span class="mobile-link-icon sm-icon bg-pink-500/15 text-pink-400 group-hover:bg-pink-500 group-hover:text-white">
+                            <i class="fas fa-pen-nib text-xs"></i>
+                        </span>
+                        <span class="flex-1">Cover Letter AI</span>
+                        <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white">NEW</span>
+                    </a>
+                </div>
+            </div>
 
-    <a href="/interview-prep" data-nav="/interview-prep" onclick="toggleMobileMenu()"
-       class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
-       style="--delay: 0.27s">
-        <span class="mobile-link-icon bg-orange-500/15 text-orange-400 group-hover:bg-orange-500 group-hover:text-white">
-            <i class="fas fa-user-tie"></i>
-        </span>
-        <span class="flex-1">Interview Prep</span>
-        <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
-    </a>
+            <a href="/templates" data-nav="/templates" onclick="toggleMobileMenu()"
+               class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
+               style="--delay: 0.22s">
+                <span class="mobile-link-icon bg-cyan-500/15 text-cyan-400 group-hover:bg-cyan-500 group-hover:text-white">
+                    <i class="fas fa-layer-group"></i>
+                </span>
+                <span class="flex-1">Templates</span>
+                <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
+            </a>
 
-    <a href="/pricing" data-nav="/pricing" onclick="toggleMobileMenu()"
-       class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
-       style="--delay: 0.3s">
-        <span class="mobile-link-icon bg-yellow-500/15 text-yellow-400 group-hover:bg-yellow-500 group-hover:text-white">
-            <i class="fas fa-tag"></i>
-        </span>
-        <span class="flex-1">Upgrade Plan</span>
-        <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
-    </a>
-</nav>
+            <a href="/interview-prep" data-nav="/interview-prep" onclick="toggleMobileMenu()"
+               class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
+               style="--delay: 0.27s">
+                <span class="mobile-link-icon bg-orange-500/15 text-orange-400 group-hover:bg-orange-500 group-hover:text-white">
+                    <i class="fas fa-user-tie"></i>
+                </span>
+                <span class="flex-1">Interview Prep</span>
+                <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
+            </a>
 
-        <!-- Footer / User Section -->
+            <a href="/pricing" data-nav="/pricing" onclick="toggleMobileMenu()"
+               class="drawer-item mobile-nav-link group flex items-center gap-3.5 text-sm font-semibold py-3 px-3.5 rounded-2xl relative overflow-hidden"
+               style="--delay: 0.3s">
+                <span class="mobile-link-icon bg-yellow-500/15 text-yellow-400 group-hover:bg-yellow-500 group-hover:text-white">
+                    <i class="fas fa-tag"></i>
+                </span>
+                <span class="flex-1">Upgrade Plan</span>
+                <i class="fas fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-all duration-300 group-hover:translate-x-1"></i>
+            </a>
+        </nav>
+
         <div class="px-4 pb-6 pt-3 border-t border-white/10 flex-shrink-0">
             {% if current_user %}
                 <div class="drawer-item flex items-center gap-3 p-3 rounded-2xl mobile-user-card mb-3"
@@ -226,7 +269,5 @@
                 </a>
             {% endif %}
         </div>
-
     </div>
 </div>
-

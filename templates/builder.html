@@ -28,16 +28,23 @@
     <meta name="twitter:image" content="https://atsresumepro.onrender.com/static/images/template-previews/modern.png">
 
     <!-- CDN & Script Asset Vectors -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    {# <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> #}
+
+    <!-- ✅ CLEAN, ULTRA-FAST & OPTIMIZED SCRIPTS -->
+    <script defer src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script defer src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="{{ url_for('static', filename='css/builder.css') }}" rel="stylesheet">
@@ -160,7 +167,7 @@
                 
                 <!-- Progress Steps -->
                 <div class="overflow-x-auto pb-4 no-scrollbar">
-    <div class="flex justify-between relative z-10 min-w-[700px] md:min-w-full px-2">
+    <div class="flex justify-between relative z-10 min-w-[800px] md:min-w-full px-2">
         <div class="flex flex-col items-center">
             <div class="progress-step active w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold shadow-lg mb-2">1</div>
             <span class="text-xs md:text-sm font-medium text-gray-300">Personal</span>
@@ -188,11 +195,16 @@
 
         <div class="flex flex-col items-center">
             <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">6</div>
-            <span class="text-xs md:text-sm font-medium text-gray-500">Certs</span>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Extras</span>
         </div>
 
         <div class="flex flex-col items-center">
             <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">7</div>
+            <span class="text-xs md:text-sm font-medium text-gray-500">Certs</span>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="progress-step w-10 h-10 md:w-12 md:h-12 rounded-full glass-panel flex items-center justify-center text-gray-400 font-bold mb-2">8</div>
             <span class="text-xs md:text-sm font-medium text-gray-500">Finish</span>
         </div>
     </div>
@@ -220,6 +232,9 @@
                         </button>
                         <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="skills">
                             <i class="fas fa-cogs"></i> Skills
+                        </button>
+                        <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="extras">
+                            <i class="fas fa-plus-circle"></i> Extras
                         </button>
                         <button class="step-btn px-3 py-2 rounded-xl glass-panel text-gray-300 font-medium" data-step="certifications">
                             <i class="fas fa-award"></i> Certs
@@ -440,6 +455,26 @@
                         </div>
                     </div>
 
+                    <!-- Extras Step -->
+                    <div id="extrasStep" class="form-step hidden">
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-white">Additional Information</h3>
+                                <button type="button" id="addExtraInfoBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
+                                    <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Extra Info
+                                </button>
+                            </div>
+
+                            <div class="mb-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 text-sm text-gray-300">
+                                Add optional sections like Languages, Volunteer Work, Publications, Awards, or Portfolio Highlights.
+                            </div>
+
+                            <div id="extraInfoList" class="space-y-4">
+                                <!-- Extra entries will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Certifications Step -->
                     <div id="certificationsStep" class="form-step hidden">
                         <div class="mb-6">
@@ -485,16 +520,11 @@
                                 
                                 <div class="glass-panel p-6 rounded-xl">
                                     <h4 class="font-bold text-white mb-4 flex items-center">
-                                        <i class="fas fa-robot mr-2 text-purple-400"></i>AI Optimization
+                                        <i class="fas fa-save mr-2 text-blue-400"></i>Save Resume
                                     </h4>
-                                    <div class="space-y-3">
-                                        <button id="runAiAnalysisBtn" class="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group">
-                                            <i class="fas fa-chart-line mr-2"></i>Run ATS Analysis
-                                        </button>
-                                        <button id="saveResumeFinalBtn" class="w-full px-6 py-3 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300">
-                                            <i class="fas fa-save mr-2"></i>Save Resume
-                                        </button>
-                                    </div>
+                                    <button id="saveResumeFinalBtn" class="w-full px-6 py-3 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300">
+                                        <i class="fas fa-save mr-2"></i>Save Resume
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -545,111 +575,9 @@
 
                     </div>
 
-                    <!-- ATS Score Display -->
-                    <div class="glass-panel rounded-xl p-5 mt-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="font-bold text-white">Basic ATS Score</h3>
-                                <p class="text-gray-400 text-sm">Automatically calculated as you build</p>
-                            </div>
-                            <div class="text-right">
-                                <div id="basicAtsScorePreview" class="text-2xl font-bold text-white">0</div>
-                                <div class="text-sm text-gray-400">out of 100</div>
-                            </div>
-                        </div>
-                        <div class="w-full bg-gray-800 rounded-full h-3">
-                            <div id="basicAtsScoreBarPreview" class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                        <div class="flex justify-between text-xs text-gray-400 mt-2">
-                            <span>Poor</span>
-                            <span>Good</span>
-                            <span>Excellent</span>
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions -->
-                    <div class="grid grid-cols-2 gap-3 mt-6">
-                        <button id="exportJsonBtn" class="px-4 py-3 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10 transition-all duration-300">
-                            <i class="fas fa-file-export mr-2"></i>Export JSON
-                        </button>
-                        <label class="px-4 py-3 rounded-xl glass-panel text-gray-300 font-medium hover:bg-white/10 transition-all duration-300 cursor-pointer text-center">
-                            <i class="fas fa-file-import mr-2"></i>Import JSON
-                            <input type="file" id="importJsonInput" accept="application/json" class="hidden">
-                        </label>
-                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Keyword Optimization Section -->
-        <div class="mt-8 fade-in-up" style="animation-delay: 400ms">
-            <div class="glass-panel rounded-2xl p-6">
-                <div class="flex items-start mb-6">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center mr-4">
-                        <i class="fas fa-robot text-2xl text-purple-400"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-white mb-2">Keyword Optimization</h3>
-                        <p class="text-gray-400">Paste a job description for AI-powered keyword analysis</p>
-                    </div>
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-300 mb-3">Job Description</label>
-                    <textarea id="jobDescription" rows="6" placeholder="Paste the job description here to get AI-powered keyword suggestions..." class="w-full p-4 glass-panel border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all duration-300"></textarea>
-                </div>
-                
-                <div class="flex gap-3">
-                  <button id="analyzeKeywordsBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold hover:scale-105 transition-transform duration-300 group auth-lock">
-                    <i class="fas fa-magic mr-2 group-hover:rotate-12 transition-transform"></i>Analyze Keywords with AI
-                </button>
-                   <button id="aiAtsAnalysisBtn" class="px-6 py-3 rounded-xl glass-panel text-white font-medium hover:bg-white/10 transition-all duration-300 auth-lock">
-                    <i class="fas fa-chart-line mr-2"></i>AI ATS Analysis
-                    </button>
-                </div>
-
-                <!-- Results Container -->
-                <div id="keywordResults" class="mt-8 hidden animate-fade-in">
-                 <div class="grid md:grid-cols-2 gap-6">
-                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-emerald-500">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
-                                <i class="fas fa-check-double text-emerald-400"></i>
-                            </div>
-                            <h4 class="font-bold text-white text-lg">Found Keywords</h4>
-                        </div>
-                         <span id="matchCount" class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold">0</span>
-                   </div>
-                      <div id="matchingKeywords" class="flex flex-wrap gap-2 min-h-[50px]">
-                   </div>
-               </div>
-        
-        <div class="glass-panel p-6 rounded-2xl border-l-4 border-rose-500">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center mr-3">
-                        <i class="fas fa-exclamation-triangle text-rose-400"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-lg">Missing Keywords</h4>
-                </div>
-                <span id="missCount" class="bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full text-xs font-bold">0</span>
-            </div>
-            <div id="missingKeywords" class="flex flex-wrap gap-2 min-h-[50px]">
-                </div>
-        </div>
-    </div>
-    
-    <div class="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start">
-        <i class="fas fa-info-circle text-blue-400 mt-1 mr-3"></i>
-        <p class="text-sm text-gray-300">
-            <strong>AI Tip:</strong> Add at least 5 missing keywords to your skills or summary section to increase your ATS match rate.
-        </p>
-    </div>
-</div>
-            </div>
-        </div>
-    </div>
 
     <section class="mt-16 mb-12 fade-in-up" style="animation-delay: 500ms">
         <div class="glass-panel rounded-2xl p-8 md:p-12 border border-gray-800 bg-slate-900/40 backdrop-blur-md">
@@ -806,19 +734,30 @@
     <!-- ========== FOOTER SECTION ========== -->
     <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
         <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
-            <div class="col-span-2">
+             <div class="col-span-2">
                 <div class="flex items-center space-x-3 mb-6">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <i class="fas fa-file-alt text-white text-2xl"></i>
-                    </div>
+                     <a href="/" class="ats-brand-logo">
+                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                    </a>
                     <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
                 </div>
+                
                 <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
-                <div class="flex space-x-4">
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                 <div class="flex space-x-4">
+                     <!-- Instagram -->
+                        <a href="https://www.instagram.com/atsresumepro0?stkn=YmVxcTJjcW54eGhk" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-pink-500 hover:border-pink-500 transition-all" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+    
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/share/19GMnFWH8Y/" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-500 transition-all" title="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+    
+                    <!-- LinkedIn (Empty placeholder) -->
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all" title="LinkedIn" onclick="event.preventDefault();">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
                 </div>
             </div>
             <div>
@@ -913,40 +852,6 @@
             <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <div class="text-white text-lg font-medium">Working on it...</div>
             <div class="text-gray-400 text-sm mt-2">AI is analyzing your resume</div>
-        </div>
-    </div>
-
-    <!-- AI ATS Score Modal -->
-    <div id="aiScoreModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div class="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl p-8 max-w-md w-full mx-4 border border-gray-800 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h3 class="text-xl font-bold text-white">AI ATS Score Analysis</h3>
-                    <p class="text-gray-400 text-sm">Powered by Gemini AI</p>
-                </div>
-                <button id="closeAiScoreModal" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="text-center mb-8">
-                <div class="text-5xl font-bold text-gradient mb-2" id="aiAtsScore">0</div>
-                <div class="text-gray-400">Overall ATS Score</div>
-                <div class="w-full bg-gray-800 rounded-full h-2 mt-4">
-                    <div class="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600" style="width: 0%" id="aiAtsScoreBar"></div>
-                </div>
-            </div>
-            
-            <div class="bg-gray-800/50 p-4 rounded-xl mb-6">
-                <h4 class="font-semibold text-white mb-2">💡 Pro Tip</h4>
-                <p class="text-gray-400 text-sm">
-                    For best results, paste a job description in the Keyword Optimization section and run AI analysis.
-                </p>
-            </div>
-            
-            <button id="closeAiScoreModal2" class="w-full px-6 py-3 rounded-xl btn-primary-glow font-semibold hover:scale-105 transition-transform duration-300">
-                Got it!
-            </button>
         </div>
     </div>
 
@@ -1067,6 +972,349 @@
     </div>
 </div>
 
+<!-- ======================================================== -->
+<!-- 1. INITIAL DECISION MODAL (100% Mobile & Desktop Ready)  -->
+<!-- ======================================================== -->
+<div id="startChoiceModal" class="fixed inset-0 z-[150] hidden bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-3 sm:p-5 transition-all overflow-y-auto">
+    <div class="start-choice-card relative w-full max-w-lg sm:max-w-xl rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 text-center overflow-hidden shadow-2xl transition-all border my-auto max-h-[92vh] overflow-y-auto">
+        
+        <!-- Mobile Handle Drag Bar -->
+        <div class="w-12 h-1.5 bg-slate-600/40 rounded-full mx-auto mb-3 sm:hidden"></div>
+
+        <!-- Ambient Glow Elements -->
+        <div class="modal-glow-top absolute -top-12 -left-12 w-32 h-32 sm:w-44 sm:h-44 rounded-full blur-3xl pointer-events-none opacity-40"></div>
+        <div class="modal-glow-bottom absolute -bottom-12 -right-12 w-32 h-32 sm:w-44 sm:h-44 rounded-full blur-3xl pointer-events-none opacity-30"></div>
+
+        <!-- Brand Logo Header -->
+        <div class="logo-wrapper w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center p-2 shadow-lg border transition-transform hover:scale-105">
+            <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" 
+                 alt="ATS Pro Logo" 
+                 class="ats-brand-img w-full h-full object-contain">
+        </div>
+
+        <h3 class="choice-title text-xl sm:text-3xl font-black mb-1.5 tracking-tight">
+            Build Your ATS Resume
+        </h3>
+        <p class="choice-desc text-xs sm:text-sm leading-relaxed mb-4 max-w-md mx-auto">
+            Choose how you would like to start your document. Import your previous resume for instant ATS audit or start fresh with AI suggestions.
+        </p>
+
+        <!-- Feature Highlights Badges -->
+        <div class="flex items-center justify-center flex-wrap gap-1.5 sm:gap-2 mb-4 text-[10px] sm:text-[11px] font-semibold">
+            <span class="feature-badge px-2.5 py-0.5 sm:py-1 rounded-full border flex items-center gap-1">
+                <i class="fas fa-check-circle text-emerald-400"></i> 95%+ ATS Score
+            </span>
+            <span class="feature-badge px-2.5 py-0.5 sm:py-1 rounded-full border flex items-center gap-1">
+                <i class="fas fa-bolt text-amber-400"></i> Gap Scan
+            </span>
+            <span class="feature-badge px-2.5 py-0.5 sm:py-1 rounded-full border flex items-center gap-1">
+                <i class="fas fa-image text-blue-400"></i> Auto Photo
+            </span>
+        </div>
+
+        <!-- Choice Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+            <!-- Option 1: Import Existing Resume -->
+            <button type="button" onclick="window.openImportFlow()" 
+                    class="choice-btn group p-4 sm:p-5 rounded-2xl border text-left transition-all flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 justify-between hover:scale-[1.01] active:scale-[0.98]">
+                <div class="btn-icon-box shrink-0 w-11 h-11 rounded-xl flex items-center justify-center sm:mb-3 transition-transform group-hover:scale-110">
+                    <i class="fas fa-cloud-upload-alt text-base sm:text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="btn-heading text-xs sm:text-sm font-bold transition-colors flex items-center justify-between">
+                        <span>Import Existing CV</span>
+                        <i class="fas fa-arrow-right text-xs opacity-60 sm:opacity-0 group-hover:opacity-100 transition-opacity ml-1"></i>
+                    </h4>
+                    <p class="btn-subtext text-[10px] sm:text-[11px] mt-1 leading-snug">
+                        Upload PDF. AI extracts timelines & diagnoses ATS mistakes.
+                    </p>
+                </div>
+            </button>
+
+            <!-- Option 2: Start Fresh -->
+            <button type="button" onclick="window.dismissChoiceModalPermanently()" 
+                    class="choice-btn group p-4 sm:p-5 rounded-2xl border text-left transition-all flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 justify-between hover:scale-[1.01] active:scale-[0.98]">
+                <div class="btn-icon-box purple shrink-0 w-11 h-11 rounded-xl flex items-center justify-center sm:mb-3 transition-transform group-hover:scale-110">
+                    <i class="fas fa-wand-magic-sparkles text-base sm:text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="btn-heading text-xs sm:text-sm font-bold transition-colors flex items-center justify-between">
+                        <span>Start Fresh</span>
+                        <i class="fas fa-arrow-right text-xs opacity-60 sm:opacity-0 group-hover:opacity-100 transition-opacity ml-1"></i>
+                    </h4>
+                    <p class="btn-subtext text-[10px] sm:text-[11px] mt-1 leading-snug">
+                        Step-by-step editor with live preview & auto-formatting.
+                    </p>
+                </div>
+            </button>
+        </div>
+
+        <!-- Footer skip link -->
+        <button type="button" onclick="window.dismissChoiceModalPermanently()" class="skip-link text-xs transition-colors font-medium py-1">
+            Continue without choice →
+        </button>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- 🚀 WIDE & CENTERED ATS REPORT MODAL (NO DUPLICATE IDs)   -->
+<!-- ======================================================== -->
+<div id="importAuditModal" 
+     class="import-modal-backdrop fixed inset-0 z-[160] hidden bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+     role="dialog" 
+     aria-modal="true" 
+     aria-labelledby="importModalTitle">
+    
+    <div class="import-modal-panel relative w-full max-w-xl sm:max-w-2xl lg:max-w-3xl rounded-3xl p-6 sm:p-9 shadow-2xl transition-all border my-auto max-h-[88vh] flex flex-col overflow-hidden">
+        
+        <!-- Ambient Glow Highlights -->
+        <div class="import-glow-top absolute -top-16 -left-16 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-25"></div>
+        <div class="import-glow-bottom absolute -bottom-16 -right-16 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-20"></div>
+
+        <!-- Accessible Close Button -->
+        <button type="button" 
+                onclick="window.closeImportAuditModal()" 
+                class="import-close-btn absolute top-5 right-5 w-10 h-10 rounded-xl flex items-center justify-center transition-all z-20 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                aria-label="Close dialog">
+            <i class="fas fa-times text-sm"></i>
+        </button>
+
+        <!-- Inner Content (Single Clean Scroll) -->
+        <div class="import-modal-body overflow-y-auto pr-1 sm:pr-2">
+            
+            <!-- VIEW 1: DROPZONE & FILE CARD -->
+            <div id="importDropzoneView" class="import-view active">
+                <div class="text-center mb-6">
+                    <div class="import-header-icon-box w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center shadow-md">
+                        <i class="fas fa-file-pdf text-2xl text-blue-500"></i>
+                    </div>
+                    <h3 id="importModalTitle" class="import-title text-2xl font-black tracking-tight">Import Your Resume</h3>
+                    <p class="import-subtitle text-xs sm:text-sm mt-1.5 max-w-md mx-auto leading-relaxed">
+                        Upload your PDF resume. Our AI parser extracts work history, education, and skills while checking ATS compatibility.
+                    </p>
+                </div>
+
+                <input type="file" 
+                       id="resumeImportFileInput" 
+                       accept="application/pdf,.pdf" 
+                       class="sr-only" 
+                       onchange="window.handlePdfFileSelect(event)">
+
+                <div id="resumeDropArea" 
+                     class="import-dropzone border-2 border-dashed rounded-2xl p-7 sm:p-9 text-center cursor-pointer transition-all mb-4 focus:outline-none"
+                     tabindex="0"
+                     role="button"
+                     onclick="document.getElementById('resumeImportFileInput').click()"
+                     onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('resumeImportFileInput').click();}">
+                    
+                    <div class="import-floating-icon w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3.5 transition-all">
+                        <i class="fas fa-cloud-arrow-up text-2xl"></i>
+                    </div>
+                    
+                    <p class="import-drop-text text-sm font-bold mb-1" id="selectedFileName">
+                        Drop your PDF resume here or <span class="text-blue-500 underline underline-offset-4">browse</span>
+                    </p>
+                    <p class="import-drop-meta text-[11px]">Strictly PDF format only (Max 10MB)</p>
+                </div>
+
+                <div id="selectedPdfCard" class="import-file-card hidden rounded-2xl p-4 border transition-all mb-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3.5 min-w-0">
+                            <div class="import-pdf-badge w-11 h-11 rounded-xl flex items-center justify-center shrink-0">
+                                <i class="fas fa-file-pdf text-red-500 text-xl"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h5 id="cardPdfName" class="import-card-name text-xs sm:text-sm font-bold truncate">candidate_resume.pdf</h5>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span id="cardPdfSize" class="text-[11px] text-gray-400">1.4 MB</span>
+                                    <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                                        <i class="fas fa-circle-check"></i> Ready to Analyze
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" 
+                                onclick="window.removeSelectedPdf(event)" 
+                                class="import-remove-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 transition-colors">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" 
+                        id="startScanBtn" 
+                        onclick="window.uploadAndScanResume()" 
+                        disabled
+                        class="import-cta-btn w-full py-3.5 sm:py-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg">
+                    <i class="fas fa-bolt"></i>
+                    <span>Analyze & Scan Resume</span>
+                </button>
+            </div>
+
+            <!-- VIEW 2: AI LASER SCANNING VIEW -->
+            <div id="importLoaderView" class="import-view hidden text-center py-6 sm:py-8">
+                <div class="import-scanner-container relative w-24 h-32 mx-auto mb-6 rounded-2xl flex items-center justify-center overflow-hidden border">
+                    <i class="fas fa-file-pdf text-4xl text-blue-500/70"></i>
+                    <div class="import-laser-line"></div>
+                </div>
+
+                <div class="mb-4">
+                    <span id="loaderPercentBadge" class="inline-block px-3 py-1 rounded-full text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 mb-2">
+                        0%
+                    </span>
+                    <h4 id="loaderStatusHeading" class="import-title text-lg font-extrabold mb-1">
+                        Analyzing your resume...
+                    </h4>
+                    <p id="loaderStatusSub" class="import-subtitle text-xs max-w-sm mx-auto">
+                        Extracting skills, experience, contact details & education
+                    </p>
+                </div>
+
+                <div class="w-full max-w-xs mx-auto h-2 rounded-full overflow-hidden bg-slate-800/50 border border-slate-700/50">
+                    <div id="importScanProgressBar" class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-400 transition-all duration-300 w-0"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: SUCCESS STATE -->
+            <div id="importSuccessView" class="import-view hidden text-center py-5 sm:py-6">
+                <div class="import-success-checkmark w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-emerald-400 text-3xl shadow-lg border">
+                    <i class="fas fa-check"></i>
+                </div>
+
+                <h4 class="import-title text-2xl font-black mb-1">Resume Imported Successfully</h4>
+                <p class="import-subtitle text-xs sm:text-sm max-w-sm mx-auto mb-5 leading-relaxed">
+                    Your document was processed and mapped into structured career sections.
+                </p>
+
+                <div id="importExtractedChips" class="flex flex-wrap items-center justify-center gap-2 mb-6 text-xs font-semibold">
+                    <span class="import-chip px-3 py-1.5 rounded-xl border flex items-center gap-1.5">
+                        <i class="fas fa-user-check text-blue-400"></i> Personal Info
+                    </span>
+                    <span class="import-chip px-3 py-1.5 rounded-xl border flex items-center gap-1.5">
+                        <i class="fas fa-briefcase text-indigo-400"></i> Experience
+                    </span>
+                    <span class="import-chip px-3 py-1.5 rounded-xl border flex items-center gap-1.5">
+                        <i class="fas fa-graduation-cap text-cyan-400"></i> Education
+                    </span>
+                    <span class="import-chip px-3 py-1.5 rounded-xl border flex items-center gap-1.5">
+                        <i class="fas fa-code text-purple-400"></i> Skills
+                    </span>
+                </div>
+
+                <button type="button" 
+                        onclick="window.continueToBuilderSuccess()" 
+                        class="import-cta-btn w-full py-4 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 transition-all shadow-lg">
+                    <span>Continue to Resume Builder</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- VIEW 4: ERROR STATE -->
+            <div id="importErrorView" class="import-view hidden text-center py-6 sm:py-8">
+                <div class="import-error-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-rose-400 text-3xl shadow-lg border">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+
+                <h4 class="import-title text-2xl font-black mb-1.5">Unable to Import Resume</h4>
+                <p id="importErrorMessageText" class="import-error-desc text-xs sm:text-sm max-w-sm mx-auto mb-6 leading-relaxed text-rose-300/80">
+                    We could not extract readable content from this PDF. Please ensure the document is not password-protected or an image-only scan.
+                </p>
+
+                <div class="space-y-3">
+                    <button type="button" 
+                            onclick="window.resetImportViews()" 
+                            class="import-cta-btn w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-rotate-right"></i>
+                        <span>Try Another PDF</span>
+                    </button>
+                    <button type="button" 
+                            onclick="window.closeImportAuditModal()" 
+                            class="import-secondary-btn w-full py-3 rounded-xl font-semibold text-xs transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 5: ATS DIAGNOSTIC REPORT (WIDE LAYOUT) -->
+            <div id="importReportView" class="import-view hidden animate-fade-in">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold mb-2 shadow-sm border" id="reportHeaderBadge">
+                        <i class="fas fa-microchip"></i>
+                        <span id="reportHeaderBadgeText">AI ATS Diagnostic Complete</span>
+                    </div>
+                    <h3 class="import-title text-2xl sm:text-3xl font-black tracking-tight">ATS Audit Report</h3>
+                    <p class="import-subtitle text-xs sm:text-sm max-w-md mx-auto mt-1">Recruiter ATS scan simulation and keyword density analysis</p>
+                </div>
+
+                <div class="report-score-panel rounded-2xl p-5 sm:p-6 border mb-6 transition-all relative overflow-hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                        <div>
+                            <span class="text-[11px] uppercase font-bold tracking-widest text-gray-400">ATS Match Readiness</span>
+                            <div class="flex items-baseline gap-2 mt-1">
+                                <span class="text-4xl sm:text-5xl font-black" id="reportScoreDisplay">70</span>
+                                <span class="text-base font-bold text-gray-400">/ 100</span>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2" id="reportVerdictWrapper">
+                                <span class="w-2.5 h-2.5 rounded-full" id="reportVerdictDot"></span>
+                                <span class="text-xs sm:text-sm font-bold" id="reportFriendlyBadge">Needs Keyword Optimization</span>
+                            </div>
+                        </div>
+
+                        <div class="report-radial-pill flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-0 px-5 sm:px-0 py-3 sm:py-0 w-full sm:w-28 sm:h-28 rounded-2xl border shadow-inner text-center shrink-0" id="reportGaugeContainer">
+                            <span class="text-3xl sm:text-4xl font-black tracking-tight" id="reportScoreBadge">70%</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider opacity-80 sm:mt-1" id="reportGradeText">Grade C (Average)</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-white/10 grid grid-cols-3 gap-3 text-center text-xs font-semibold">
+                        <div class="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/5">
+                            <span class="text-gray-400 block text-[10px] mb-0.5">Contact Data</span>
+                            <span class="text-emerald-500 font-bold" id="metricContact">Pass ✓</span>
+                        </div>
+                        <div class="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/5">
+                            <span class="text-gray-400 block text-[10px] mb-0.5">Timeline Sync</span>
+                            <span class="text-rose-500 font-bold" id="metricTimeline">Issue ✗</span>
+                        </div>
+                        <div class="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-white/5">
+                            <span class="text-gray-400 block text-[10px] mb-0.5">Keyword Density</span>
+                            <span class="text-amber-500 font-bold" id="metricKeywords">Needs Work !</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-xs uppercase font-extrabold tracking-wider flex items-center gap-2">
+                            <i class="fas fa-triangle-exclamation text-amber-500"></i> 
+                            <span>Critical Issues Detected</span>
+                        </h4>
+                        <span class="text-xs text-gray-400 font-semibold" id="reportIssueCount">3 detected</span>
+                    </div>
+                    
+                    <div class="space-y-3 max-h-60 overflow-y-auto pr-1.5" id="reportMistakesList"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button type="button" 
+                            onclick="window.applyParsedData('improved')" 
+                            class="import-cta-btn w-full py-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xl hover:scale-[1.01] active:scale-[0.98]">
+                        <i class="fas fa-wand-magic-sparkles text-amber-300"></i>
+                        <span>Fix Resume with AI</span>
+                    </button>
+                    
+                    <button type="button" 
+                            onclick="window.applyParsedData('raw')" 
+                            class="import-secondary-btn w-full py-3.5 sm:py-4 rounded-xl font-bold text-xs sm:text-sm border transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-file-lines text-gray-400"></i>
+                        <span>Keep My Old Resume</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <!-- 🎁 CENTER REFERRAL PROMO MODAL -->
 {% set user_ref_code = current_user.referral_code if current_user and current_user.referral_code else '' %}
 {% set share_url = "https://atsresumepro.onrender.com/login?tab=signup&ref=" ~ user_ref_code %}
@@ -1178,11 +1426,12 @@ window.USER_UNLOCKED = {{ user_unlocked_templates | default([]) | tojson | safe 
 window.IS_PRO_USER = {{ 'true' if is_pro_user else 'false' }};
 </script>
 
-<script src="{{ url_for('static', filename='js/pdf.js') }}"></script>
-<script src="{{ url_for('static', filename='js/builder.js') }}"></script>
-<script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
-<script src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
-
+<!-- In teeno par bhi 'defer' laga dein taaki HTML pehle show ho -->
+<script defer src="{{ url_for('static', filename='js/pdf.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/builder.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/activity_tracker.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/builder_import.js') }}"></script>
 <script>
 // ==========================================
 // 🚀 BUILDER CORE INITIALIZATION (CLEANED & UNIFIED)
@@ -1360,55 +1609,6 @@ function showLoginToast() {
         if (toast) toast.remove();
     }, 3000);
 }
-
-async function saveResume() {
-    const saveBtn = document.getElementById('saveResumeBtn') || document.getElementById('saveResumeFinalBtn');
-    if (!saveBtn) return;
-    
-    const originalText = saveBtn.innerHTML;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
-    saveBtn.disabled = true;
-
-    try {
-        if (typeof collectFormData !== 'function') {
-            alert("Error: collectFormData function missing!");
-            return;
-        }
-        const resumeData = collectFormData(); 
-        const templateDropdown = document.getElementById('templateSelector');
-        const selectedTemplate = templateDropdown ? templateDropdown.value : 'modern';
-
-        const payload = {
-            data: resumeData,
-            template_name: selectedTemplate,
-            resume_id: window.currentResumeId || null 
-        };
-
-        const res = await fetch('/api/save-resume', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await res.json();
-
-        if (result.success) {
-            window.currentResumeId = result.resume_id; 
-            alert("✅ Resume Saved Successfully!");
-        } else {
-            alert("❌ Save Failed: " + result.message);
-        }
-
-    } catch (error) {
-        console.error("Save Error:", error);
-        alert("System Error during save.");
-    } finally {
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
-    }
-}
-
-    
 
 </script>
 </body>

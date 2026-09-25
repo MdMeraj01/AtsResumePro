@@ -126,7 +126,7 @@
   ]
 }
 </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -794,17 +794,28 @@ body.light-mode .text-purple-400 {
         <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
             <div class="col-span-2">
                 <div class="flex items-center space-x-3 mb-6">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <i class="fas fa-file-alt text-white text-2xl"></i>
-                    </div>
+                     <a href="/" class="ats-brand-logo">
+                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                    </a>
                     <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
                 </div>
+                
                 <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
-                <div class="flex space-x-4">
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-linkedin"></i></a>
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-github"></i></a>
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all"><i class="fab fa-instagram"></i></a>
+                 <div class="flex space-x-4">
+                     <!-- Instagram -->
+                        <a href="https://www.instagram.com/atsresumepro0?stkn=YmVxcTJjcW54eGhk" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-pink-500 hover:border-pink-500 transition-all" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+    
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/share/19GMnFWH8Y/" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-500 transition-all" title="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+    
+                    <!-- LinkedIn (Empty placeholder) -->
+                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all" title="LinkedIn" onclick="event.preventDefault();">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
                 </div>
             </div>
             <div>
@@ -963,85 +974,29 @@ body.light-mode .text-purple-400 {
     <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/home_reviews.js') }}"></script>
     <script>
-    // --- 1. MOBILE MENU LOGIC ---
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        const body = document.body;
-        
-        if (menu.classList.contains('translate-x-full')) {
-            // Open Menu
-            menu.classList.remove('translate-x-full');
-            body.style.overflow = 'hidden'; // Stop scrolling
-        } else {
-            // Close Menu
-            menu.classList.add('translate-x-full');
-            body.style.overflow = 'auto'; // Enable scrolling
-        }
-    }
+    // ==========================================
+    // 🛡️ SAFE EVENT LISTENERS (NO NULL CRASHES)
+    // ==========================================
 
-    // --- 2. THEME TOGGLE LOGIC ---
-    // Check local storage for saved theme
-    if (localStorage.getItem('theme') === 'light') {
-        document.body.classList.add('light-mode');
-        updateThemeIcons(true);
-    }
-
-    function toggleTheme() {
-        const body = document.body;
-        body.classList.toggle('light-mode');
-        
-        const isLight = body.classList.contains('light-mode');
-        
-        // Update Icons
-        updateThemeIcons(isLight);
-
-        // Save to Local Storage
-        localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    }
-
-    function updateThemeIcons(isLight) {
-        const desktopIcon = document.getElementById('themeIcon');
-        const mobileIcon = document.getElementById('mobileThemeIcon');
-        
-        if (isLight) {
-            if(desktopIcon) desktopIcon.classList.replace('fa-sun', 'fa-moon');
-            if(mobileIcon) mobileIcon.classList.replace('fa-sun', 'fa-moon');
-        } else {
-            if(desktopIcon) desktopIcon.classList.replace('fa-moon', 'fa-sun');
-            if(mobileIcon) mobileIcon.classList.replace('fa-moon', 'fa-sun');
-        }
-    }
-
-    function toggleMobileMenu() {
-        const menu = document.getElementById('mobileMenu');
-        const body = document.body;
-        
-        // Agar menu hidden hai (translate-x-full), to usko dikhao
-        if (menu.classList.contains('translate-x-full')) {
-            menu.classList.remove('translate-x-full');
-            body.style.overflow = 'hidden'; // Background scroll band
-        } else {
-            // Nahi to chupao
-            menu.classList.add('translate-x-full');
-            body.style.overflow = 'auto'; // Background scroll chalu
-        }
-    }
-
-    // Close menu when clicking outside (Optional feature)
+    // Safe Click-outside for Mobile Drawer (Crash Proof)
     document.addEventListener('click', function(event) {
         const menu = document.getElementById('mobileMenu');
-        const btn = document.getElementById('mobileMenuBtn');
-        const closeBtn = document.getElementById('mobileCloseBtn');
-        
-        // Agar click menu ke andar nahi hai aur button par nahi hai
-        if (!menu.classList.contains('translate-x-full') && 
-            !menu.contains(event.target) && 
-            !btn.contains(event.target)) {
-            toggleMobileMenu();
+        if (!menu) return;
+
+        // Sirf tab close karo agar menu khula ho aur click drawer ke bahar hua ho
+        if (!menu.classList.contains('translate-x-full')) {
+            const clickedInsideDrawer = menu.contains(event.target);
+            const clickedToggleButton = event.target.closest('.ats-mobile-only button, #mobileThemeToggle, [onclick*="toggleMobileMenu"]');
+            
+            if (!clickedInsideDrawer && !clickedToggleButton) {
+                if (typeof toggleMobileMenu === 'function') {
+                    toggleMobileMenu();
+                }
+            }
         }
     });
-    
-    // 1. Register Service Worker
+
+    // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
@@ -1050,43 +1005,47 @@ body.light-mode .text-purple-400 {
         });
     }
 
-    // 2. Handle Install Banner Logic
+    // PWA Install Banner Handler
     let deferredPrompt;
     const installBanner = document.getElementById('install-banner');
     const installBtn = document.getElementById('install-btn');
     const closeBannerBtn = document.getElementById('close-banner');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Chrome का डिफ़ॉल्ट प्रॉम्प्ट रोकें
         e.preventDefault();
         deferredPrompt = e;
         
-        // अपना कस्टम बैनर दिखाएँ
-        installBanner.classList.remove('hidden');
-        setTimeout(() => {
-            installBanner.classList.remove('-translate-y-full');
-        }, 100);
-    });
-
-    // जब यूज़र "Install App" पर क्लिक करे
-    installBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`User interaction: ${outcome}`);
-            deferredPrompt = null;
-            
-            // बैनर छुपा दें
-            installBanner.classList.add('-translate-y-full');
-            setTimeout(() => installBanner.classList.add('hidden'), 300);
+        if (installBanner) {
+            installBanner.classList.remove('hidden');
+            setTimeout(() => {
+                installBanner.classList.remove('-translate-y-full');
+            }, 100);
         }
     });
 
-    // जब यूज़र बैनर क्लोज़ (X) करे
-    closeBannerBtn.addEventListener('click', () => {
-        installBanner.classList.add('-translate-y-full');
-        setTimeout(() => installBanner.classList.add('hidden'), 300);
-    });
-</script>
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                
+                if (installBanner) {
+                    installBanner.classList.add('-translate-y-full');
+                    setTimeout(() => installBanner.classList.add('hidden'), 300);
+                }
+            }
+        });
+    }
+
+    if (closeBannerBtn) {
+        closeBannerBtn.addEventListener('click', () => {
+            if (installBanner) {
+                installBanner.classList.add('-translate-y-full');
+                setTimeout(() => installBanner.classList.add('hidden'), 300);
+            }
+        });
+    }
+    </script>
 </body>
 </html>
