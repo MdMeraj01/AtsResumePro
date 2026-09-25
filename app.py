@@ -5201,54 +5201,15 @@ try:
 except Exception as sched_err:
     print(f"⚠️ Scheduler init warning: {sched_err}")
 
-from playwright.sync_api import sync_playwright
 
-try:
-    from playwright.sync_api import sync_playwright
-    PLAYWRIGHT_AVAILABLE = True
-except (ImportError, ModuleNotFoundError):
-    PLAYWRIGHT_AVAILABLE = False
-    sync_playwright = None
-
-# 2. xhtml2pdf Safe Setup
-try:
-    from xhtml2pdf import pisa
-    XHTML2PDF_AVAILABLE = True
-except (ImportError, ModuleNotFoundError):
-    XHTML2PDF_AVAILABLE = False
-    pisa = None
     
-def generate_text_based_pdf(full_html):
-    # 1. Playwright try karo agar available hai
-    if PLAYWRIGHT_AVAILABLE and sync_playwright:
-        try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
-                page.set_content(full_html, wait_until="networkidle")
-                pdf_bytes = page.pdf(
-                    format="A4",
-                    print_background=True,
-                    margin={"top": "0", "bottom": "0", "left": "0", "right": "0"}
-                )
-                browser.close()
-                return pdf_bytes
-        except Exception as e:
-            print(f"Playwright PDF generation failed, falling back: {e}")
-
-    # 2. Fallback: xhtml2pdf use karo (Render standard)
-    if XHTML2PDF_AVAILABLE and pisa:
-        pdf_buffer = io.BytesIO()
-        pisa_status = pisa.CreatePDF(full_html, dest=pdf_buffer)
-        if not pisa_status.err:
-            return pdf_buffer.getvalue()
-
-    return None
-    
+# ==========================================
+# 🟢 APP RUNNER
+# ==========================================
 if __name__ == '__main__':
     print("🚀 ATS Resume Builder Pro - Multi Page Version")
     if API_KEY and API_KEY != 'your-google-api-key-here':
         print("🔑 GOOGLE_API_KEY Status: LOADED")
     else:
         print("⚠️  GOOGLE_API_KEY Status: MISSING (Check .env file)")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
