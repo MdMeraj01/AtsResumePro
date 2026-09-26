@@ -444,41 +444,9 @@
             });
         });
 
-        let forgotOtpTimer = null;
-let forgotOtpSeconds = 300;
+        
 
-function startForgotOtpTimer() {
-    clearInterval(forgotOtpTimer);
 
-    forgotOtpSeconds = 300;
-
-    const timer = document.getElementById("forgot-otp-timer");
-    const timerText = timer?.querySelector("span");
-    const resendBtn = document.getElementById("forgot-resend-otp");
-
-    if (!timer || !timerText || !resendBtn) return;
-
-    resendBtn.disabled = true;
-
-    forgotOtpTimer = setInterval(() => {
-        const minutes = Math.floor(forgotOtpSeconds / 60);
-        const seconds = forgotOtpSeconds % 60;
-
-        timerText.textContent =
-            `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
-        if (forgotOtpSeconds <= 0) {
-            clearInterval(forgotOtpTimer);
-
-            timerText.textContent = "Expired";
-            resendBtn.disabled = false;
-
-            return;
-        }
-
-        forgotOtpSeconds--;
-    }, 1000);
-}
     </script>
 </body>
 </html>
