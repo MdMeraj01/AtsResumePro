@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, redirect, url_for, session, Response, make_response, flash
 from werkzeug.utils import secure_filename
 from pdf import generate_text_based_pdf, build_resume_html
-from security import validate_full_name, validate_real_email, check_user_template_access
+from security import (
+    validate_full_name, validate_real_email, check_user_template_access,
+    validate_password, generate_secure_otp, rate_limit
+)
 import os
 from flask_cors import CORS  
 import json
@@ -84,7 +87,7 @@ def get_safe_cursor(conn):
         except Exception:
             return conn.cursor()
 
-CORS(app)
+CORS(app, resources={r'/api/*': {'origins': [o.strip() for o in os.getenv('CORS_ORIGINS', 'http://localhost:5000,http://127.0.0.1:5000,https://atsresumepro.onrender.com').split(',') if o.strip()]}})
 
 # ==========================================
 # CONFIGURATION (Updated from your Screenshot)
@@ -92,6 +95,25 @@ CORS(app)
 
 # 1. Security
 app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY")
+if not app.config['SECRET_KEY']:
+    raise RuntimeError("FLASK_SECRET_KEY is required in production")
+
+# Harden browser session cookies and request size.
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV', '').lower() == 'production' or os.getenv('RENDER') == 'true'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 7
+app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+    response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    if request.is_secure or request.headers.get('X-Forwarded-Proto', '').lower() == 'https':
+        response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    return response
 
 
 # 2. Database Configuration (Matched with Workbench)
@@ -592,6 +614,7 @@ def update_profile():
 # CHANGE PASSWORD ROUTE
 # ==========================================
 @app.route('/api/user/change-password', methods=['POST'])
+@rate_limit(5, 600)
 def change_password():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -603,6 +626,10 @@ def change_password():
 
         if not current_password or not new_password:
             return jsonify({'success': False, 'message': 'Both fields are required'}), 400
+
+        valid_pw, pw_err = validate_password(str(new_password))
+        if not valid_pw:
+            return jsonify({'success': False, 'message': pw_err}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -796,7 +823,9 @@ def google_auth():
 
         if user:
             # 🟢 EXISTING USER LOGIN
+            session.clear()
             session['user_id'] = user['id']
+            session.permanent = True
             session['user_name'] = user['full_name']
             session['logged_in'] = True
             conn.close()
@@ -847,8 +876,9 @@ def google_auth():
                 except Exception as ref_err:
                     print(f"⚠️ Google Referral Reward Error: {ref_err}")
 
-            session.pop('pending_ref_code', None)
+            session.clear()
             session['user_id'] = new_user_id
+            session.permanent = True
             session['user_name'] = name
             session['logged_in'] = True
             
@@ -918,7 +948,9 @@ def callback_github():
 
         if existing_user:
             # 🟢 EXISTING USER LOGIN
+            session.clear()
             session['user_id'] = existing_user['id']
+            session.permanent = True
             session['user_name'] = existing_user['full_name']
             session['user_email'] = existing_user['email']
             session['logged_in'] = True
@@ -967,8 +999,9 @@ def callback_github():
                 except Exception as ref_err:
                     print(f"⚠️ GitHub Referral Reward Error: {ref_err}")
 
-            session.pop('pending_ref_code', None)
+            session.clear()
             session['user_id'] = user_id
+            session.permanent = True
             session['user_name'] = name
             session['user_email'] = email
             session['logged_in'] = True
@@ -1060,6 +1093,7 @@ DISPOSABLE_DOMAINS = {
 # 🟢 ROUTE 1: SEND OTP (Strict Validations Added)
 # ==========================================
 @app.route('/api/user/send-signup-otp', methods=['POST'])
+@rate_limit(3, 600)
 def send_signup_otp():
     data = request.json or {}
     full_name = str(data.get('full_name', '')).strip()
@@ -1120,10 +1154,11 @@ def send_signup_otp():
             conn.close()
 
     # 7. Generate 6-digit Secure OTP
-    otp = str(random.randint(100000, 999999))
+    otp = generate_secure_otp()
 
     # 8. Save Data to Session
     session['signup_otp'] = otp
+    session['signup_otp_expires_at'] = time.time() + 600
     session['signup_email'] = email
     if full_name:
         session['signup_name'] = full_name
@@ -1138,6 +1173,7 @@ def send_signup_otp():
 # 🟢 ROUTE: VERIFY OTP & CREATE ACCOUNT (Clean & Single Insert)
 # ==========================================
 @app.route('/api/user/signup', methods=['POST'])
+@rate_limit(10, 600)
 def signup():
     try:
         data = request.json
@@ -1150,11 +1186,15 @@ def signup():
         if not all([full_name, email, password, user_otp]):
             return jsonify({'success': False, 'message': 'All fields and OTP are required'}), 400
 
+        valid_pw, pw_err = validate_password(str(password))
+        if not valid_pw:
+            return jsonify({'success': False, 'message': pw_err}), 400
+
         # 1. 🛡️ VERIFY OTP
         saved_otp = session.get('signup_otp')
         saved_email = session.get('signup_email')
 
-        if not saved_otp or saved_otp != user_otp or saved_email != email:
+        if (not saved_otp or saved_otp != str(user_otp) or saved_email != str(email).strip().lower() or time.time() > session.get('signup_otp_expires_at', 0)):
             return jsonify({'success': False, 'message': 'Invalid or Expired OTP!'}), 400
 
         # 2. Database Connection
@@ -1210,9 +1250,12 @@ def signup():
         # Cleanup & Auto-login
         session.pop('signup_otp', None)
         session.pop('signup_email', None)
+        session.pop('signup_otp_expires_at', None)
         session.pop('pending_ref_code', None)
 
+        session.clear()
         session['user_id'] = user_id
+        session.permanent = True
         session['user_name'] = full_name
         session['logged_in'] = True
 
@@ -1227,6 +1270,7 @@ def signup():
         return jsonify({'success': False, 'message': 'Server error'}), 500
 
 @app.route('/api/user/login', methods=['POST'])
+@rate_limit(10, 600)
 def login():
     try:
         data = request.json or {}
@@ -1266,7 +1310,9 @@ def login():
 
             # PASSWORD CHECK
             if bcrypt.check_password_hash(user['password_hash'], password):
+                session.clear()
                 session['user_id'] = user['id']
+                session.permanent = True
                 session['user_name'] = user['full_name']
                 session['email'] = user['email']
                 session['plan_type'] = user.get('plan_type', 'Free')
@@ -2197,7 +2243,10 @@ def admin_dashboard():
 def admin_add_user():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
+    data = request.json or {}
+    valid_pw, pw_err = validate_password(str(data.get('password', '')))
+    if not valid_pw:
+        return jsonify({'success': False, 'message': pw_err}), 400
     hashed_pw = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     
     conn = get_db_connection()
@@ -2490,12 +2539,17 @@ def get_templates():
 
 # 🟢 UPDATED: Dynamic 3x Pricing Logic
 @app.route('/api/create-template-order', methods=['POST'])
+@rate_limit(10, 60)
 def create_template_order():
     if 'user_id' not in session:
         return jsonify({'error': 'Please login first'}), 401
+    if not razorpay_client:
+        return jsonify({'success': False, 'message': 'Payment service is not configured.'}), 503
         
     template_name = request.json.get('template_name')
-    plan_type = request.json.get('plan_type') # 'single' or 'lifetime'
+    plan_type = str((request.get_json(silent=True) or {}).get('plan_type', '')).strip().lower() # 'single' or 'lifetime'
+    if plan_type not in ('single', 'lifetime'):
+        return jsonify({'success': False, 'message': 'Invalid purchase type.'}), 400
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
@@ -2548,20 +2602,13 @@ def create_template_order():
 # 🟢 UPDATE PAYMENT SUCCESS ROUTE TO SAVE ACCESS TYPE
 @app.route('/api/verify-payment', methods=['POST'])
 def verify_payment():
-    data = request.json
-    # ... (Aapka razorpay signature verification code) ...
-    
-    # Jab payment success ho jaye, DB mein access_type save karein:
-    cursor = get_db_connection().cursor()
-    cursor.execute("""
-        INSERT INTO user_purchases (user_id, template_name, access_type, purchase_date) 
-        VALUES (%s, %s, %s, NOW())
-    """, (session['user_id'], data['template_name'], data['plan_type']))
-    get_db_connection().commit()
-    
-    return jsonify({'success': True})
+    # Legacy endpoint intentionally disabled. It previously trusted client data
+    # and could unlock a template without a verified Razorpay payment.
+    return jsonify({'success': False, 'message': 'Legacy payment endpoint disabled.'}), 410
+
 
 @app.route('/api/verify-template-payment', methods=['POST'])
+@rate_limit(10, 60)
 def verify_template_payment():
     if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2577,28 +2624,36 @@ def verify_template_payment():
         
         razorpay_client.utility.verify_payment_signature(params_dict)
         
-        # 2. Extract Data
-        template_name = data.get('template_name', 'Premium Template')
-        plan_type = data.get('plan_type', 'single') # 'single' ya 'lifetime'
+        # 2. Read purchase details from the Razorpay order, not the browser.
         user_id = session['user_id']
-        
+        order_id = data.get('razorpay_order_id')
+        payment_id = data.get('razorpay_payment_id')
+        order = razorpay_client.order.fetch(order_id)
+        notes = order.get('notes') or {}
+        template_name = str(notes.get('template', '')).strip().lower()
+        plan_type = str(notes.get('access_type', '')).strip().lower()
+        if str(notes.get('user')) != str(user_id):
+            return jsonify({'success': False, 'message': 'Payment order does not belong to this account.'}), 403
+        if plan_type not in ('single', 'lifetime') or not template_name:
+            return jsonify({'success': False, 'message': 'Invalid purchase order.'}), 400
+
         conn = get_db_connection()
-        # Dictionary cursor for safe fetching
-        cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
-        
-        # 🟢 THE FIX: Frontend ki jagah sidha Database se asli Price nikalo!
-        cursor.execute("SELECT price FROM templates WHERE name = %s", (template_name,))
+        cursor = get_safe_cursor(conn)
+        cursor.execute("SELECT price FROM templates WHERE LOWER(name) = %s", (template_name,))
         template_data = cursor.fetchone()
-        
-        # Agar template DB mein nahi mila to default 99 set karo (Safety net)
-        base_price = 99.0 
-        if template_data:
-            # Check for both Dictionary and Tuple formats
-            base_price = float(template_data['price'] if isinstance(template_data, dict) else template_data[0])
-            
-        # 🟢 NAYA LOGIC: Agar lifetime hai to price 3 guna (3x) kar do
-        final_price = base_price if plan_type == 'single' else (base_price * 3)
-        
+        if not template_data:
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'message': 'Template not found.'}), 404
+        base_price = float(template_data['price'] if isinstance(template_data, dict) else template_data[0])
+        final_price = base_price if plan_type == 'single' else base_price * 3
+        if int(order.get('amount', 0)) != int(round(final_price * 100)):
+            cursor.close(); conn.close()
+            return jsonify({'success': False, 'message': 'Payment amount mismatch.'}), 400
+        cursor.execute("SELECT id FROM transactions WHERE transaction_id = %s LIMIT 1", (payment_id,))
+        if cursor.fetchone():
+            cursor.close(); conn.close()
+            return jsonify({'success': True, 'message': 'Payment already processed.'})
+
         # 3. Save to User Purchases
         cursor.execute("""
             INSERT INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
@@ -3582,41 +3637,12 @@ def checkout():
 
 @app.route('/api/process-payment', methods=['POST'])
 def process_payment():
-    if 'user_id' not in session: return jsonify({'success': False}), 401
-    
-    data = request.json
-    plan_name = data.get('plan') # basic, standard, premium, lifetime
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        new_plan = plan_name.capitalize()
-        
-        # 🟢 NEW: Plan ke hisaab se limits set karo
-        new_limit = 99999 
-        new_credits = 5
-        
-        if new_plan == 'Basic': new_credits = 10
-        elif new_plan == 'Standard': new_credits = 100
-        elif new_plan == 'Premium': new_credits = 9999
-        elif new_plan == 'Lifetime': new_credits = 99999 # Lifetime ke liye 99999 credits
-        
-        # Update Query (ai_credits bhi update hoga)
-        cursor.execute("""
-            UPDATE users 
-            SET plan_type = %s, resume_limit = %s, ai_credits = %s 
-            WHERE id = %s
-        """, (new_plan, new_limit, new_credits, session['user_id']))
-        
-        conn.commit()
-        return jsonify({'success': True, 'redirect': url_for('user_dashboard')})
-        
-    except Exception as e:
-        print(f"Payment Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-    finally:
-        conn.close()
+    # Security: never activate a paid plan from client-supplied JSON.
+    # The only supported activation path is verified Razorpay payment below.
+    return jsonify({
+        'success': False,
+        'message': 'Direct plan activation is disabled. Please complete payment through Razorpay.'
+    }), 403
 
 
 # ==========================================
@@ -3627,145 +3653,155 @@ RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
 # Razorpay Client Initialize karo
+razorpay_client = None
 if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
     razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
     print("✅ Razorpay Keys Loaded Successfully!")
 else:
-    print("⚠️ WARNING: Razorpay Keys not found in .env file!")
-    
-razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    print("⚠️ WARNING: Razorpay Keys not found in environment variables.")
 
 @app.route('/api/create-razorpay-order', methods=['POST'])
+@rate_limit(10, 60)
 def create_razorpay_order():
-    if 'user_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
-    
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not razorpay_client:
+        return jsonify({'success': False, 'message': 'Payment service is not configured.'}), 503
+
     try:
-        data = request.json
-        amount = float(data.get('amount'))
-        plan = data.get('plan', 'Premium')
-        
-        # Razorpay takes amount in Paise (e.g., ₹499 = 49900 paise)
-        amount_paise = int(amount * 100)
-        
-        # Create Order
-        order_data = {
-            "amount": amount_paise,
-            "currency": "INR",
-            "receipt": f"receipt_{session['user_id']}_{int(time.time())}",
-            "notes": {
-                "plan": plan,
-                "user_id": session['user_id']
-            }
+        data = request.get_json(silent=True) or {}
+        plan = str(data.get('plan', 'Premium')).strip().lower()
+        cycle = str(data.get('cycle', 'monthly')).strip().lower()
+        prices = {
+            'basic': {'monthly': 199, 'yearly': 1990},
+            'standard': {'monthly': 499, 'yearly': 4990},
+            'premium': {'monthly': 999, 'yearly': 9990},
+            'lifetime': {'monthly': 2000, 'yearly': 2000},
         }
-        
+        amount = prices.get(plan, {}).get(cycle)
+        if amount is None:
+            return jsonify({'success': False, 'message': 'Invalid plan or billing cycle.'}), 400
+
+        order_data = {
+            'amount': int(amount * 100),
+            'currency': 'INR',
+            'receipt': f"receipt_{session['user_id']}_{secrets.token_hex(6)}",
+            'notes': {'plan': plan, 'cycle': cycle, 'user_id': str(session['user_id'])}
+        }
         order = razorpay_client.order.create(data=order_data)
-        
-        # Send Order ID to Frontend
         return jsonify({
-            'success': True, 
-            'order_id': order['id'], 
-            'amount': order['amount'], 
-            'currency': order['currency'],
-            'key_id': RAZORPAY_KEY_ID
+            'success': True, 'order_id': order['id'], 'amount': order['amount'],
+            'currency': order['currency'], 'key_id': RAZORPAY_KEY_ID,
+            'plan': plan, 'cycle': cycle
         })
-            
     except Exception as e:
         print(f"Razorpay Order Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': 'Unable to create payment order.'}), 500
+
 
 @app.route('/api/verify-razorpay-payment', methods=['POST'])
+@rate_limit(10, 60)
 def verify_razorpay_payment():
-    if 'user_id' not in session: 
+    if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+    if not razorpay_client:
+        return jsonify({'success': False, 'message': 'Payment service is not configured.'}), 503
+
+    conn = None
+    cursor = None
     try:
-        data = request.json
-        
-        # 1. Verify Signature (Ye confirm karta hai ki payment asli hai)
-        params_dict = {
-            'razorpay_order_id': data['razorpay_order_id'],
-            'razorpay_payment_id': data['razorpay_payment_id'],
-            'razorpay_signature': data['razorpay_signature']
-        }
-        
-        razorpay_client.utility.verify_payment_signature(params_dict)
-        
-        # 2. Signature Verify ho gaya, ab DB update karo
-        plan_name = data.get('plan', 'Premium').capitalize()
+        data = request.get_json(silent=True) or {}
+        order_id = data.get('razorpay_order_id')
+        payment_id = data.get('razorpay_payment_id')
+        signature = data.get('razorpay_signature')
+        if not order_id or not payment_id or not signature:
+            return jsonify({'success': False, 'message': 'Incomplete payment verification data.'}), 400
+
+        razorpay_client.utility.verify_payment_signature({
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        })
+
+        order = razorpay_client.order.fetch(order_id)
+        notes = order.get('notes') or {}
         user_id = session['user_id']
-        
-        credits = 5
-        if plan_name == 'Basic': credits = 10
-        elif plan_name == 'Standard': credits = 100
-        elif plan_name == 'Premium': credits = 9999
-        elif plan_name == 'Lifetime': credits = 99999
+        if str(notes.get('user_id')) != str(user_id):
+            return jsonify({'success': False, 'message': 'Payment order does not belong to this account.'}), 403
+
+        plan_name = str(notes.get('plan', '')).capitalize()
+        cycle = str(notes.get('cycle', 'monthly')).lower()
+        prices = {
+            'Basic': {'monthly': 199, 'yearly': 1990},
+            'Standard': {'monthly': 499, 'yearly': 4990},
+            'Premium': {'monthly': 999, 'yearly': 9990},
+            'Lifetime': {'monthly': 2000, 'yearly': 2000},
+        }
+        expected_amount = prices.get(plan_name, {}).get(cycle)
+        if expected_amount is None or int(order.get('amount', 0)) != int(expected_amount * 100):
+            return jsonify({'success': False, 'message': 'Payment amount/order mismatch.'}), 400
 
         conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Update User Limits
+        cursor = get_safe_cursor(conn)
+        cursor.execute('SELECT id FROM transactions WHERE transaction_id = %s LIMIT 1', (payment_id,))
+        if cursor.fetchone():
+            return jsonify({'success': True, 'message': 'Payment already processed.'})
+
+        credits = {'Basic': 10, 'Standard': 100, 'Premium': 9999, 'Lifetime': 99999}[plan_name]
         cursor.execute("""
-            UPDATE users SET plan_type = %s, resume_limit = 9999, ai_credits = %s 
+            UPDATE users SET plan_type = %s, resume_limit = 9999, ai_credits = %s
             WHERE id = %s
         """, (plan_name, credits, user_id))
-        
-        # Add to Transactions
         cursor.execute("""
             INSERT INTO transactions (user_id, plan_name, amount, transaction_id, payment_method, status)
             VALUES (%s, %s, %s, %s, 'Razorpay', 'Success')
-        """, (user_id, plan_name, float(data['amount'])/100, data['razorpay_payment_id']))
+        """, (user_id, plan_name, expected_amount, payment_id))
 
-        # ========================================================
-        # 🎁 3. REFERRAL REWARD LOGIC: 15 Days Pro Reward to Referrer
-        # ========================================================
+        # Referral reward: execute only after the payment has passed all checks.
         try:
-            cursor.execute("SELECT referred_by FROM users WHERE id = %s", (user_id,))
+            cursor.execute('SELECT referred_by FROM users WHERE id = %s', (user_id,))
             u = cursor.fetchone()
-            
-            referrer_id = u['referred_by'] if isinstance(u, dict) else (u[0] if u else None)
-            
+            referrer_id = u.get('referred_by') if isinstance(u, dict) else (u[0] if u else None)
             if referrer_id:
-                # A. Mark referral as purchased
                 cursor.execute("""
-                    UPDATE referrals 
-                    SET has_purchased = 1 
+                    UPDATE referrals SET has_purchased = 1
                     WHERE referrer_id = %s AND referee_id = %s
                 """, (referrer_id, user_id))
-                
-                # B. Referrer ko 15 Days Booster + Credits + Resume Limit
                 cursor.execute("""
-                    UPDATE users 
+                    UPDATE users
                     SET pro_reward_until = DATE_ADD(NOW(), INTERVAL 15 DAY),
                         ai_credits = COALESCE(ai_credits, 0) + 50,
                         resume_limit = 9999
                     WHERE id = %s
                 """, (referrer_id,))
-                
-                # C. Referrer ko 3 Popular Premium Templates Free Unlock kar do
-                bonus_templates = ['luxury', 'creative', 'timeline']
-                for tpl in bonus_templates:
+                for tpl in ['luxury', 'creative', 'timeline']:
                     cursor.execute("""
-                        INSERT IGNORE INTO user_purchases (user_id, template_name, amount, access_type, purchase_date) 
+                        INSERT IGNORE INTO user_purchases
+                        (user_id, template_name, amount, access_type, purchase_date)
                         VALUES (%s, %s, 0, 'single', NOW())
                     """, (referrer_id, tpl))
-                    
-                print(f"🎉 Referral Reward Activated: 15-day boost & 3 templates granted to user ID {referrer_id}")
-        except Exception as ref_reward_err:
-            print(f"⚠️ Referral bonus error: {ref_reward_err}")
+        except Exception as ref_err:
+            print(f'⚠️ Referral bonus error: {ref_err}')
 
         conn.commit()
-        conn.close()
-        
         return jsonify({'success': True, 'message': 'Payment Verified & Plan Activated!'})
-        
+
     except razorpay.errors.SignatureVerificationError:
-        print("Payment Verification Failed! Fake Signature.")
+        if conn:
+            conn.rollback()
         return jsonify({'success': False, 'message': 'Payment verification failed!'}), 400
     except Exception as e:
-        print(f"Verification Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
-    
-    
+        if conn:
+            conn.rollback()
+        print(f'Verification Error: {e}')
+        return jsonify({'success': False, 'message': 'Payment verification failed.'}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 # ==========================================
 # 🔍 SEO ROUTES (Dynamic Sitemap for Render)
 # ==========================================
@@ -3968,6 +4004,7 @@ def send_welcome_email(user_name, user_email):
 
 # 1. Send OTP for Forgot Password
 @app.route('/api/user/forgot-password', methods=['POST'])
+@rate_limit(3, 600)
 def forgot_password():
     data = request.json
     email = data.get('email')
@@ -3987,7 +4024,7 @@ def forgot_password():
             return jsonify({'success': False, 'message': 'No account found with this email!'}), 404
             
         # Generate 6-digit OTP
-        otp = str(random.randint(100000, 999999))
+        otp = generate_secure_otp()
         
         # Save OTP in database (using the existing verification_code column)
         cursor.execute("UPDATE users SET verification_code = %s WHERE email = %s", (otp, email))
@@ -4006,6 +4043,7 @@ def forgot_password():
 
 # 2. Verify OTP & Set New Password
 @app.route('/api/user/reset-password', methods=['POST'])
+@rate_limit(10, 600)
 def reset_password():
     data = request.json
     email = data.get('email')
@@ -4014,6 +4052,10 @@ def reset_password():
     
     if not all([email, otp, new_password]):
         return jsonify({'success': False, 'message': 'All fields are required'}), 400
+
+    valid_pw, pw_err = validate_password(str(new_password))
+    if not valid_pw:
+        return jsonify({'success': False, 'message': pw_err}), 400
         
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
