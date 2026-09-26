@@ -189,6 +189,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+/* ============================================
+   DESKTOP: User Profile Dropdown (1-Click Stable)
+   ============================================ */
+function toggleUserProfileDropdown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn = e.currentTarget;
+    const parent = btn.closest('.user-dropdown-parent');
+    const dropdown = parent.querySelector('#userProfileDropdownMenu');
+    const chevron = btn.querySelector('.user-dropdown-chevron');
+
+    // Doosre dropdowns (e.g. Builder & Tools) ko close karein
+    document.querySelectorAll('.ats-dropdown-menu').forEach(d => {
+        d.classList.add('hidden');
+        d.parentElement.classList.remove('dropdown-open');
+    });
+
+    if (!dropdown) return;
+
+    const isOpening = dropdown.classList.contains('hidden');
+    dropdown.classList.toggle('hidden');
+
+    if (chevron) {
+        chevron.style.transform = isOpening ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
+window.toggleUserProfileDropdown = toggleUserProfileDropdown;
 window.addEventListener('pageshow', setActiveNavLink);
 window.toggleTheme = toggleTheme;
 window.updateThemeIcons = updateThemeIcons;

@@ -21,7 +21,7 @@
                     <i class="fas fa-chevron-down text-[10px] opacity-60 dropdown-chevron transition-transform duration-200"></i>
                 </button>
 
-                <!-- Dropdown Popup Card (Clean Theme-Aware Classes) -->
+                <!-- Dropdown Popup Card -->
                 <div class="ats-dropdown-menu absolute left-0 mt-2 w-64 rounded-2xl shadow-2xl py-2 hidden transition-all z-50">
                     <a href="/builder" data-nav="/builder" class="ats-dropdown-item flex items-center gap-3 px-4 py-2.5 transition-colors">
                         <div class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
@@ -32,7 +32,6 @@
                             <div class="dropdown-item-sub text-[10px]">Create ATS resume from scratch</div>
                         </div>
                     </a>
-
 
                     <a href="/cover-letter" data-nav="/cover-letter" class="ats-dropdown-item flex items-center gap-3 px-4 py-2.5 transition-colors">
                         <div class="w-8 h-8 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center shrink-0">
@@ -60,19 +59,20 @@
         <!-- Right Controls -->
         <div class="hidden lg:flex items-center gap-3">
             <!-- Theme Toggle -->
-            <!-- Desktop Theme Toggle -->
             <button type="button" 
-                id="themeToggle"
-                onclick="toggleTheme()" 
-                class="theme-toggle-btn p-2 rounded-xl text-gray-400 hover:text-white transition-colors cursor-pointer" 
-                title="Toggle Theme">
-               <i class="theme-icon fas fa-sun"></i>
-           </button>
+                    id="themeToggle"
+                    onclick="toggleTheme()" 
+                    class="theme-toggle-btn p-2 rounded-xl text-gray-400 hover:text-white transition-colors cursor-pointer" 
+                    title="Toggle Theme">
+                <i class="theme-icon fas fa-sun"></i>
+            </button>
 
             {% if current_user %}
-                <!-- User Capsule Dropdown -->
-                <div class="relative group">
-                    <button class="ats-user-capsule">
+                <!-- 🟢 User Profile Dropdown (Stable 1-Click System) -->
+                <div class="relative user-dropdown-parent">
+                    <button type="button" 
+                            onclick="toggleUserProfileDropdown(event)" 
+                            class="ats-user-capsule focus:outline-none cursor-pointer">
                         {% if current_user.profile_pic and current_user.profile_pic.startswith('http') %}
                             <img src="{{ current_user.profile_pic }}" alt="Avatar" class="ats-user-avatar-img" referrerpolicy="no-referrer">
                         {% else %}
@@ -84,11 +84,11 @@
                             <span class="opacity-60 block text-[9px] uppercase font-bold">Welcome,</span>
                             <span class="font-bold">{{ (current_user.full_name or 'User').split(' ')[0] }}</span>
                         </div>
-                        <i class="fas fa-chevron-down text-[9px] opacity-50 ml-1"></i>
+                        <i class="fas fa-chevron-down text-[9px] opacity-50 ml-1 user-dropdown-chevron transition-transform duration-200"></i>
                     </button>
 
-                    <!-- User Dropdown Options -->
-                    <div class="ats-user-dropdown-menu absolute right-0 mt-2 w-52 rounded-2xl shadow-2xl py-2 hidden group-hover:block transition-all z-50">
+                    <!-- User Dropdown Options Card -->
+                    <div id="userProfileDropdownMenu" class="ats-user-dropdown-menu absolute right-0 mt-2 w-52 rounded-2xl shadow-2xl py-2 hidden transition-all z-50">
                         <div class="px-4 py-2 border-b border-inherit">
                             <p class="text-xs font-bold truncate user-menu-name">{{ current_user.full_name }}</p>
                             <span class="text-[10px] text-cyan-500 font-bold uppercase tracking-wider">{{ current_user.plan_type or 'Free' }} Plan</span>
@@ -113,15 +113,14 @@
 
         <!-- Mobile Toggles -->
         <div class="flex items-center gap-1 lg:hidden">
-             <!-- Mobile Theme Toggle -->
             <button type="button" 
-                id="mobileThemeToggle"
-                onclick="toggleTheme()" 
-                class="theme-toggle-btn p-2 text-gray-400 hover:text-white cursor-pointer" 
-                title="Toggle Theme">
-             <i class="theme-icon fas fa-sun"></i>
+                    id="mobileThemeToggle"
+                    onclick="toggleTheme()" 
+                    class="theme-toggle-btn p-2 text-gray-400 hover:text-white cursor-pointer" 
+                    title="Toggle Theme">
+                <i class="theme-icon fas fa-sun"></i>
             </button>
-            <button onclick="toggleMobileMenu()" class="p-2 text-gray-300 hover:text-white">
+            <button type="button" onclick="toggleMobileMenu()" class="p-2 text-gray-300 hover:text-white" aria-label="Open mobile menu">
                 <i class="fas fa-bars text-xl"></i>
             </button>
         </div>
@@ -143,7 +142,7 @@
             <a href="/" class="ats-brand-logo">
                 <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
             </a>
-            <button onclick="toggleMobileMenu()"
+            <button type="button" onclick="toggleMobileMenu()"
                     class="drawer-item w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:rotate-90 mobile-close-btn"
                     style="--delay: 0.1s"
                     aria-label="Close menu">
