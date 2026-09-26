@@ -34,6 +34,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/login.css')}}" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+
+<style>
+.otp-verification-box{margin-top:18px;padding:16px;border-radius:16px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.18)}
+.otp-status-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;flex-wrap:wrap}
+.otp-sent-message{margin:0;font-size:13px;font-weight:600;color:#16a34a}.otp-sent-message i{margin-right:4px}
+.otp-countdown{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:rgba(79,70,229,.1);color:#4f46e5;font-size:13px;font-weight:800;white-space:nowrap}.otp-countdown.warning{background:rgba(245,158,11,.12);color:#d97706}.otp-countdown.expired{background:rgba(239,68,68,.12);color:#dc2626}
+.otp-resend-btn{margin-top:8px;border:none;background:transparent;color:#4f46e5;font-size:13px;font-weight:700;cursor:pointer;padding:5px 0}.otp-resend-btn:hover:not(:disabled){text-decoration:underline}.otp-resend-btn:disabled{color:#9ca3af;cursor:not-allowed}
+@media(max-width:600px){.otp-status-row{align-items:flex-start;flex-direction:column}}
+</style>
 </head>
 <body>
     <div class="bg-animation">
@@ -223,15 +232,19 @@
                     </div>
                 </div>
                
-                <div id="signup-otp-group" class="form-group" style="display: none;">
+                <div id="signup-otp-group" class="form-group otp-verification-box" style="display: none;">
                     <label for="signup-otp" class="form-label text-indigo-600 font-bold">
                         <i class="fas fa-shield-alt"></i> Enter 6-Digit OTP
                     </label>
                     <div class="input-container">
-                        <input type="text" id="signup-otp" class="form-input" placeholder="e.g. 123456" maxlength="6" style="letter-spacing: 5px; font-weight: bold; text-align: center; font-size: 1.1rem; background-color: #f8fafc; color: #000000;">
+                        <input type="text" id="signup-otp" class="form-input" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="letter-spacing: 7px; font-weight: 800; text-align: center; font-size: 1.2rem; background-color: #f8fafc; color: #000000;">
                         <div class="input-icon"><i class="fas fa-check-circle text-green-500"></i></div>
                     </div>
-                    <p class="text-xs text-green-600 mt-2 font-semibold"><i class="fas fa-check"></i> OTP has been sent to your email!</p>
+                    <div class="otp-status-row">
+                        <p class="otp-sent-message"><i class="fas fa-check-circle"></i> OTP sent to your email</p>
+                        <div id="signup-otp-timer" class="otp-countdown"><i class="fas fa-clock"></i><span>05:00</span></div>
+                    </div>
+                    <button type="button" id="signup-resend-otp" class="otp-resend-btn" disabled><i class="fas fa-redo"></i> Resend OTP</button>
                 </div>
  
                 <div class="form-options">
@@ -313,10 +326,14 @@
             </form>
 
             <form id="resetPasswordForm" class="hidden" onsubmit="handleResetPassword(event)">
-                <p class="text-sm text-green-500 font-bold mb-4">OTP sent successfully to your email!</p>
+                <p class="text-sm text-green-500 font-bold mb-4"><i class="fas fa-check-circle"></i> OTP sent successfully to your email!</p>
                 <div class="space-y-4">
                     <div>
-                        <input type="text" id="resetOtp" placeholder="Enter 6-digit OTP" maxlength="6" class="w-full text-center tracking-widest font-mono font-bold px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <input type="text" id="resetOtp" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="w-full text-center tracking-widest font-mono font-bold px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                    </div>
+                    <div class="otp-status-row">
+                        <div id="forgot-otp-timer" class="otp-countdown"><i class="fas fa-clock"></i><span>05:00</span></div>
+                        <button type="button" id="forgot-resend-otp" class="otp-resend-btn" disabled><i class="fas fa-redo"></i> Resend OTP</button>
                     </div>
                     <div>
                         <input type="password" id="newPassword" placeholder="New Password" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none" required>
@@ -333,8 +350,39 @@
     <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 
     <script>
-        // Open/Close Modal
+        let forgotOtpTimer = null;
+        let forgotOtpResendTimer = null;
+        let forgotOtpSeconds = 0;
+        let forgotOtpResendSeconds = 0;
+
+        function formatOtpTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function startForgotOtpTimer(seconds = 300, resendSeconds = 60) {
+            clearInterval(forgotOtpTimer); clearInterval(forgotOtpResendTimer);
+            forgotOtpSeconds = seconds; forgotOtpResendSeconds = resendSeconds;
+            const timer = document.getElementById('forgot-otp-timer'); const text = timer?.querySelector('span');
+            const resend = document.getElementById('forgot-resend-otp'); const otp = document.getElementById('resetOtp');
+            if (!timer || !text || !resend || !otp) return;
+            resend.disabled = true; timer.classList.remove('warning','expired'); otp.disabled = false;
+            function tickOtp(){
+                text.textContent = formatOtpTime(forgotOtpSeconds);
+                if (forgotOtpSeconds <= 60 && forgotOtpSeconds > 0) timer.classList.add('warning');
+                if (forgotOtpSeconds <= 0){ clearInterval(forgotOtpTimer); timer.classList.remove('warning'); timer.classList.add('expired'); text.textContent='Expired'; otp.disabled=true; otp.value=''; otp.placeholder='OTP expired'; return; }
+                forgotOtpSeconds--;
+            }
+            function tickResend(){
+                if(forgotOtpResendSeconds<=0){ clearInterval(forgotOtpResendTimer); resend.disabled=false; resend.innerHTML='<i class="fas fa-redo"></i> Resend OTP'; return; }
+                resend.disabled=true; resend.innerHTML=`<i class="fas fa-clock"></i> Resend in ${forgotOtpResendSeconds}s`; forgotOtpResendSeconds--;
+            }
+            tickOtp(); tickResend(); forgotOtpTimer=setInterval(tickOtp,1000); forgotOtpResendTimer=setInterval(tickResend,1000);
+        }
+
         function openForgotModal() {
+            clearInterval(forgotOtpTimer); clearInterval(forgotOtpResendTimer);
             document.getElementById('forgotPasswordModal').classList.remove('hidden');
             document.getElementById('forgotEmailForm').classList.remove('hidden');
             document.getElementById('resetPasswordForm').classList.add('hidden');
@@ -342,94 +390,94 @@
         }
 
         function closeForgotModal() {
+            clearInterval(forgotOtpTimer); clearInterval(forgotOtpResendTimer);
             document.getElementById('forgotPasswordModal').classList.add('hidden');
         }
 
-        // Step 1: Send OTP
         async function handleForgotEmail(e) {
             e.preventDefault();
-            const email = document.getElementById('resetEmail').value;
+            const email = document.getElementById('resetEmail').value.trim().toLowerCase();
             const btn = document.getElementById('sendOtpBtn');
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            btn.disabled = true;
-
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; btn.disabled = true;
             try {
-                const res = await fetch('/api/user/forgot-password', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email: email })
-                });
+                const res = await fetch('/api/user/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
                 const data = await res.json();
-                
-                if(data.success) {
-                    // Hide Email form, Show OTP form
+                if(data.success){
                     document.getElementById('forgotEmailForm').classList.add('hidden');
                     document.getElementById('resetPasswordForm').classList.remove('hidden');
-                } else {
-                    alert(data.message);
-                }
-            } catch (err) {
-                alert('Server Error. Please try again.');
-            } finally {
-                btn.innerHTML = 'Send OTP';
-                btn.disabled = false;
-            }
+                    document.getElementById('resetOtp').value=''; document.getElementById('resetOtp').focus();
+                    startForgotOtpTimer(data.expires_in || 300);
+                } else alert(data.message || 'Unable to send OTP.');
+            } catch(err){ console.error(err); alert('Server Error. Please try again.'); }
+            finally { btn.innerHTML='Send OTP'; btn.disabled=false; }
         }
 
-        // Step 2: Reset Password
         async function handleResetPassword(e) {
-    e.preventDefault();
-    const email = document.getElementById('resetEmail').value;
-    const otp = document.getElementById('resetOtp').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const btn = document.getElementById('savePasswordBtn');
-    
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/user/reset-password', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, otp, new_password: newPassword })
-        });
-        const data = await res.json();
-        
-        if(data.success) {
-            alert('🎉 Password reset successful! You can now login.');
-            closeForgotModal();
-            
-            // 🟢 NEW: Lock Khol Do! (Unlock the forms)
-            localStorage.removeItem('failed_login_attempts');
-            
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            const loginPasswordInput = document.getElementById('login-password');
-            
-            if(loginForm) {
-                loginForm.style.opacity = '1';
-                loginForm.style.pointerEvents = 'auto';
-            }
-            if(signupForm) {
-                signupForm.style.opacity = '1';
-                signupForm.style.pointerEvents = 'auto';
-            }
-            
-            // Password box khali kar do taaki user naya password daal sake
-            if(loginPasswordInput) {
-                loginPasswordInput.value = '';
-            }
-            
-        } else {
-            alert('❌ ' + data.message);
+            e.preventDefault();
+            if (forgotOtpSeconds <= 0) { alert('OTP has expired. Please request a new OTP.'); return; }
+            const email=document.getElementById('resetEmail').value.trim().toLowerCase();
+            const otp=document.getElementById('resetOtp').value.trim();
+            const newPassword=document.getElementById('newPassword').value;
+            if(!/^\d{6}$/.test(otp)){ alert('Please enter a valid 6-digit OTP.'); return; }
+            const btn=document.getElementById('savePasswordBtn'); btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...'; btn.disabled=true;
+            try {
+                const res=await fetch('/api/user/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,otp,new_password:newPassword})});
+                const data=await res.json();
+                if(data.success){ alert('🎉 Password reset successful! You can now login.'); closeForgotModal(); localStorage.removeItem('failed_login_attempts'); const lf=document.getElementById('login-form'), sf=document.getElementById('signup-form'), lp=document.getElementById('login-password'); if(lf){lf.style.opacity='1';lf.style.pointerEvents='auto';} if(sf){sf.style.opacity='1';sf.style.pointerEvents='auto';} if(lp) lp.value=''; startForgotOtpTimer(); }
+                else { alert('❌ '+(data.message||'Unable to reset password.')); if(data.expired){ clearInterval(forgotOtpTimer); startForgotOtpTimer(0); } }
+            } catch(err){ console.error(err); alert('Server Error. Please try again.'); }
+            finally { btn.innerHTML='Save New Password'; btn.disabled=false; }
         }
-    } catch (err) {
-        alert('Server Error. Please try again.');
-    } finally {
-        btn.innerHTML = 'Save New Password';
-        btn.disabled = false;
-    }
+
+        document.addEventListener('DOMContentLoaded',()=>{
+            const resend=document.getElementById('forgot-resend-otp');
+            if(resend) resend.addEventListener('click',async()=>{
+                const email=document.getElementById('resetEmail').value.trim().toLowerCase();
+                if(!email) return; resend.disabled=true; resend.innerHTML='<i class="fas fa-spinner fa-spin"></i> Sending...';
+                try{
+                    const res=await fetch('/api/user/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+                    const data=await res.json();
+                    if(data.success){ document.getElementById('resetOtp').disabled=false; document.getElementById('resetOtp').value=''; document.getElementById('resetOtp').placeholder='Enter 6-digit OTP'; startForgotOtpTimer(data.expires_in||300, data.resend_in||60); alert('New OTP sent to your email.'); }
+                    else { alert(data.message||'Unable to resend OTP.'); resend.disabled=false; }
+                }catch(err){ console.error(err); alert('Server Error. Please try again.'); resend.disabled=false; }
+                finally{ if(forgotOtpResendSeconds<=0){ resend.innerHTML='<i class="fas fa-redo"></i> Resend OTP'; resend.disabled=false; } }
+            });
+        });
+
+        let forgotOtpTimer = null;
+let forgotOtpSeconds = 300;
+
+function startForgotOtpTimer() {
+    clearInterval(forgotOtpTimer);
+
+    forgotOtpSeconds = 300;
+
+    const timer = document.getElementById("forgot-otp-timer");
+    const timerText = timer?.querySelector("span");
+    const resendBtn = document.getElementById("forgot-resend-otp");
+
+    if (!timer || !timerText || !resendBtn) return;
+
+    resendBtn.disabled = true;
+
+    forgotOtpTimer = setInterval(() => {
+        const minutes = Math.floor(forgotOtpSeconds / 60);
+        const seconds = forgotOtpSeconds % 60;
+
+        timerText.textContent =
+            `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+        if (forgotOtpSeconds <= 0) {
+            clearInterval(forgotOtpTimer);
+
+            timerText.textContent = "Expired";
+            resendBtn.disabled = false;
+
+            return;
+        }
+
+        forgotOtpSeconds--;
+    }, 1000);
 }
     </script>
 </body>

@@ -231,6 +231,72 @@ async function handleLogin(e) {
 // OTP Step Tracker
 let signupStep = 1; // 1 = Send OTP, 2 = Verify & Register
 
+// =========================================
+// 🔐 SIGNUP OTP COUNTDOWN
+// =========================================
+
+let signupOtpTimer = null;
+let signupOtpSeconds = 300; // 5 minutes
+
+function startSignupOtpTimer() {
+
+    clearInterval(signupOtpTimer);
+
+    signupOtpSeconds = 300;
+
+    const timer = document.getElementById('signup-otp-timer');
+    const timerText = timer?.querySelector('span');
+    const resendBtn = document.getElementById('signup-resend-otp');
+
+    if (!timer || !timerText || !resendBtn) return;
+
+    resendBtn.disabled = true;
+
+    timer.classList.remove('warning', 'expired');
+
+    function updateTimer() {
+
+        const minutes = Math.floor(signupOtpSeconds / 60);
+        const seconds = signupOtpSeconds % 60;
+
+        timerText.textContent =
+            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        // Last 60 seconds
+        if (signupOtpSeconds <= 60 && signupOtpSeconds > 0) {
+            timer.classList.add('warning');
+        }
+
+        if (signupOtpSeconds <= 0) {
+
+            clearInterval(signupOtpTimer);
+
+            timer.classList.remove('warning');
+            timer.classList.add('expired');
+
+            timerText.textContent = 'Expired';
+
+            resendBtn.disabled = false;
+
+            const otpInput = document.getElementById('signup-otp');
+
+            if (otpInput) {
+                otpInput.disabled = true;
+                otpInput.value = '';
+                otpInput.placeholder = 'OTP expired';
+            }
+
+            return;
+        }
+
+        signupOtpSeconds--;
+    }
+
+    updateTimer();
+
+    signupOtpTimer = setInterval(updateTimer, 1000);
+}
+
 async function handleSignup(e) {
     e.preventDefault();
 
@@ -299,9 +365,13 @@ async function handleSignup(e) {
                 emailInput.readOnly = true;
                 emailInput.style.opacity = '0.7';
                 otpInput.required = true;
+                otpInput.disabled = false;
+                otpInput.placeholder = 'Enter OTP';
                 otpInput.focus();
-                
-                // Switch button mode to verification
+
+                // 🔐 Start 5-minute OTP countdown
+                startSignupOtpTimer();
+
                 btnText.innerText = 'Verify & Create Account';
                 signupStep = 2;
                 resetButtonState(submitBtn, btnText, loader);
@@ -652,3 +722,108 @@ function lockFormAndForceReset() {
         }
     }, 1500);
 }
+
+// =========================================
+// 🔄 RESEND SIGNUP OTP
+// =========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    const resendBtn = document.getElementById('signup-resend-otp');
+
+    if (!resendBtn) return;
+
+    resendBtn.addEventListener('click', async () => {
+
+        const nameInput = document.getElementById('signup-name');
+        const emailInput = document.getElementById('signup-email');
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim().toLowerCase();
+
+        if (!name || !email) {
+            showToast(
+                'Missing Information',
+                'Please enter your name and email first.',
+                'error'
+            );
+            return;
+        }
+
+        resendBtn.disabled = true;
+
+        const originalText = resendBtn.innerHTML;
+
+        resendBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        try {
+
+            const response = await fetch('/api/user/send-signup-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    full_name: name,
+                    email: email
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+
+                showToast(
+                    'OTP Resent!',
+                    'A new OTP has been sent to your email.',
+                    'success'
+                );
+
+                const otpInput =
+                    document.getElementById('signup-otp');
+
+                if (otpInput) {
+                    otpInput.disabled = false;
+                    otpInput.value = '';
+                    otpInput.placeholder = 'Enter OTP';
+                    otpInput.focus();
+                }
+
+                // Restart 5 minute timer
+                startSignupOtpTimer();
+
+            } else {
+
+                showToast(
+                    'Unable to Resend',
+                    data.message || 'Could not send OTP.',
+                    'error'
+                );
+
+                resendBtn.disabled = false;
+            }
+
+        } catch (error) {
+
+            console.error('Resend OTP Error:', error);
+
+            showToast(
+                'System Error',
+                'Server not responding. Please try again.',
+                'error'
+            );
+
+            resendBtn.disabled = false;
+
+        } finally {
+
+            if (signupOtpSeconds > 0) {
+                resendBtn.innerHTML = originalText;
+            }
+
+        }
+
+    });
+
+});

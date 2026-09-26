@@ -1232,3 +1232,90 @@ body {
         border: 1px solid #ddd !important;
     }
 }
+
+/* =========================================
+   OTP VERIFICATION UI
+========================================= */
+
+.otp-verification-box {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.18);
+}
+
+.otp-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.otp-sent-message {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #16a34a;
+}
+
+.otp-sent-message i {
+    margin-right: 4px;
+}
+
+.otp-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.otp-countdown.warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.otp-countdown.expired {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+}
+
+.otp-resend-btn {
+    margin-top: 10px;
+    border: none;
+    background: transparent;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 5px 0;
+}
+
+.otp-resend-btn:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.otp-resend-btn:disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+
+    .otp-status-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .otp-countdown {
+        align-self: flex-start;
+    }
+
+}
