@@ -24,7 +24,6 @@ urllib3>=2.0.0
 google-generativeai==0.5.2
 
 # PDF & Document Processing (Render Native - No Root Required)
-playwright
 xhtml2pdf>=0.2.16
 reportlab>=4.0.0
 html5lib>=1.1
