@@ -1,0 +1,40 @@
+<div class="review-footer-callout">
+    <div class="review-footer-copy">
+        <span class="review-footer-eyebrow"><i class="fas fa-star" aria-hidden="true"></i> Your feedback matters</span>
+        <h3>Help us make ATS Pro better</h3>
+        <p>Share your experience or see what other job seekers think.</p>
+    </div>
+    <div class="review-footer-actions">
+        <button type="button" class="review-footer-primary" onclick="openReviewModal()">
+            <i class="fas fa-pen" aria-hidden="true"></i> Add a Review
+        </button>
+        <a href="{{ url_for('index') }}#reviews-section" class="review-footer-link">Home reviews</a>
+        <a href="{{ url_for('all_reviews_page') }}" class="review-footer-link">All reviews</a>
+    </div>
+</div>
+
+<div id="reviewModal" class="review-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+    <div class="review-modal-panel">
+        <button type="button" onclick="closeReviewModal()" class="review-modal-close" aria-label="Close review form">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+        <h3 id="reviewModalTitle">Rate Your Experience</h3>
+        <p class="review-modal-description">Tell us what worked well and what we can improve.</p>
+        <div class="review-modal-stars" id="starContainer" aria-label="Choose a rating from one to five stars">
+            <button type="button" data-val="1" aria-label="1 star"><i class="fas fa-star" aria-hidden="true"></i></button>
+            <button type="button" data-val="2" aria-label="2 stars"><i class="fas fa-star" aria-hidden="true"></i></button>
+            <button type="button" data-val="3" aria-label="3 stars"><i class="fas fa-star" aria-hidden="true"></i></button>
+            <button type="button" data-val="4" aria-label="4 stars"><i class="fas fa-star" aria-hidden="true"></i></button>
+            <button type="button" data-val="5" aria-label="5 stars"><i class="fas fa-star" aria-hidden="true"></i></button>
+        </div>
+        <input type="hidden" id="reviewRatingInput" value="5">
+        <textarea id="reviewCommentInput" rows="4" maxlength="1000" placeholder="Write a short review..." aria-label="Your review"></textarea>
+        {% if not current_user %}
+        <p class="review-login-note">Please <a href="{{ url_for('login_page') }}">log in</a> to submit your review.</p>
+        {% endif %}
+        <button type="button" onclick="submitReviewAction()" id="btnSubmitReview" class="review-submit-button">Submit Review</button>
+    </div>
+</div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/review-footer.css') }}">
+<script defer src="{{ url_for('static', filename='js/review_form.js') }}"></script>

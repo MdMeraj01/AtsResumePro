@@ -26,6 +26,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import hashlib
+import hmac
+import re
+from html import escape as html_escape
+from functools import wraps
+import otp_guard
+from security import get_client_ip, user_or_ip_key
 import base64
 import string
 import cloudinary
@@ -105,6 +111,12 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 7
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024
 
+# Behind Render's proxy the app would think every request is http://. Trust only the
+# forwarded PROTO header (x_for=0 on purpose: X-Forwarded-For can be spoofed).
+if os.getenv('RENDER') == 'true':
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1, x_host=0, x_prefix=0)
+
 @app.after_request
 def add_security_headers(response):
     response.headers.setdefault('X-Content-Type-Options', 'nosniff')
@@ -116,14 +128,6 @@ def add_security_headers(response):
     return response
 
 
-# 2. Database Configuration (Matched with Workbench)
-app.config['MYSQL_HOST'] = '127.0.0.1'  # Localhost ki jagah IP use karo
-app.config['MYSQL_PORT'] = 3306         # Port explicit batao
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''       # Workbench me password nahi tha to blank rakho
-app.config['MYSQL_DB'] = 'ats_resume_db'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
-
 # Initialize Extensions
 # try:
 #     mysql = MySQL(app)
@@ -132,6 +136,90 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 #     print(f"❌ Extension Initialization Error: {e}")
 
 bcrypt = Bcrypt(app)
+
+# ==========================================
+# 🔐 ADMIN PASSWORD HELPERS (bcrypt + auto-migration of old plain-text rows)
+# ==========================================
+ADMIN_PW_MIN_LEN = 8
+ADMIN_PW_MAX_LEN = 72  # bcrypt limit
+
+def _is_bcrypt_hash(value):
+    return isinstance(value, str) and len(value) == 60 and value.startswith(('$2a$', '$2b$', '$2y$'))
+
+def hash_admin_password(plain):
+    return bcrypt.generate_password_hash(plain).decode('utf-8')
+
+def verify_admin_password(stored, entered):
+    """Returns (is_ok, needs_upgrade). Old plain-text rows still work once,
+    then get upgraded to a bcrypt hash right after a successful login."""
+    stored = '' if stored is None else str(stored)
+    entered = '' if entered is None else str(entered)
+    if _is_bcrypt_hash(stored):
+        try:
+            return bcrypt.check_password_hash(stored, entered), False
+        except ValueError:
+            return False, False
+    ok = hmac.compare_digest(stored.strip().encode('utf-8'), entered.strip().encode('utf-8'))
+    return ok, ok
+
+# ==========================================
+# 🚫 BLOCKED USERS + 🛡️ ADMIN PERMISSIONS (Step 2)
+# ==========================================
+BLOCKED_USER_STATUSES = {'banned', 'suspended'}
+
+def clean_display_name(name, default='User'):
+    """Names from Google/GitHub are not validated by us. Drop < and > so a profile name can never
+    turn into an HTML tag when it is shown in the admin panel or in e-mails."""
+    cleaned = re.sub(r'[<>]', '', str(name or '')).strip()[:100]
+    return cleaned or default
+
+def is_user_blocked(status):
+    """Admin panel writes 'Suspended', older code only knew 'Banned'. Treat both as blocked."""
+    return str(status or '').strip().lower() in BLOCKED_USER_STATUSES
+
+
+def admin_required(super_only=False):
+    """Protects /api/admin/* routes.
+    - must be logged in as admin
+    - admin must still exist and not be suspended (re-checked in DB every 60 s,
+      so a suspended/deleted admin loses access quickly)
+    - super_only=True -> only role 'Super Admin'"""
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            admin_id = session.get('admin_id')
+            if not admin_id:
+                return jsonify({'success': False, 'error': 'Unauthorized', 'message': 'Unauthorized'}), 401
+
+            now = time.time()
+            if now - session.get('admin_verified_at', 0) > 60:
+                conn = None
+                try:
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    cur.execute("SELECT role, status FROM admins WHERE id = %s", (admin_id,))
+                    row = cur.fetchone()
+                except Exception as e:
+                    print(f"Admin verify error: {type(e).__name__}")
+                    return jsonify({'success': False, 'error': 'Unavailable',
+                                    'message': 'Could not verify admin session. Try again.'}), 503
+                finally:
+                    if conn:
+                        conn.close()
+                if not row or str(row.get('status') or '').strip().lower() == 'suspended':
+                    for k in ('admin_id', 'admin_name', 'admin_role', 'admin_verified_at'):
+                        session.pop(k, None)
+                    return jsonify({'success': False, 'error': 'Unauthorized',
+                                    'message': 'Admin session expired. Please login again.'}), 401
+                session['admin_role'] = row.get('role') or 'Admin'
+                session['admin_verified_at'] = now
+
+            if super_only and session.get('admin_role') != 'Super Admin':
+                return jsonify({'success': False, 'error': 'Forbidden',
+                                'message': 'Super Admin permission required.'}), 403
+            return view(*args, **kwargs)
+        return wrapped
+    return decorator
 oauth = OAuth(app)
 
 google = oauth.register(
@@ -810,8 +898,10 @@ def google_auth():
         if not user_info:
             return "Failed to fetch user info from Google", 400
             
+        if user_info.get('email_verified') is False:
+            return redirect(url_for('login_page', error="Your Google email is not verified."))
         email = user_info['email']
-        name = user_info.get('name', 'Google User')
+        name = clean_display_name(user_info.get('name'), 'Google User')
         picture = user_info.get('picture', '')
 
         conn = get_db_connection()
@@ -820,6 +910,10 @@ def google_auth():
         # Check existing user
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
+
+        if user and is_user_blocked(user.get('status')):
+            conn.close()
+            return redirect(url_for('login_page', error="Your account has been suspended. Please contact support."))
 
         if user:
             # 🟢 EXISTING USER LOGIN
@@ -937,7 +1031,7 @@ def callback_github():
         if not email:
             return redirect(url_for('login_page', error="GitHub Account Email is Private or Not Verified"))
 
-        name = user_info.get('name') or user_info.get('login') or 'GitHub User'
+        name = clean_display_name(user_info.get('name') or user_info.get('login'), 'GitHub User')
         picture = user_info.get('avatar_url', '')
         
         conn = get_db_connection()
@@ -945,6 +1039,10 @@ def callback_github():
         
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         existing_user = cursor.fetchone()
+
+        if existing_user and is_user_blocked(existing_user.get('status')):
+            conn.close()
+            return redirect(url_for('login_page', error="Your account has been suspended. Please contact support."))
 
         if existing_user:
             # 🟢 EXISTING USER LOGIN
@@ -1153,13 +1251,20 @@ def send_signup_otp():
         if conn:
             conn.close()
 
-    # 7. Generate 6-digit Secure OTP
+    # 7. Anti-bombing: one OTP e-mail per address per minute
+    if not otp_guard.cooldown_ok('signup', email):
+        return jsonify({'success': False, 'message': 'Please wait a minute before requesting another OTP.'}), 429
+
+    # 7b. Generate 6-digit Secure OTP
     otp = generate_secure_otp()
 
     # 8. Save Data to Session
-    session['signup_otp'] = otp
+    # The cookie only keeps an HMAC of the OTP (never the OTP itself), so it cannot be read from the cookie.
+    session.pop('signup_otp', None)
+    session['signup_otp_hash'] = otp_guard.digest(app.config['SECRET_KEY'], email, otp)
     session['signup_otp_expires_at'] = time.time() + 600
     session['signup_email'] = email
+    otp_guard.start('signup', email, ttl=600)
     if full_name:
         session['signup_name'] = full_name
 
@@ -1176,30 +1281,44 @@ def send_signup_otp():
 @rate_limit(10, 600)
 def signup():
     try:
-        data = request.json
-        full_name = data.get('full_name')
-        email = data.get('email')
+        data = request.get_json(silent=True) or {}
+        full_name = str(data.get('full_name') or '').strip()
+        email = str(data.get('email') or '').strip().lower()
         password = data.get('password')
-        user_otp = data.get('otp')
+        user_otp = str(data.get('otp') or '').strip()
         ref_code = data.get('ref_code') or session.get('pending_ref_code')
 
         if not all([full_name, email, password, user_otp]):
             return jsonify({'success': False, 'message': 'All fields and OTP are required'}), 400
+
+        is_name_valid, name_err = validate_full_name(full_name)
+        if not is_name_valid:
+            return jsonify({'success': False, 'message': name_err}), 400
 
         valid_pw, pw_err = validate_password(str(password))
         if not valid_pw:
             return jsonify({'success': False, 'message': pw_err}), 400
 
         # 1. 🛡️ VERIFY OTP
-        saved_otp = session.get('signup_otp')
-        saved_email = session.get('signup_email')
-
-        if (not saved_otp or saved_otp != str(user_otp) or saved_email != str(email).strip().lower() or time.time() > session.get('signup_otp_expires_at', 0)):
+        otp_ok = (
+            session.get('signup_email') == email
+            and time.time() <= session.get('signup_otp_expires_at', 0)
+            and otp_guard.is_active('signup', email)
+            and otp_guard.same(session.get('signup_otp_hash'),
+                               otp_guard.digest(app.config['SECRET_KEY'], email, user_otp))
+        )
+        if not otp_ok:
+            otp_guard.register_failure('signup', email)
             return jsonify({'success': False, 'message': 'Invalid or Expired OTP!'}), 400
 
         # 2. Database Connection
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        cursor.execute("SELECT id FROM users WHERE LOWER(email) = %s", (email,))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'success': False, 'message': 'Email is already registered. Please login.'}), 409
 
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         user_referral_code = secrets.token_hex(4).upper()
@@ -1249,6 +1368,8 @@ def signup():
 
         # Cleanup & Auto-login
         session.pop('signup_otp', None)
+        session.pop('signup_otp_hash', None)
+        otp_guard.finish('signup', email)
         session.pop('signup_email', None)
         session.pop('signup_otp_expires_at', None)
         session.pop('pending_ref_code', None)
@@ -1302,7 +1423,7 @@ def login():
                 }), 404
 
             # ACCOUNT BANNED CHECK
-            if user.get('status') == 'Banned':
+            if is_user_blocked(user.get('status')):
                 return jsonify({
                     'success': False,
                     'message': 'Your account has been suspended. Please contact support.'
@@ -1462,6 +1583,7 @@ def blog_post(id):
 
 # 3. Admin API: Add New Blog Post (Direct Image URL)
 @app.route('/api/admin/blog/add', methods=['POST'])
+@admin_required(super_only=False)
 def add_blog():
     # 1. Admin Session Check
     is_admin = (
@@ -1516,6 +1638,7 @@ def add_blog():
             
 # 4. Admin API: Delete Blog Post
 @app.route('/api/admin/delete-blog/<int:id>', methods=['DELETE'])
+@admin_required(super_only=False)
 def delete_blog(id):
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
@@ -1662,9 +1785,13 @@ def generate_ai_description():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ai/suggestions', methods=['POST'])
+@rate_limit(15, 600, key_func=user_or_ip_key)
 def get_ai_suggestions():
+    if not session.get('user_id'):
+        return jsonify({'success': False, 'error': 'LOGIN_REQUIRED',
+                        'message': 'Please login to use AI suggestions.'}), 401
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
         step = data.get('step')
         resume_data = data.get('resume_data')
         
@@ -1811,6 +1938,12 @@ def export_pdf():
         if not template_name or template_name in ['none', 'undefined', 'null']:
             template_name = 'modern'
 
+        # 🔒 Premium templates need an unlocked plan/purchase (same rule as /api/check-template-access)
+        has_access, _is_premium, _reason, _display = check_user_template_access(conn, template_name)
+        if not has_access:
+            return jsonify({'success': False, 'error': 'PREMIUM_REQUIRED',
+                            'message': 'This template is premium. Please upgrade or unlock it to download.'}), 403
+
         full_html = data.get('full_html', '')
         candidate_name = data.get('candidate_name', 'Resume')
 
@@ -1935,6 +2068,7 @@ def write_cover_letter_ai():
 # 🟢 AI ROUTE: Resume Builder (With Credit System)
 # ==========================================
 @app.route('/api/ai/generate', methods=['POST'])
+@rate_limit(20, 600, key_func=user_or_ip_key)
 def generate_ai_content():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -1981,6 +2115,7 @@ def admin_login_page():
 # ==========================================
 
 @app.route('/api/admin/gallery-scan')
+@admin_required(super_only=False)
 def scan_gallery():
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
@@ -2023,6 +2158,7 @@ def scan_gallery():
     return jsonify(gallery_data)
 
 @app.route('/api/admin/delete-image', methods=['POST'])
+@admin_required(super_only=True)
 def delete_image():
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
@@ -2051,53 +2187,55 @@ def delete_image():
 # ==========================================
 
 @app.route('/api/admin/login', methods=['POST'])
+@rate_limit(limit=10, window_seconds=300)
 def admin_login():
     try:
-        data = request.json
-        email = data.get('email')
-        password = data.get('password')
+        data = request.get_json(silent=True) or {}
+        email = str(data.get('email') or '').strip()
+        password = str(data.get('password') or '').strip()
 
-        # Debug Print (Console check karo ki kya data aaya)
-        print(f"🔍 Login Attempt: Email={email}, Password={password}")
+        if not email or not password:
+            return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
 
         conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Admin ko email se dhoondo
-        cursor.execute("SELECT * FROM admins WHERE email = %s", (email,))
-        admin = cursor.fetchone()
-        conn.close()
-        if admin:
-        # 👇 NEW CHECK: Agar suspended hai to rok do
-         if admin.get('status') == 'suspended':
-          return jsonify({'success': False, 'message': '🚫 Account Suspended. Contact Super Admin.'}), 403
-     
-        # Check 1: Kya Admin database mein mila?
-        if not admin:
-            print("❌ Error: Admin email not found in DB")
-            return jsonify({'success': False, 'message': 'User not found'}), 401
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM admins WHERE email = %s", (email,))
+            admin = cursor.fetchone()
 
-        # Debug Print (DB mein kya password save hai)
-        # Note: Production mein password print karna unsafe hai, par abhi debugging ke liye zaroori hai.
-        print(f"✅ User Found: {admin['full_name']}")
-        print(f"🔑 DB Password: {admin['password']} | Entered Password: {password}")
+            ok, needs_upgrade = (False, False)
+            if admin:
+                ok, needs_upgrade = verify_admin_password(admin.get('password'), password)
 
-        # Check 2: Password Match (Plain Text Match)
-        # .strip() use kar rahe hain taaki agar galti se space aa gaya ho to hat jaye
-        if str(admin['password']).strip() == str(password).strip():
-            session['admin_id'] = admin['id']
-            session['admin_name'] = admin['full_name']
-            session['admin_role'] = admin.get('role', 'Admin')
-            
-            print("🎉 Login Successful!")
-            return jsonify({'success': True, 'redirect': url_for('admin_dashboard')})
-        else:
-            print("❌ Error: Password Mismatch")
-            return jsonify({'success': False, 'message': 'Wrong Password'}), 401
+            # Same message for "no such admin" and "wrong password" (no user enumeration)
+            if not admin or not ok:
+                return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
+
+            # Status is checked only AFTER the password is correct
+            if str(admin.get('status') or '').strip().lower() == 'suspended':
+                return jsonify({'success': False, 'message': '🚫 Account Suspended. Contact Super Admin.'}), 403
+
+            # Silent upgrade: plain-text -> bcrypt
+            if needs_upgrade:
+                try:
+                    cursor.execute("UPDATE admins SET password = %s WHERE id = %s",
+                                   (hash_admin_password(password), admin['id']))
+                    conn.commit()
+                except Exception as upg_err:
+                    conn.rollback()
+                    print(f"⚠️ Admin password upgrade skipped (is admins.password VARCHAR(255)?): {upg_err}")
+        finally:
+            conn.close()
+
+        session['admin_id'] = admin['id']
+        session['admin_name'] = admin['full_name']
+        session['admin_role'] = admin.get('role', 'Admin')
+        session['admin_verified_at'] = time.time()
+        return jsonify({'success': True, 'redirect': url_for('admin_dashboard')})
 
     except Exception as e:
-        print(f"🔥 System Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"🔥 Admin login error: {type(e).__name__}")
+        return jsonify({'success': False, 'message': 'Server error. Please try again.'}), 500
 
 # ==========================================
 # 👑 ADMIN DASHBOARD ROUTE (Updated with Transactions)
@@ -2240,6 +2378,7 @@ def admin_dashboard():
     
 
 @app.route('/api/admin/add-user', methods=['POST'])
+@admin_required(super_only=True)
 def admin_add_user():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2270,6 +2409,7 @@ def admin_add_user():
 
 # 1. Get All Settings
 @app.route('/api/admin/settings', methods=['GET'])
+@admin_required(super_only=True)
 def get_settings():
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
@@ -2284,6 +2424,7 @@ def get_settings():
 
 # 2. Update Settings
 @app.route('/api/admin/update-settings', methods=['POST'])
+@admin_required(super_only=True)
 def update_settings():
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
@@ -2310,6 +2451,7 @@ def update_settings():
         
 # 3. Delete User API
 @app.route('/api/admin/delete-user/<int:user_id>', methods=['DELETE'])
+@admin_required(super_only=True)
 def admin_delete_user(user_id):
     # 🟢 EXACT MATCH: Aapka admin session 'admin_id' use karta hai
     if not session.get('admin_id'):
@@ -2356,6 +2498,7 @@ def admin_delete_user(user_id):
 
 # 4. Reset Password API (Admin Power)
 @app.route('/api/admin/reset-password', methods=['POST'])
+@admin_required(super_only=True)
 def admin_reset_password():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2375,6 +2518,7 @@ def admin_reset_password():
 
 # 1. Edit User Details
 @app.route('/api/admin/edit-user', methods=['POST'])
+@admin_required(super_only=False)
 def admin_edit_user():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2400,6 +2544,7 @@ def admin_edit_user():
 
 # 1. Toggle User Status (URL CHANGED)
 @app.route('/api/admin/toggle-user-status/<int:user_id>', methods=['POST']) 
+@admin_required(super_only=False)
 def admin_toggle_status(user_id):
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2420,6 +2565,7 @@ def admin_toggle_status(user_id):
 
 # 👇 UPDATED admin_analytics FUNCTION (Shows ALL Templates including 0 downloads)
 @app.route('/api/admin/analytics')
+@admin_required(super_only=False)
 def admin_analytics():
     if 'admin_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -2681,12 +2827,13 @@ def verify_template_payment():
 # 2. Add New Template (Advanced - Files & DB)
 # ==========================================
 @app.route('/api/admin/add-template', methods=['POST'])
+@admin_required(super_only=False)
 def add_template():
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
-        name = request.form.get('name')
+        name = (request.form.get('name') or '').strip().lower()
         display_name = request.form.get('display_name')
         category = request.form.get('category')
         description = request.form.get('description')
@@ -2696,6 +2843,17 @@ def add_template():
         
         html_content = request.form.get('html_content')
         css_content = request.form.get('css_content')
+
+        # 🛡️ name becomes a file name -> allow only safe characters (blocks ../ tricks)
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,39}", name):
+            return jsonify({'success': False,
+                            'message': 'Invalid template name. Use only a-z, 0-9, - and _ (2-40 chars).'}), 400
+        # 🛡️ templates are plain HTML; block Jinja syntax (server-side template injection)
+        if html_content and any(tok in html_content for tok in ('{{', '{%', '{#')):
+            return jsonify({'success': False,
+                            'message': 'Jinja syntax ({{ }}, {% %}) is not allowed in template HTML.'}), 400
+        if (html_content and len(html_content) > 200_000) or (css_content and len(css_content) > 100_000):
+            return jsonify({'success': False, 'message': 'Template file too large.'}), 400
         
         # Direct URL fetch from Form
         image_url = request.form.get('image_url') or f"{name}.png"
@@ -2736,10 +2894,11 @@ def add_template():
 
     except Exception as e:
         print(f"Add Template Error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500        
+        return jsonify({'success': False, 'message': 'Could not create template.'}), 500
     
 # 3. Toggle Premium / Edit Template
 @app.route('/api/admin/update-template', methods=['POST'])
+@admin_required(super_only=False)
 def update_template():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2759,6 +2918,7 @@ def update_template():
 
 # 4. Delete Template
 @app.route('/api/admin/delete-template/<int:id>', methods=['DELETE'])
+@admin_required(super_only=True)
 def delete_template(id):
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -2775,6 +2935,7 @@ def delete_template(id):
 
 # 1. Export Users to CSV (Excel Compatible)
 @app.route('/api/admin/export/csv')
+@admin_required(super_only=True)
 def admin_export_csv(): # <--- Renamed
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
@@ -2804,6 +2965,7 @@ def admin_export_csv(): # <--- Renamed
 
 # 2. Export Analytics Report to PDF
 @app.route('/api/admin/export/pdf')
+@admin_required(super_only=True)
 def admin_export_pdf(): # <--- 🔴 NAME CHANGED HERE (Error Solved)
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
@@ -2894,22 +3056,26 @@ def trap_admin_route(subpath=None):
 
 # 1. Change Password (Direct Reset)
 @app.route('/api/admin/change-password', methods=['POST'])
+@admin_required(super_only=False)
 def change_admin_password():
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
-    new_password = data.get('new_password')
+    data = request.get_json(silent=True) or {}
+    new_password = str(data.get('new_password') or '').strip()
     
-    if not new_password or len(new_password) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    if len(new_password) < ADMIN_PW_MIN_LEN or len(new_password) > ADMIN_PW_MAX_LEN:
+        msg = f'Password must be {ADMIN_PW_MIN_LEN}-{ADMIN_PW_MAX_LEN} characters'
+        return jsonify({'success': False, 'error': msg, 'message': msg}), 400
     
     conn = get_db_connection()
-    cursor = conn.cursor()
-    # Logged in admin ka password direct update karo
-    cursor.execute("UPDATE admins SET password = %s WHERE id = %s", (new_password, session['admin_id']))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE admins SET password = %s WHERE id = %s",
+                       (hash_admin_password(new_password), session['admin_id']))
+        conn.commit()
+    finally:
+        conn.close()
     
     return jsonify({'success': True, 'message': 'Password updated successfully!'})
 
@@ -2919,6 +3085,7 @@ def change_admin_password():
 
 # 1. Add New Admin (Only Super Admin)
 @app.route('/api/admin/add-admin', methods=['POST'])
+@admin_required(super_only=True)
 def add_new_admin():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
 
@@ -2926,17 +3093,31 @@ def add_new_admin():
     if session.get('admin_role') != 'Super Admin':
         return jsonify({'success': False, 'message': 'Permission Denied! Only Super Admin can add users.'}), 403
 
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    full_name = str(data.get('full_name') or '').strip()[:100]
+    email = str(data.get('email') or '').strip()[:150]
+    password = str(data.get('password') or '').strip()
+    role = str(data.get('role') or 'Admin').strip()
+
+    if not full_name or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        return jsonify({'success': False, 'message': 'Valid name and email are required'}), 400
+    if role not in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'message': 'Invalid role'}), 400
+    if len(password) < ADMIN_PW_MIN_LEN or len(password) > ADMIN_PW_MAX_LEN:
+        return jsonify({'success': False,
+                        'message': f'Password must be {ADMIN_PW_MIN_LEN}-{ADMIN_PW_MAX_LEN} characters'}), 400
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    
     try:
         cursor.execute("INSERT INTO admins (full_name, email, password, role) VALUES (%s, %s, %s, %s)",
-                       (data['full_name'], data['email'], data['password'], data['role']))
+                       (full_name, email, hash_admin_password(password), role))
         conn.commit()
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        conn.rollback()
+        print(f"Add admin error: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'message': 'Could not add admin (email may already exist).'}), 500
     finally:
         conn.close()
 
@@ -3021,6 +3202,7 @@ def build_newsletter_html(user_name, subject, intro_text, banner_image_url, acti
 # 📧 ADMIN NEWSLETTER & TEST SENDER API
 # ==========================================
 @app.route('/api/admin/send-newsletter', methods=['POST'])
+@admin_required(super_only=True)
 def send_newsletter():
     if 'admin_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -3130,6 +3312,7 @@ def send_newsletter():
 # 1. Toggle Status ADMIN (Suspend/Active) -> URL CHANGED
 # 2. Toggle Admin Status (URL CHANGED)
 @app.route('/api/admin/toggle-admin-status/<int:id>', methods=['POST']) 
+@admin_required(super_only=True)
 def toggle_admin_status(id):
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3158,6 +3341,7 @@ def toggle_admin_status(id):
 
 # 3. Delete Admin (Only Super Admin)
 @app.route('/api/admin/delete-admin/<int:id>', methods=['DELETE'])
+@admin_required(super_only=True)
 def delete_admin(id):
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3183,6 +3367,7 @@ def delete_admin(id):
 
 # 1. Get Single User Details (For Admin View)
 @app.route('/api/admin/user-details/<int:user_id>', methods=['GET'])
+@admin_required(super_only=False)
 def get_user_details(user_id):
     if 'admin_id' not in session: 
         return jsonify({'error': 'Unauthorized'}), 401
@@ -3325,11 +3510,17 @@ def update_user_last_active():
 
     conn = None
     cursor = None
+    blocked = False
     try:
         session['last_activity_tracked'] = now_ts
         conn = get_db_connection()
         cursor = get_safe_cursor(conn)
         
+        cursor.execute("SELECT status FROM users WHERE id = %s", (user_id,))
+        _row = cursor.fetchone()
+        if _row:
+            _status = _row.get('status') if isinstance(_row, dict) else _row[0]
+            blocked = is_user_blocked(_status)
         cursor.execute("UPDATE users SET last_active = NOW() WHERE id = %s", (user_id,))
         cursor.execute("""
             INSERT IGNORE INTO user_login_history (user_id, activity_date) 
@@ -3342,8 +3533,15 @@ def update_user_last_active():
         if cursor: cursor.close()
         if conn: conn.close()
 
+    if blocked:
+        session.clear()
+        if request.path.startswith('/api/'):
+            return jsonify({'success': False, 'message': 'Your account has been suspended. Please contact support.'}), 403
+        return redirect(url_for('login_page', error='Your account has been suspended. Please contact support.'))
+
 # 2. Update User Resources (Plan & Credits)
 @app.route('/api/admin/update-user-resources', methods=['POST'])
+@admin_required(super_only=True)
 def update_user_resources():
     if 'admin_id' not in session: return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3372,7 +3570,8 @@ def update_user_resources():
 # ==========================================
 # 🛠️ DATABASE IMAGE FIXER (RUN ONCE)
 # ==========================================
-@app.route('/fix-template-images')
+@app.route('/fix-template-images', methods=['POST'])
+@admin_required(super_only=True)
 def fix_template_images():
     if 'admin_id' not in session: return "Admin login required", 403
     
@@ -3400,7 +3599,8 @@ def fix_template_images():
 # ==========================================
 # 🧹 DATABASE CLEANER (Run Once)
 # ==========================================
-@app.route('/clean-old-templates')
+@app.route('/clean-old-templates', methods=['POST'])
+@admin_required(super_only=True)
 def clean_old_templates():
     if 'admin_id' not in session: return "Admin login required", 403
     
@@ -3428,7 +3628,8 @@ def clean_old_templates():
 # ==========================================
 # 🛠️ FIX EMPTY TEMPLATE NAMES
 # ==========================================
-@app.route('/fix-missing-names')
+@app.route('/fix-missing-names', methods=['POST'])
+@admin_required(super_only=True)
 def fix_missing_names():
     if 'admin_id' not in session: return "Admin login required", 403
     
@@ -3455,10 +3656,22 @@ def fix_missing_names():
 # ==========================================
 
 def send_contact_emails(user_name, user_email, subject, message):
-    # 🔐 EMAIL SETTINGS (Apna Gmail aur App Password yahan dalein)
-    SENDER_EMAIL = "atsresumepro01@gmail.com"  # Apna Gmail dalein
-    SENDER_PASSWORD = "nmma chlo ybuc bprl" # Gmail App Password (Not login password)
-    ADMIN_EMAIL = "merajmohammed00123@gmail.com"     # Jis par aapko msg chahiye
+    # 🔐 EMAIL SETTINGS -> set these in Render > Environment (never in code)
+    SENDER_EMAIL = os.getenv('SMTP_SENDER_EMAIL', '').strip()
+    SENDER_PASSWORD = os.getenv('SMTP_APP_PASSWORD', '').strip()
+    ADMIN_EMAIL = os.getenv('CONTACT_ADMIN_EMAIL', '').strip()
+    if not (SENDER_EMAIL and SENDER_PASSWORD and ADMIN_EMAIL):
+        print("⚠️ Contact e-mail not configured: set SMTP_SENDER_EMAIL, SMTP_APP_PASSWORD, CONTACT_ADMIN_EMAIL")
+        return False
+
+    # Header-injection + HTML-injection protection for user supplied text
+    user_name = ' '.join(str(user_name or '').split())[:100]
+    user_email = ' '.join(str(user_email or '').split())[:150]
+    subject = ' '.join(str(subject or '').split())[:150]
+    message = html_escape(str(message or '')[:5000]).replace('\n', '<br>')
+    user_name = html_escape(user_name)
+    user_email_html = html_escape(user_email)
+    subject_html = html_escape(subject)
     
     # ----------------------------------------
     # 1. EMAIL TO ADMIN (Aapke liye)
@@ -3471,8 +3684,8 @@ def send_contact_emails(user_name, user_email, subject, message):
     body_admin = f"""
     <h3>New User Query Received</h3>
     <p><b>Name:</b> {user_name}</p>
-    <p><b>Email:</b> {user_email}</p>
-    <p><b>Subject:</b> {subject}</p>
+    <p><b>Email:</b> {user_email_html}</p>
+    <p><b>Subject:</b> {subject_html}</p>
     <hr>
     <p><b>Message:</b><br>{message}</p>
     """
@@ -3514,7 +3727,7 @@ def send_contact_emails(user_name, user_email, subject, message):
 
     # 🚀 SEND BOTH EMAILS
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=20)
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         
@@ -4006,38 +4219,40 @@ def send_welcome_email(user_name, user_email):
 @app.route('/api/user/forgot-password', methods=['POST'])
 @rate_limit(3, 600)
 def forgot_password():
-    data = request.json
-    email = data.get('email')
-    
+    data = request.get_json(silent=True) or {}
+    email = str(data.get('email') or '').strip()
+
     if not email:
         return jsonify({'success': False, 'message': 'Email is required'}), 400
-        
+
+    # Anti-bombing: one reset mail per address per minute
+    if not otp_guard.cooldown_ok('reset', email):
+        return jsonify({'success': False, 'message': 'Please wait a minute before requesting another OTP.'}), 429
+
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
-    
+    cursor = conn.cursor()
+
     try:
-        # Check if user exists
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
-        
+
         if not user:
             return jsonify({'success': False, 'message': 'No account found with this email!'}), 404
-            
-        # Generate 6-digit OTP
+
         otp = generate_secure_otp()
-        
-        # Save OTP in database (using the existing verification_code column)
+
+        # OTP is kept in the existing verification_code column; expiry + attempt limit live in otp_guard
         cursor.execute("UPDATE users SET verification_code = %s WHERE email = %s", (otp, email))
         conn.commit()
-        
-        # Send Email
+        otp_guard.start('reset', email, ttl=600)
+
         if send_password_reset_email(email, otp):
             return jsonify({'success': True, 'message': 'OTP sent to your email!'})
-        else:
-            return jsonify({'success': False, 'message': 'Failed to send email. Try again.'}), 500
-            
+        return jsonify({'success': False, 'message': 'Failed to send email. Try again.'}), 500
+
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"Forgot password error: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'message': 'Something went wrong. Please try again.'}), 500
     finally:
         conn.close()
 
@@ -4045,47 +4260,50 @@ def forgot_password():
 @app.route('/api/user/reset-password', methods=['POST'])
 @rate_limit(10, 600)
 def reset_password():
-    data = request.json
-    email = data.get('email')
-    otp = data.get('otp')
+    data = request.get_json(silent=True) or {}
+    email = str(data.get('email') or '').strip()
+    otp = str(data.get('otp') or '').strip()
     new_password = data.get('new_password')
-    
+
     if not all([email, otp, new_password]):
         return jsonify({'success': False, 'message': 'All fields are required'}), 400
 
     valid_pw, pw_err = validate_password(str(new_password))
     if not valid_pw:
         return jsonify({'success': False, 'message': pw_err}), 400
-        
+
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) if hasattr(conn.cursor(), 'dictionary') else conn.cursor()
-    
+    cursor = conn.cursor()
+
     try:
-        # Verify OTP
         cursor.execute("SELECT id, verification_code FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
-        
-        if not user or user.get('verification_code') != otp:
+
+        # valid only if: an OTP was issued in the last 10 min, < 5 wrong tries, and the code matches
+        otp_ok = bool(
+            user
+            and otp_guard.is_active('reset', email)
+            and otp_guard.same(user.get('verification_code'), otp)
+        )
+        if not otp_ok:
+            otp_guard.register_failure('reset', email)
             return jsonify({'success': False, 'message': 'Invalid or expired OTP!'}), 400
-            
-        # Hash new password
+
         hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-        
-        # Update password and clear OTP
         cursor.execute("""
-            UPDATE users 
-            SET password_hash = %s, verification_code = NULL 
+            UPDATE users
+            SET password_hash = %s, verification_code = NULL
             WHERE email = %s
         """, (hashed_password, email))
-        
         conn.commit()
+        otp_guard.finish('reset', email)
         return jsonify({'success': True, 'message': 'Password reset successfully! You can now login.'})
-        
+
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"Reset password error: {type(e).__name__}: {e}")
+        return jsonify({'success': False, 'message': 'Something went wrong. Please try again.'}), 500
     finally:
         conn.close()
-
 
 # Cloudinary Configuration
 cloudinary.config(
@@ -4134,14 +4352,24 @@ def submit_review():
     if not session.get('user_id'):
         return jsonify({'success': False, 'message': 'Please login first'}), 401
 
-    data = request.get_json(force=True) or {}
-    rating = int(data.get('rating', 5))
+    data = request.get_json(silent=True) or {}
+    try:
+        rating = int(data.get('rating', 5))
+    except (TypeError, ValueError):
+        rating = 0
     comment = str(data.get('comment', '')).strip()
     user_id = session.get('user_id')
-    user_name = session.get('user_name') or 'Verified Candidate'
+    user_name = str(session.get('user_name') or 'Verified Candidate')[:100]
 
+    if rating < 1 or rating > 5:
+        return jsonify({'success': False, 'message': 'Rating must be between 1 and 5'}), 400
     if not comment:
         return jsonify({'success': False, 'message': 'Comment is required'}), 400
+    comment = comment[:1000]
+
+    # Moderation: new reviews stay hidden until approved in Admin > Reviews.
+    # Set REVIEWS_AUTO_APPROVE=1 in env to publish instantly again.
+    approved = 1 if os.getenv('REVIEWS_AUTO_APPROVE', '0') == '1' else 0
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -4153,22 +4381,23 @@ def submit_review():
         if existing:
             cursor.execute("""
                 UPDATE reviews 
-                SET rating = %s, comment = %s, is_approved = 1, created_at = NOW() 
+                SET rating = %s, comment = %s, is_approved = %s, created_at = NOW() 
                 WHERE user_id = %s
-            """, (rating, comment, user_id))
+            """, (rating, comment, approved, user_id))
         else:
             cursor.execute("""
                 INSERT INTO reviews (user_id, user_name, rating, comment, is_approved, created_at)
-                VALUES (%s, %s, %s, %s, 1, NOW())
-            """, (user_id, user_name, rating, comment))
+                VALUES (%s, %s, %s, %s, %s, NOW())
+            """, (user_id, user_name, rating, comment, approved))
 
         conn.commit()  # 🔴 Yeh commit hona compulsory hai!
-        return jsonify({'success': True, 'message': 'Review live ho gaya!'})
+        msg = 'Review live ho gaya!' if approved else 'Thanks! Your review will appear after approval.'
+        return jsonify({'success': True, 'message': msg})
 
     except Exception as e:
         if conn: conn.rollback()
         print(f"Review submit error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': 'Could not save review. Please try again.'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -4323,13 +4552,17 @@ def all_reviews_page():
         
 # 🟢 5. Admin Approve/Hide Toggle Route (/furqan panel ke liye)
 @app.route('/api/admin/reviews/toggle', methods=['POST'])
+@admin_required(super_only=False)
 def admin_toggle_review():
-    if not session.get('is_admin'):
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
-
-    data = request.json or {}
+    # (Old check `session.get('is_admin')` never matched: that key is never set anywhere,
+    #  so approving/hiding reviews always failed. @admin_required above does the real check.)
+    data = request.get_json(silent=True) or {}
     review_id = data.get('review_id')
-    status = data.get('status') # True ya False
+    status = 1 if data.get('status') in (True, 1, '1', 'true', 'True') else 0
+    try:
+        review_id = int(review_id)
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': 'Invalid review id'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -4342,6 +4575,7 @@ def admin_toggle_review():
         
 # 1. Fetch all reviews for Admin Panel
 @app.route('/api/admin/reviews/all', methods=['GET'])
+@admin_required(super_only=False)
 def admin_get_all_reviews():
     if 'admin_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -4369,6 +4603,7 @@ def admin_get_all_reviews():
 # 2. Delete abusive review permanently
 # 🟢 Delete Abusive Review with Optional Warning Email
 @app.route('/api/admin/reviews/delete/<int:review_id>', methods=['POST'])
+@admin_required(super_only=False)
 def admin_delete_review_with_warning(review_id):
     if 'admin_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -5045,6 +5280,7 @@ def call_gemini_json(prompt, max_tokens=8192):
     return None
 
 @app.route('/api/import-and-audit-resume', methods=['POST'])
+@rate_limit(6, 600)   # free tool stays open to guests, but limited per visitor
 def import_and_audit_resume():
     if 'resume_file' not in request.files:
         return jsonify({'success': False, 'message': 'No file uploaded'}), 400
@@ -5217,6 +5453,7 @@ Return strictly a valid JSON matching this schema:
          
 # 🟢 Instant Test Trigger Route (Testing ke liye)
 @app.route('/api/admin/trigger-monthly-backup', methods=['POST'])
+@admin_required(super_only=True)
 def trigger_monthly_backup():
     if 'admin_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -5254,4 +5491,4 @@ if __name__ == '__main__':
         print("🔑 GOOGLE_API_KEY Status: LOADED")
     else:
         print("⚠️  GOOGLE_API_KEY Status: MISSING (Check .env file)")
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

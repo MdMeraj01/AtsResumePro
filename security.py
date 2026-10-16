@@ -1,3 +1,4 @@
+import os
 import re
 import time
 import secrets
@@ -118,6 +119,26 @@ def check_user_template_access(conn, template_name):
         cursor.close()
 
 
+def get_client_ip():
+    """Real visitor IP.
+    On Render, request.remote_addr is the proxy, so every visitor looked identical
+    to the rate limiter. Render/Cloudflare put the visitor in True-Client-IP /
+    CF-Connecting-IP. X-Forwarded-For is NOT used because a client can spoof it.
+    Locally (no RENDER env) plain remote_addr is used."""
+    if os.getenv('RENDER') == 'true':
+        for header in ('True-Client-IP', 'CF-Connecting-IP'):
+            value = (request.headers.get(header) or '').strip()
+            if value:
+                return value[:64]
+    return request.remote_addr or 'unknown'
+
+
+def user_or_ip_key():
+    """Rate-limit key: logged-in user id, otherwise visitor IP."""
+    uid = session.get('user_id')
+    return f"u{uid}" if uid else f"ip{get_client_ip()}"
+
+
 # Simple process-local rate limiter. It protects a single worker/container.
 # For multiple Render instances, move the store to Redis later.
 _rate_lock = threading.Lock()
@@ -131,9 +152,9 @@ def rate_limit(limit=10, window_seconds=60, key_func=None):
                 try:
                     key = key_func()
                 except Exception:
-                    key = request.remote_addr or 'unknown'
+                    key = get_client_ip()
             else:
-                key = request.remote_addr or 'unknown'
+                key = get_client_ip()
 
             bucket_key = f"{view.__name__}:{key}"
             now = time.monotonic()

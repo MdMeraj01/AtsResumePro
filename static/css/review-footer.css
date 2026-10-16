@@ -1,0 +1,100 @@
+.review-footer-callout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin: 0 auto 2rem;
+    padding: 1.5rem clamp(1rem, 4vw, 2.25rem);
+    max-width: 80rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 1rem;
+    background: linear-gradient(110deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.88));
+    box-shadow: 0 18px 45px rgba(2, 6, 23, 0.2);
+}
+
+.review-footer-copy { min-width: 0; }
+.review-footer-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #fbbf24;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.review-footer-copy h3 {
+    margin: 0.45rem 0 0.25rem;
+    color: #f8fafc;
+    font-size: 1.2rem;
+    font-weight: 750;
+}
+.review-footer-copy p { margin: 0; color: #cbd5e1; font-size: 0.875rem; }
+.review-footer-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.65rem 1rem; }
+.review-footer-primary,
+.review-footer-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    border-radius: 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.review-footer-primary { padding: 0.65rem 1rem; color: #111827; background: #fbbf24; border: 1px solid #fbbf24; cursor: pointer; }
+.review-footer-primary:hover { background: #fcd34d; border-color: #fcd34d; }
+.review-footer-link { padding: 0.5rem 0.25rem; color: #cbd5e1; }
+.review-footer-link:hover { color: #fff; text-decoration: underline; }
+
+.review-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 1rem;
+    background: rgba(2, 6, 23, 0.78);
+    backdrop-filter: blur(7px);
+}
+.review-modal-overlay.hidden { display: none; }
+.review-modal-panel {
+    position: relative;
+    width: min(100%, 28rem);
+    max-height: min(90vh, 42rem);
+    overflow-y: auto;
+    padding: 2rem 1.5rem 1.5rem;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+    color: #f8fafc;
+    background: #0f172a;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+}
+.review-modal-close { position: absolute; top: 0.9rem; right: 0.9rem; padding: 0.5rem; color: #94a3b8; background: transparent; border: 0; cursor: pointer; }
+.review-modal-close:hover { color: #fff; }
+.review-modal-panel h3 { margin: 0; padding-right: 2rem; text-align: center; font-size: 1.25rem; font-weight: 750; }
+.review-modal-description { margin: 0.5rem 0 1.25rem; color: #94a3b8; text-align: center; font-size: 0.85rem; }
+.review-modal-stars { display: flex; justify-content: center; gap: 0.45rem; margin-bottom: 1rem; }
+.review-modal-stars button { padding: 0.25rem; color: #fbbf24; background: transparent; border: 0; font-size: 1.5rem; cursor: pointer; }
+.review-modal-panel textarea { display: block; width: 100%; min-height: 6rem; resize: vertical; padding: 0.8rem; color: #f8fafc; background: #1e293b; border: 1px solid #334155; border-radius: 0.7rem; outline: none; }
+.review-modal-panel textarea:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15); }
+.review-login-note { margin: 0.75rem 0 0; color: #cbd5e1; text-align: center; font-size: 0.8rem; }
+.review-login-note a { color: #7dd3fc; font-weight: 700; }
+.review-submit-button { width: 100%; min-height: 2.9rem; margin-top: 1rem; padding: 0.7rem 1rem; color: #fff; background: #2563eb; border: 0; border-radius: 0.7rem; font-weight: 700; cursor: pointer; }
+.review-submit-button:hover { background: #1d4ed8; }
+.review-submit-button:disabled { opacity: 0.65; cursor: wait; }
+#reviewStatus { margin: 0.75rem 0 0; text-align: center; font-size: 0.8rem; }
+
+@media (max-width: 640px) {
+    .review-footer-callout { align-items: stretch; flex-direction: column; gap: 1.15rem; margin-bottom: 1.5rem; }
+    .review-footer-actions { justify-content: flex-start; gap: 0.5rem 0.9rem; }
+    .review-footer-primary { width: 100%; }
+    .review-modal-panel { padding: 1.75rem 1.1rem 1.1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .review-footer-primary, .review-footer-link { transition: none; }
+}

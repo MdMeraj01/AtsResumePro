@@ -1,3 +1,10 @@
+// ---- XSS protection: always escape DB text before putting it in innerHTML ----
+function escapeReviewHtml(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // static/js/home_reviews.js
 document.addEventListener('DOMContentLoaded', async () => {
     const grid = document.getElementById('homeReviewsGrid');
@@ -20,13 +27,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-                const userName = rev.user_name || 'Verified User';
-                const commentText = rev.comment || '';
-                const reviewDate = rev.date || 'Recent';
-                // Fallback smart avatar agar photo null ho
-                const userPhoto = rev.user_photo && rev.user_photo.trim() !== '' 
-                    ? rev.user_photo 
-                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=4f46e5&color=fff&bold=true`;
+                const rawName = String(rev.user_name || 'Verified User');
+                const userName = escapeReviewHtml(rawName);
+                const commentText = escapeReviewHtml(rev.comment || '');
+                const reviewDate = escapeReviewHtml(rev.date || 'Recent');
+                const photoRaw = String(rev.user_photo || '').trim();
+                const userPhoto = /^(https?:\/\/|\/)/i.test(photoRaw)
+                    ? escapeReviewHtml(photoRaw)
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=4f46e5&color=fff&bold=true`;
 
                 return `
                     <div class="relative group bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/80 hover:border-indigo-500/50 p-6 rounded-3xl backdrop-blur-xl transition-all duration-500 hover:-translate-y-1.5 shadow-2xl hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden">

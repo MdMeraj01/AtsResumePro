@@ -1,3 +1,10 @@
+// ---- XSS protection helper (use for any DB text placed inside innerHTML) ----
+function adminEscape(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ==========================================
 // 👑 ADMIN DASHBOARD LOGIC (admin.js) - CLEANED & OPTIMIZED
 // ==========================================
@@ -601,8 +608,8 @@ async function openUserDetail(userId) {
                 docsContainer.innerHTML = user.saved_docs.map(doc => `
                     <div class="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700">
                         <div>
-                            <h5 class="text-sm font-bold text-gray-900 dark:text-white">${doc.title}</h5>
-                            <p class="text-xs text-gray-400">Template: <span class="uppercase text-blue-500 font-semibold">${doc.template_name}</span> • Updated: ${doc.updated_at}</p>
+                            <h5 class="text-sm font-bold text-gray-900 dark:text-white">${adminEscape(doc.title)}</h5>
+                            <p class="text-xs text-gray-400">Template: <span class="uppercase text-blue-500 font-semibold">${adminEscape(doc.template_name)}</span> • Updated: ${doc.updated_at}</p>
                         </div>
                         <a href="/builder?resume_id=${doc.id}" target="_blank" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs">Open in Builder</a>
                     </div>
@@ -620,7 +627,7 @@ async function openUserDetail(userId) {
                     <div class="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-blue-100 dark:border-slate-700">
                         <div>
                             <h5 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-file-pdf text-red-500"></i> ${pdf.resume_title}
+                                <i class="fas fa-file-pdf text-red-500"></i> ${adminEscape(pdf.resume_title)}
                             </h5>
                             <p class="text-xs text-gray-400 mt-0.5">Template: <span class="uppercase text-blue-500 font-semibold">${pdf.template_name}</span> • ${pdf.downloaded_at}</p>
                         </div>
@@ -923,10 +930,10 @@ function renderGallery(images) {
                     <img src="${img.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
                 </div>
                 <div class="p-3">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate font-mono" title="${img.name}">${img.name}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate font-mono" title="${adminEscape(img.name)}">${adminEscape(img.name)}</p>
                     <p class="text-[10px] text-gray-400 mt-1">${img.size} KB</p>
                     ${!isUsed ? `
-                        <button onclick="deleteImage('${img.name}')" class="mt-2 w-full py-1 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white text-xs font-bold rounded border border-red-100 transition-colors">
+                        <button onclick="deleteImage('${adminEscape(img.name)}')" class="mt-2 w-full py-1 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white text-xs font-bold rounded border border-red-100 transition-colors">
                             <i class="fas fa-trash mr-1"></i> Delete
                         </button>
                     ` : `
@@ -1308,20 +1315,21 @@ async function loadAdminReviews() {
         }
 
         tbody.innerHTML = data.reviews.map(r => {
-            const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+            const safeRating = Math.min(5, Math.max(0, parseInt(r.rating) || 0));
+            const stars = '★'.repeat(safeRating) + '☆'.repeat(5 - safeRating);
             const isApproved = r.is_approved === 1 || r.is_approved === true;
 
             return `
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="font-bold text-gray-900 dark:text-white">${r.user_name || 'Anonymous'}</div>
-                        <div class="text-xs text-gray-400">${r.email || 'N/A'}</div>
+                        <div class="font-bold text-gray-900 dark:text-white">${adminEscape(r.user_name || 'Anonymous')}</div>
+                        <div class="text-xs text-gray-400">${adminEscape(r.email || 'N/A')}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="text-yellow-400 font-bold text-base tracking-widest">${stars}</span>
                     </td>
                     <td class="px-6 py-4 max-w-md">
-                        <p class="text-gray-700 dark:text-gray-300 line-clamp-2">${r.comment || ''}</p>
+                        <p class="text-gray-700 dark:text-gray-300 line-clamp-2">${adminEscape(r.comment || '')}</p>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-400 font-mono">
                         ${r.formatted_date || 'Recently'}
@@ -1333,7 +1341,7 @@ async function loadAdminReviews() {
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right">
                         <button onclick="openDeleteReviewModal(this, ${r.id})" 
-                                data-comment="${(r.comment || '').replace(/"/g, '&quot;')}" 
+                                data-comment="${adminEscape(r.comment || '')}" 
                                 class="px-3 py-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold transition-all">
                             <i class="fas fa-trash-alt mr-1"></i> Delete
                         </button>

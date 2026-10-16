@@ -3,7 +3,13 @@
 # No Playwright / Chromium required
 
 import io
-from flask import render_template, request
+import os
+import time
+import tempfile
+import traceback
+import mimetypes
+from urllib.parse import urlparse, unquote, urljoin
+from flask import render_template, request, current_app
 
 
 # ============================================================
@@ -12,11 +18,16 @@ from flask import render_template, request
 
 try:
     from weasyprint import HTML
+    try:
+        from weasyprint import default_url_fetcher
+    except ImportError:
+        default_url_fetcher = None
     WEASYPRINT_AVAILABLE = True
     print("✅ WeasyPrint loaded successfully")
 except (ImportError, ModuleNotFoundError, OSError) as e:
     WEASYPRINT_AVAILABLE = False
     HTML = None
+    default_url_fetcher = None
     print(f"⚠️ WeasyPrint unavailable: {e}")
 
 
@@ -30,6 +41,93 @@ try:
 except (ImportError, ModuleNotFoundError):
     XHTML2PDF_AVAILABLE = False
     pisa = None
+
+
+# ============================================================
+# 2b. SAFE RESOURCE LOADING (blocks file:// and internal-network fetches)
+# ============================================================
+# The HTML that reaches the PDF engine contains user-controlled text.
+# Without a restricted fetcher a crafted <img src="file:///..."> or
+# <link href="http://169.254.169.254/..."> would be fetched by the server.
+# Allowed: data: URIs, files under /static of THIS app (read from disk),
+# and a short list of public asset hosts over https.
+
+ALLOWED_REMOTE_HOSTS = {
+    'fonts.googleapis.com',
+    'fonts.gstatic.com',
+    'cdnjs.cloudflare.com',      # Font Awesome (builder page links it)
+    'cdn.jsdelivr.net',
+    'res.cloudinary.com',
+    'lh3.googleusercontent.com',
+    'ui-avatars.com',
+}
+
+# EMERGENCY SWITCH: set env PDF_SAFE_FETCH=0 on Render to go back to the old
+# (unrestricted) behaviour if PDF export ever breaks. Keep it 1 in normal use.
+PDF_SAFE_FETCH = os.getenv('PDF_SAFE_FETCH', '1') != '0'
+
+# xhtml2pdf treats an EMPTY return value of link_callback as "use the original URL"
+# (fail-open). To really block a resource we must return a path that cannot exist.
+_BLOCKED_PATH = os.path.join(tempfile.gettempdir(), '__blocked_pdf_resource__')
+
+
+def _build_real_fetcher():
+    """The library's own fetcher. Used ONLY for URLs we already approved.
+    Newer WeasyPrint (68+) ships a URLFetcher class; older ones have default_url_fetcher."""
+    try:
+        from weasyprint.urls import URLFetcher
+        return URLFetcher()
+    except Exception:
+        pass
+    return default_url_fetcher
+
+
+def _is_own_static(parsed, own_host):
+    """True only for http(s)://<this site>/static/... without path tricks."""
+    if (parsed.scheme or '').lower() not in ('http', 'https'):
+        return False
+    if (parsed.hostname or '').lower() != own_host:
+        return False
+    path = unquote(parsed.path)
+    return path.startswith('/static/') and '..' not in path.split('/')
+
+
+def _make_safe_url_fetcher(own_host):
+    real_fetch = _build_real_fetcher()
+
+    def safe_url_fetcher(url, *args, **kwargs):
+        parsed = urlparse(url)
+        scheme = (parsed.scheme or '').lower()
+        host = (parsed.hostname or '').lower()
+
+        allowed = (
+            scheme == 'data'
+            or _is_own_static(parsed, own_host)
+            or (scheme == 'https' and host in ALLOWED_REMOTE_HOSTS)
+        )
+        if not allowed or real_fetch is None:
+            raise ValueError(f"Blocked resource in PDF: {scheme}://{host}")
+        return real_fetch(url, *args, **kwargs)
+
+    # WeasyPrint 68+ reads this attribute when a fetch raises. Without it a single
+    # blocked resource crashes the WHOLE PDF (AttributeError: '_fail_on_errors').
+    # False = skip that one resource with a warning and keep rendering.
+    safe_url_fetcher._fail_on_errors = False
+    return safe_url_fetcher
+
+
+def _make_pisa_link_callback(own_host, base_url):
+    def link_callback(uri, rel):
+        full = urljoin(base_url, uri) if uri else uri
+        parsed = urlparse(full or '')
+        scheme = (parsed.scheme or '').lower()
+        host = (parsed.hostname or '').lower()
+        if scheme == 'data':
+            return uri
+        if _is_own_static(parsed, own_host) or (scheme == 'https' and host in ALLOWED_REMOTE_HOSTS):
+            return full
+        return _BLOCKED_PATH  # file://, internal URLs, other hosts -> cannot be opened
+    return link_callback
 
 
 # ============================================================
@@ -69,10 +167,18 @@ def generate_text_based_pdf(full_html_content):
             print("📄 Generating PDF using WeasyPrint...")
             print(f"🌐 Base URL: {base_url}")
 
-            pdf_bytes = HTML(
-                string=full_html_content,
-                base_url=base_url
-            ).write_pdf()
+            own_host = (request.host.split(':')[0] or '').lower()
+            _t0 = time.time()
+            if PDF_SAFE_FETCH:
+                pdf_bytes = HTML(
+                    string=full_html_content,
+                    base_url=base_url,
+                    url_fetcher=_make_safe_url_fetcher(own_host)
+                ).write_pdf()
+            else:
+                print("⚠️ PDF_SAFE_FETCH=0 -> unrestricted resource loading")
+                pdf_bytes = HTML(string=full_html_content, base_url=base_url).write_pdf()
+            print(f"⏱️ WeasyPrint took {int((time.time() - _t0) * 1000)} ms")
 
             if pdf_bytes:
                 print(
@@ -85,7 +191,8 @@ def generate_text_based_pdf(full_html_content):
             print("❌ WeasyPrint returned empty PDF.")
 
         except Exception as e:
-            print(f"❌ WeasyPrint PDF generation failed: {e}")
+            print(f"❌ WeasyPrint PDF generation failed: {type(e).__name__}: {e}")
+            traceback.print_exc()
 
     else:
         print("⚠️ WeasyPrint is not available.")
@@ -102,10 +209,12 @@ def generate_text_based_pdf(full_html_content):
 
             pdf_buffer = io.BytesIO()
 
-            pisa_status = pisa.CreatePDF(
-                full_html_content,
-                dest=pdf_buffer
-            )
+            _t1 = time.time()
+            pisa_kwargs = {}
+            if PDF_SAFE_FETCH:
+                pisa_kwargs['link_callback'] = _make_pisa_link_callback((request.host.split(':')[0] or '').lower(), request.url_root)
+            pisa_status = pisa.CreatePDF(full_html_content, dest=pdf_buffer, **pisa_kwargs)
+            print(f"⏱️ xhtml2pdf took {int((time.time() - _t1) * 1000)} ms")
 
             if not pisa_status.err:
 
@@ -125,10 +234,8 @@ def generate_text_based_pdf(full_html_content):
             )
 
         except Exception as pisa_err:
-            print(
-                f"❌ xhtml2pdf exception: "
-                f"{pisa_err}"
-            )
+            print(f"❌ xhtml2pdf exception: {type(pisa_err).__name__}: {pisa_err}")
+            traceback.print_exc()
 
 
     # --------------------------------------------------------
