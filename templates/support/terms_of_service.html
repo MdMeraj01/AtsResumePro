@@ -19,11 +19,12 @@
     <meta property="og:url" content="https://atsresumepro.onrender.com/terms-of-service">
 
     <!-- CDN & Script Asset Vectors -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% if tw_built('class') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.class.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
-    <script>
+    {% if not tw_built('class') %}<script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -37,7 +38,7 @@
                 }
             }
         }
-    </script>
+    </script>{% endif %}
 
     <style>
         /* --- SMOOTH TRANSITIONS --- */
@@ -173,7 +174,7 @@
              <div class="col-span-2">
                 <div class="flex items-center space-x-3 mb-6">
                      <a href="/" class="ats-brand-logo">
-                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
                     </a>
                     <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
                 </div>

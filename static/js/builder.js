@@ -11,14 +11,20 @@ let entrySequence = 0;
 const persistAndRefresh = debounce(() => {
     saveToLocalStorage();
     updatePreview();
-}, 180);
+}, 120);
 // Function to stop lag (Wait 300ms before updating)
 function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
+    let timeout = null, lastThis, lastArgs;
+    function debounced(...args) {
+        lastThis = this; lastArgs = args;
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = setTimeout(() => { timeout = null; func.apply(lastThis, lastArgs); }, wait);
+    }
+    // run the pending call right now (used before the PDF is captured)
+    debounced.flush = function () {
+        if (timeout !== null) { clearTimeout(timeout); timeout = null; func.apply(lastThis, lastArgs); }
     };
+    return debounced;
 }
 // ---------- INITIALIZATION ----------
 document.addEventListener('DOMContentLoaded', function() {
@@ -1559,11 +1565,8 @@ function initEventListeners() {
         // Har type hone wale input par instantly updatePreview chalega
         form.addEventListener('input', (e) => {
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
-                if (typeof updatePreview === 'function') {
-                    updatePreview();
-                }
                 if (typeof persistAndRefresh === 'function') {
-                    persistAndRefresh();
+                    persistAndRefresh();   // one render after a 120 ms pause (was: instant render + debounced render)
                 }
             }
         });
@@ -1571,11 +1574,8 @@ function initEventListeners() {
         // Dropdowns, selects aur checkboxes ke change par
         form.addEventListener('change', (e) => {
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
-                if (typeof updatePreview === 'function') {
-                    updatePreview();
-                }
                 if (typeof persistAndRefresh === 'function') {
-                    persistAndRefresh();
+                    persistAndRefresh();   // one render after a 120 ms pause (was: instant render + debounced render)
                 }
             }
         });
@@ -1859,6 +1859,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // builder.js -> loadTemplate (Cache Buster Fix)
 
+const templateHtmlCache = new Map();
+
 async function loadTemplate(templateId) {
     const previewArea = document.getElementById('template-render-area');
     
@@ -1869,10 +1871,13 @@ async function loadTemplate(templateId) {
         console.log(`🔄 Loading Template: ${templateId}`);
 
         // 1. HTML Load Karo
-        const response = await fetch(`/resume_templates/${templateId}.html`);
-        if (!response.ok) throw new Error(`HTML file not found: ${templateId}.html`);
-        
-        const html = await response.text();
+        let html = templateHtmlCache.get(templateId);
+        if (html === undefined) {
+            const response = await fetch(`/resume_templates/${templateId}.html`);
+            if (!response.ok) throw new Error(`HTML file not found: ${templateId}.html`);
+            html = await response.text();
+            templateHtmlCache.set(templateId, html);   // switching back to a template is now instant
+        }
         previewArea.innerHTML = html;
 
         // 2. CSS swap karo and let the browser reuse cached templates.
@@ -1915,7 +1920,7 @@ async function loadTemplate(templateId) {
 function setupEventListeners() {
     const inputs = document.querySelectorAll('input, textarea');
     inputs.forEach(input => {
-        input.addEventListener('input', updatePreview);
+        input.addEventListener('input', persistAndRefresh);
     });
 }
 

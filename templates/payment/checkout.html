@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Checkout | ATS Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% if tw_built('media') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.media.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .glass-panel { 

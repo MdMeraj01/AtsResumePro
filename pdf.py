@@ -13,34 +13,58 @@ from flask import render_template, request, current_app
 
 
 # ============================================================
-# 1. WEASYPRINT SAFE SETUP
+# 1. PDF ENGINES (loaded lazily)
 # ============================================================
+# WeasyPrint (Pango, Cairo, fonts...) and xhtml2pdf are heavy to import: ~1-2 s of CPU and
+# ~100 MB RAM. Importing them at start-up slowed every cold start of the site. Now they load
+# in a background thread right after start-up (or on the first PDF, whichever comes first).
 
-try:
-    from weasyprint import HTML
-    try:
-        from weasyprint import default_url_fetcher
-    except ImportError:
-        default_url_fetcher = None
-    WEASYPRINT_AVAILABLE = True
-    print("✅ WeasyPrint loaded successfully")
-except (ImportError, ModuleNotFoundError, OSError) as e:
-    WEASYPRINT_AVAILABLE = False
-    HTML = None
-    default_url_fetcher = None
-    print(f"⚠️ WeasyPrint unavailable: {e}")
+import threading
+
+HTML = None
+default_url_fetcher = None
+WEASYPRINT_AVAILABLE = False
+pisa = None
+XHTML2PDF_AVAILABLE = False
+
+_engines_lock = threading.Lock()
+_engines_loaded = False
 
 
-# ============================================================
-# 2. XHTML2PDF FALLBACK
-# ============================================================
+def _load_engines():
+    """Idempotent and thread-safe; call it before using HTML / pisa."""
+    global HTML, default_url_fetcher, WEASYPRINT_AVAILABLE, pisa, XHTML2PDF_AVAILABLE, _engines_loaded
+    if _engines_loaded:
+        return
+    with _engines_lock:
+        if _engines_loaded:
+            return
+        try:
+            from weasyprint import HTML as _HTML
+            HTML = _HTML
+            try:
+                from weasyprint import default_url_fetcher as _duf
+                default_url_fetcher = _duf
+            except ImportError:
+                default_url_fetcher = None
+            WEASYPRINT_AVAILABLE = True
+            print("✅ WeasyPrint loaded successfully")
+        except (ImportError, ModuleNotFoundError, OSError) as e:
+            WEASYPRINT_AVAILABLE = False
+            HTML = None
+            print(f"⚠️ WeasyPrint unavailable: {e}")
+        try:
+            from xhtml2pdf import pisa as _pisa
+            pisa = _pisa
+            XHTML2PDF_AVAILABLE = True
+        except (ImportError, ModuleNotFoundError):
+            XHTML2PDF_AVAILABLE = False
+            pisa = None
+        _engines_loaded = True
 
-try:
-    from xhtml2pdf import pisa
-    XHTML2PDF_AVAILABLE = True
-except (ImportError, ModuleNotFoundError):
-    XHTML2PDF_AVAILABLE = False
-    pisa = None
+
+def warm_up_in_background():
+    threading.Thread(target=_load_engines, name="pdf-engine-warmup", daemon=True).start()
 
 
 # ============================================================
@@ -151,6 +175,8 @@ def generate_text_based_pdf(full_html_content):
     # --------------------------------------------------------
     # Attempt 1: WeasyPrint
     # --------------------------------------------------------
+
+    _load_engines()   # no-op after the first call
 
     if WEASYPRINT_AVAILABLE and HTML:
 

@@ -1,0 +1,12 @@
+{
+  "name": "atsresumepro-assets",
+  "private": true,
+  "scripts": {
+    "build:css": "npm run build:css:media && npm run build:css:class",
+    "build:css:media": "tailwindcss -c tailwind.config.media.js -i static/src/tailwind.css -o static/css/tailwind.media.min.css --minify",
+    "build:css:class": "tailwindcss -c tailwind.config.class.js -i static/src/tailwind.css -o static/css/tailwind.class.min.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

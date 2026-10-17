@@ -1,3 +1,19 @@
+// Load a script only when it is needed (cached, resolves when ready)
+if (typeof window.loadScriptOnce !== 'function') {
+    window._scriptPromises = window._scriptPromises || {};
+    window.loadScriptOnce = function (url) {
+        if (window._scriptPromises[url]) return window._scriptPromises[url];
+        window._scriptPromises[url] = new Promise(function (resolve, reject) {
+            const el = document.createElement('script');
+            el.src = url; el.async = true;
+            el.onload = function () { resolve(); };
+            el.onerror = function () { delete window._scriptPromises[url]; reject(new Error('Could not load ' + url)); };
+            document.head.appendChild(el);
+        });
+        return window._scriptPromises[url];
+    };
+}
+
 /* ================= PDF DOWNLOAD ENGINE (WITH 0 TO 100% PROGRESS LOADER) ================= */
 
 let pdfLock = false;
@@ -168,6 +184,8 @@ function closeDownloadLoader() {
 async function downloadPDF() {
     if (pdfLock) return;
     pdfLock = true;
+    // make sure the last typed characters are in the preview before it is captured
+    if (typeof persistAndRefresh !== 'undefined' && persistAndRefresh.flush) persistAndRefresh.flush();
 
     const btn = document.getElementById('downloadPdfBtn');
     const originalText = btn ? btn.innerHTML : '';
@@ -377,6 +395,8 @@ async function uploadPdfCopyToServer(pdfBlob, resumeTitle, templateName) {
 async function downloadWord() {
     if (pdfLock) return;
     pdfLock = true;
+    // make sure the last typed characters are in the preview before it is captured
+    if (typeof persistAndRefresh !== 'undefined' && persistAndRefresh.flush) persistAndRefresh.flush();
     const btn = document.getElementById('downloadWordBtn');
     const originalText = btn ? btn.innerHTML : '';
     const actualTemplateId = getCurrentTemplateId();
@@ -410,6 +430,9 @@ async function downloadWord() {
         }
 
         const htmlContent = `<!DOCTYPE html><html><head><meta charset='utf-8'><style>${cssRules}</style></head><body>${clone.innerHTML}</body></html>`;
+        // FileSaver + html-docx are only downloaded now (they used to load on every page view)
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js');
+        await loadScriptOnce('https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js');
         if (typeof htmlDocx === 'undefined') throw new Error("html-docx library missing!");
 
         const converted = htmlDocx.asBlob(htmlContent, {

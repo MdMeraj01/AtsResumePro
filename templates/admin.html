@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Builder - Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% if tw_built('class') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.class.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
-    <script>
+    {% if not tw_built('class') %}<script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -23,7 +24,7 @@
                 }
             }
         }
-    </script>
+    </script>{% endif %}
     <style>
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

@@ -1,3 +1,19 @@
+// Load a script only when it is needed (cached, resolves when ready)
+if (typeof window.loadScriptOnce !== 'function') {
+    window._scriptPromises = window._scriptPromises || {};
+    window.loadScriptOnce = function (url) {
+        if (window._scriptPromises[url]) return window._scriptPromises[url];
+        window._scriptPromises[url] = new Promise(function (resolve, reject) {
+            const el = document.createElement('script');
+            el.src = url; el.async = true;
+            el.onload = function () { resolve(); };
+            el.onerror = function () { delete window._scriptPromises[url]; reject(new Error('Could not load ' + url)); };
+            document.head.appendChild(el);
+        });
+        return window._scriptPromises[url];
+    };
+}
+
 // ==========================================
 // 🚀 ATS RESUME PRO - TEMPLATES LOGIC (100% FIXED)
 // ==========================================
@@ -108,7 +124,7 @@ function renderTemplatesGrid(templates) {
         <div class="template-card relative rounded-2xl overflow-hidden group bg-slate-900/80 border border-slate-800 flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-blue-500/50 w-full" data-category="${t.category}" style="display: flex !important; opacity: 1 !important; visibility: visible !important;">
             <div class="relative h-72 overflow-hidden bg-slate-950/60">
                 ${badgeHTML}
-                <img src="${imageSrc}" 
+                <img src="${imageSrc}" loading="lazy" decoding="async" 
                      alt="${t.display_name}" 
                      class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                      onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'300\\' height=\\'400\\' viewBox=\\'0 0 300 400\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%231e293b\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%2394a3b8\\' font-family=\\'sans-serif\\' font-size=\\'18\\'>${t.display_name}</text></svg>'">
@@ -285,6 +301,7 @@ window.initiateTemplateCheckout = async function(planType) {
             "theme": { "color": "#4f46e5" }
         };
 
+        await loadScriptOnce('https://checkout.razorpay.com/v1/checkout.js');   // loaded only when someone clicks Buy
         const rzp = new Razorpay(options);
         rzp.on('payment.failed', function (response){
             hideLoader();

@@ -37,14 +37,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> #}
 
     <!-- ✅ CLEAN, ULTRA-FAST & OPTIMIZED SCRIPTS -->
-    <script defer src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script defer src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+    {% if tw_built('media') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.media.min.css') }}">{% else %}<script defer src="https://cdn.tailwindcss.com"></script>{% endif %}
 
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="{{ url_for('static', filename='css/builder.css') }}" rel="stylesheet">
@@ -737,7 +736,7 @@
              <div class="col-span-2">
                 <div class="flex items-center space-x-3 mb-6">
                      <a href="/" class="ats-brand-logo">
-                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
                     </a>
                     <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
                 </div>
@@ -826,7 +825,6 @@
     </ul>
 </div>
         </div>
-        {% include 'partials/review_footer.html' %}
         <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
             <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
                 <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
@@ -988,7 +986,7 @@
 
         <!-- Brand Logo Header -->
         <div class="logo-wrapper w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center p-2 shadow-lg border transition-transform hover:scale-105">
-            <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" 
+            <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" 
                  alt="ATS Pro Logo" 
                  class="ats-brand-img w-full h-full object-contain">
         </div>
@@ -1384,6 +1382,33 @@
     </div>
 </div>
 
+<!-- 🟢 REVIEW POPUP MODAL -->
+<div id="reviewModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white relative">
+        <button type="button" onclick="closeReviewModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+        
+        <h3 class="text-xl font-bold text-center mb-1">Rate Your Experience ⭐</h3>
+        <p class="text-gray-400 text-xs text-center mb-4">Aapka resume kaisa bana? Hame zaroor batayein!</p>
+        
+        <!-- Star Rating -->
+        <div class="flex justify-center gap-2 mb-4 text-2xl text-amber-400 cursor-pointer" id="starContainer">
+            <i class="fas fa-star" data-val="1"></i>
+            <i class="fas fa-star" data-val="2"></i>
+            <i class="fas fa-star" data-val="3"></i>
+            <i class="fas fa-star" data-val="4"></i>
+            <i class="fas fa-star" data-val="5"></i>
+        </div>
+        <input type="hidden" id="reviewRatingInput" value="5">
+
+        <textarea id="reviewCommentInput" rows="3" placeholder="Write a short feedback..." class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+
+        <button type="button" onclick="submitReviewAction()" id="btnSubmitReview" class="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/30">
+            Submit Review
+        </button>
+    </div>
+</div>
 <!-- 🟢 NAYA CODE (Tag ke andar band karo) -->
 <script>
 function showUpgradeModal() {

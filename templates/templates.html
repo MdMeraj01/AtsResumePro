@@ -28,24 +28,24 @@
     <meta name="twitter:image" content="https://atsresumepro.onrender.com/static/images/template-previews/modern.png">
 
     <!-- CDN & Script Asset Vectors -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
-    <link href="{{ url_for('static', filename='css/template-section.css') }}?v=20260924-2" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/template-section.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/global.css') }}" rel="stylesheet">
 
     <!-- CDN & Script Asset Vectors -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    {% if tw_built('class') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.class.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
+    {% if not tw_built('class') %}<script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {}
             }
         }
-    </script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    </script>{% endif %}
 </head>
 <body class="antialiased font-sans min-h-screen">
     <!-- Animated Background -->
@@ -168,7 +168,7 @@
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-blue-500/10 to-purple-600/10">
                         <div class="badge">Most Popular</div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/modern.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/modern.png') }}" 
                                  alt="Modern Professional Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -195,7 +195,7 @@
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-purple-500/10 to-pink-600/10">
                         <div class="badge">Creative</div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/classic.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/classic.png') }}" 
                                  alt="Creative Edge Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -222,7 +222,7 @@
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-gray-700/20 to-gray-900/20">
                         <div class="badge">ATS Optimized</div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/minimal.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/minimal.png') }}" 
                                  alt="Classic ATS Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -248,7 +248,7 @@
                 <div class="template-card rounded-2xl overflow-hidden group" data-category="minimal">
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-emerald-500/10 to-teal-600/10">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/creative.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/creative.png') }}" 
                                  alt="Minimal Clean Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -274,7 +274,7 @@
                 <div class="template-card rounded-2xl overflow-hidden group" data-category="modern">
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-indigo-500/10 to-blue-600/10">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/professional.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/professional.png') }}" 
                                  alt="Modern Professional Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -300,7 +300,7 @@
                 <div class="template-card rounded-2xl overflow-hidden group" data-category="minimal">
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-teal-500/10 to-cyan-600/10">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/bold.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/bold.png') }}" 
                                  alt="Minimal Clean Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -327,7 +327,7 @@
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-violet-500/10 to-purple-600/10">
                         <div class="badge">Elegant</div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/elegant.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/elegant.png') }}" 
                                  alt="Elegant Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -353,7 +353,7 @@
                 <div class="template-card rounded-2xl overflow-hidden group" data-category="creative">
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-pink-500/10 to-rose-600/10">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/stylish.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/stylish.png') }}" 
                                  alt="Stylish Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -395,7 +395,7 @@
                 <div class="template-card rounded-2xl overflow-hidden group" data-category="professional">
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-sky-500/10 to-blue-600/10">
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/compact.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/compact.png') }}" 
                                  alt="Professional Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -422,7 +422,7 @@
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-amber-500/10 to-yellow-600/10">
                         <div class="badge premium-badge">Premium</div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/luxury.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/luxury.png') }}" 
                                  alt="Luxury template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -449,7 +449,7 @@
                     <div class="relative overflow-hidden h-56 bg-gradient-to-br from-orange-500/10 to-red-600/10">
                         <div class="badge">Visual</div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <img src="{{ url_for('static', filename='images/template-previews/infographic.png') }}" 
+                            <img loading="lazy" decoding="async" src="{{ url_for('static', filename='images/template-previews/infographic.png') }}" 
                                  alt="Infographic Template" 
                                  class="template-image w-full h-full object-contain p-6">
                         </div>
@@ -684,7 +684,7 @@
             <div class="col-span-2">
                 <div class="flex items-center space-x-3 mb-6">
                      <a href="/" class="ats-brand-logo">
-                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
                     </a>
                     <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
                 </div>
@@ -773,7 +773,6 @@
     </ul>
 </div>
         </div>
-        {% include 'partials/review_footer.html' %}
         <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
             <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
                 <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
@@ -919,8 +918,7 @@
         </div>
     </div>
 </div>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="{{ url_for('static', filename='js/template-section.js') }}?v=20260924-2"></script>
+    <script src="{{ url_for('static', filename='js/template-section.js') }}"></script>
     <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
     <script>

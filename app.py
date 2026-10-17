@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, redirect, url_for, session, Response, make_response, flash
 from werkzeug.utils import secure_filename
-from pdf import generate_text_based_pdf, build_resume_html
+from werkzeug.security import safe_join
+from pdf import generate_text_based_pdf, build_resume_html, warm_up_in_background as _warm_pdf_engines
 from security import (
     validate_full_name, validate_real_email, check_user_template_access,
     validate_password, generate_secure_otp, rate_limit
@@ -31,6 +32,7 @@ import re
 from html import escape as html_escape
 from functools import wraps
 import otp_guard
+import perf_utils
 from security import get_client_ip, user_or_ip_key
 import base64
 import string
@@ -57,7 +59,7 @@ def is_pro_reward_active(user_data):
         return datetime.now() <= user_data['pro_reward_until']
     return False
 
-def get_db_connection():
+def _new_db_connection():
     # .env se variables load karo
     host = os.getenv("DB_HOST")
     user = os.getenv("DB_USER")
@@ -74,7 +76,10 @@ def get_db_connection():
         'password': passwd,
         'database': db_name,
         'port': port,
-        'cursorclass': pymysql.cursors.DictCursor
+        'cursorclass': pymysql.cursors.DictCursor,
+        'connect_timeout': 10,   # never hang forever if the DB is unreachable
+        'read_timeout': 60,
+        'write_timeout': 60,
     }
 
     # 🔒 SSL LOGIC: Agar Host Localhost nahi hai (yani Cloud hai), to SSL on karo
@@ -82,6 +87,32 @@ def get_db_connection():
         config['ssl'] = {'ssl': {}} # Empty dict SSL trigger karne ke liye kaafi hai Aiven par
 
     return pymysql.connect(**config)
+
+
+# Re-use connections instead of opening a new SSL connection on every request.
+# Emergency switch: set env DB_POOL=0 to go back to one-connection-per-request.
+# Template list changes only when an admin edits it: cache it for a minute (cleared on admin writes).
+templates_cache = perf_utils.TTLCache(ttl=60)
+
+def _cached_template_rows(cursor):
+    def load():
+        cursor.execute("SELECT * FROM templates ORDER BY sort_order DESC, is_premium DESC")
+        return list(cursor.fetchall())
+    return [dict(r) for r in templates_cache.get('templates_all', load)]   # copies: callers modify rows
+
+def _cached_premium_names(cursor):
+    def load():
+        cursor.execute("SELECT LOWER(name) as name FROM templates WHERE is_premium = 1")
+        rows = cursor.fetchall()
+        return [r['name'] if isinstance(r, dict) else r[0].lower() for r in rows]
+    return list(templates_cache.get('premium_names', load))
+
+_db_pool = perf_utils.ConnectionPool(_new_db_connection, max_idle=int(os.getenv("DB_POOL_SIZE", "6")))
+
+def get_db_connection():
+    if os.getenv("DB_POOL", "1") == "0":
+        return _new_db_connection()
+    return _db_pool.acquire()
 
 def get_safe_cursor(conn):
     try:
@@ -127,6 +158,79 @@ def add_security_headers(response):
         response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     return response
 
+
+# ==========================================
+# ⚡ STATIC FILES: versioning, caching, WebP  (Step 3)
+# ==========================================
+@app.url_defaults
+def add_static_version(endpoint, values):
+    """url_for('static', ...) automatically gets ?v=<file modified time>, so browsers can cache
+    CSS/JS for a year and still pick up a new file the moment it changes."""
+    if endpoint == 'static' and values.get('filename') and 'v' not in values:
+        try:
+            values['v'] = int(os.stat(os.path.join(app.static_folder, values['filename'])).st_mtime)
+        except (OSError, ValueError):
+            pass
+
+
+@app.after_request
+def add_cache_headers(response):
+    path = request.path
+    if request.method == 'GET' and response.status_code == 200:
+        if path.startswith('/static/'):
+            if 'v' in request.args:
+                response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+            else:
+                response.headers['Cache-Control'] = 'public, max-age=3600'
+        elif path.startswith('/resume_templates/'):
+            response.headers['Cache-Control'] = 'public, max-age=300'
+        elif path == '/sw.js':
+            response.headers['Cache-Control'] = 'no-cache'
+    # any admin write may change templates -> drop the cached template list
+    if request.method in ('POST', 'PUT', 'PATCH', 'DELETE') and path.startswith('/api/admin/'):
+        templates_cache.clear()
+    return response
+
+
+# Serve a .webp twin instead of a big .png/.jpg when the browser supports it and the twin exists
+# (no template/JS changes needed). Social crawlers and old browsers still get the original file.
+_original_static_view = app.view_functions['static']
+
+def _static_with_webp(filename):
+    if filename.lower().endswith(('.png', '.jpg', '.jpeg')) and 'image/webp' in request.headers.get('Accept', ''):
+        webp_name = filename.rsplit('.', 1)[0] + '.webp'
+        full = safe_join(app.static_folder, webp_name)
+        if full and os.path.isfile(full):
+            resp = _original_static_view(filename=webp_name)
+            resp.headers['Vary'] = 'Accept'
+            return resp
+    return _original_static_view(filename=filename)
+
+app.view_functions['static'] = _static_with_webp
+
+_warm_pdf_engines()   # load WeasyPrint in the background so start-up stays fast
+
+
+def tw_built(mode):
+    """True once you have run the Tailwind build (static/css/tailwind.<mode>.min.css exists)."""
+    return os.path.isfile(os.path.join(app.static_folder, 'css', f'tailwind.{mode}.min.css'))
+
+app.jinja_env.globals['tw_built'] = tw_built
+
+
+@app.route('/healthz')
+def healthz():
+    """Cheap keep-alive/uptime endpoint: no database, no session, no template."""
+    return 'ok', 200, {'Cache-Control': 'no-store'}
+
+
+# 2. Database Configuration (Matched with Workbench)
+app.config['MYSQL_HOST'] = '127.0.0.1'  # Localhost ki jagah IP use karo
+app.config['MYSQL_PORT'] = 3306         # Port explicit batao
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''       # Workbench me password nahi tha to blank rakho
+app.config['MYSQL_DB'] = 'ats_resume_db'
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # Initialize Extensions
 # try:
@@ -833,9 +937,7 @@ def builder():
         cursor = get_safe_cursor(conn)
 
         # 1. Sirf premium template names nikalo
-        cursor.execute("SELECT LOWER(name) as name FROM templates WHERE is_premium = 1")
-        rows = cursor.fetchall()
-        premium_templates = [r['name'] if isinstance(r, dict) else r[0].lower() for r in rows]
+        premium_templates = _cached_premium_names(cursor)
 
         # 2. Agar user logged in hai to Single Joined/Combined Query
         if user_id:
@@ -2635,8 +2737,7 @@ def get_templates():
     cursor = conn.cursor()
     
     # 1. Fetch All Templates
-    cursor.execute("SELECT * FROM templates ORDER BY sort_order DESC, is_premium DESC")
-    templates = cursor.fetchall()
+    templates = _cached_template_rows(cursor)
     
     # 2. Check User Access (Agar logged in hai)
     purchased_templates = []
@@ -5491,4 +5592,4 @@ if __name__ == '__main__':
         print("🔑 GOOGLE_API_KEY Status: LOADED")
     else:
         print("⚠️  GOOGLE_API_KEY Status: MISSING (Check .env file)")
-    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
