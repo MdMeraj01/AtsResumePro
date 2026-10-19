@@ -91,6 +91,12 @@ def _new_db_connection():
 
 # Re-use connections instead of opening a new SSL connection on every request.
 # Emergency switch: set env DB_POOL=0 to go back to one-connection-per-request.
+# Public address of the site. Today: the onrender.com URL. When you buy a domain, set the env
+# variable SITE_URL=https://yourdomain.com on Render and every canonical/OG/sitemap/email link follows.
+SITE_URL = os.getenv("SITE_URL", "https://atsresumepro.onrender.com").rstrip("/")
+
+page_cache = perf_utils.TTLCache(ttl=300)   # rendered HTML of public pages for logged-out visitors
+
 # Template list changes only when an admin edits it: cache it for a minute (cleared on admin writes).
 templates_cache = perf_utils.TTLCache(ttl=60)
 
@@ -173,6 +179,10 @@ def add_static_version(endpoint, values):
             pass
 
 
+NOINDEX_PREFIXES = ('/login', '/logout', '/auth/', '/callback/', '/dashboard', '/checkout', '/api/',
+                    '/furqan', '/admin', '/careers', '/press')
+
+
 @app.after_request
 def add_cache_headers(response):
     path = request.path
@@ -186,6 +196,10 @@ def add_cache_headers(response):
             response.headers['Cache-Control'] = 'public, max-age=300'
         elif path == '/sw.js':
             response.headers['Cache-Control'] = 'no-cache'
+    # keep private, transactional and placeholder pages out of Google (the page must stay crawlable
+    # for Google to see this header, so these paths are NOT blocked in robots.txt)
+    if path.startswith(NOINDEX_PREFIXES):
+        response.headers['X-Robots-Tag'] = 'noindex, nofollow'
     # any admin write may change templates -> drop the cached template list
     if request.method in ('POST', 'PUT', 'PATCH', 'DELETE') and path.startswith('/api/admin/'):
         templates_cache.clear()
@@ -216,6 +230,11 @@ def tw_built(mode):
     return os.path.isfile(os.path.join(app.static_folder, 'css', f'tailwind.{mode}.min.css'))
 
 app.jinja_env.globals['tw_built'] = tw_built
+
+
+@app.context_processor
+def inject_site_urls():
+    return {'site_url': SITE_URL, 'canonical_url': SITE_URL + request.path}
 
 
 @app.route('/healthz')
@@ -917,7 +936,14 @@ def track_activity():
 # ========== MAIN ROUTES ==========
 @app.route('/')
 def index():
-    return render_template('home.html')
+    # Logged-in visitors get a personal page; everyone else (and Google) gets the same HTML,
+    # so it is rendered once per 5 minutes instead of on every request (lower server response time).
+    if session.get('user_id') or session.get('admin_id'):
+        return render_template('home.html')
+    html = page_cache.get(f"home:{request.host}", lambda: render_template('home.html'))
+    resp = make_response(html)
+    resp.headers['X-Page-Cache'] = 'guest'
+    return resp
 
 # 1. Builder Route (Template load hote waqt hi dynamic list inject hogi)
 # ==========================================
@@ -3259,7 +3285,7 @@ def build_newsletter_html(user_name, subject, intro_text, banner_image_url, acti
             <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: auto;">
                 <tr>
                     <td style="vertical-align: middle; padding-right: 10px;">
-                        <img src="https://atsresumepro.onrender.com/static/images/favicon.png" alt="Logo" width="34" height="34" style="display: block; border-radius: 8px;">
+                        <img src="{SITE_URL}/static/images/favicon.png" alt="Logo" width="34" height="34" style="display: block; border-radius: 8px;">
                     </td>
                     <td style="vertical-align: middle;">
                         <h2 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">ATS Resume <span style="color: #00d4ff;">Pro</span></h2>
@@ -4122,61 +4148,40 @@ def verify_razorpay_payment():
 
 @app.route('/robots.txt')
 def robots_txt():
-    # Render URL ko hardcode kar diya taaki galti na ho
-    base_url = "https://atsresumepro.onrender.com"
-    content = f"User-agent: *\nAllow: /\nSitemap: {base_url}/sitemap.xml"
+    content = f"User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: {SITE_URL}/sitemap.xml\n"
     return Response(content, mimetype="text/plain")
+
+
+# Only real, public, indexable pages. (/login, /careers, /press are excluded: login is private,
+# careers/press are placeholder pages.)
+SITEMAP_PAGES = ['/', '/builder', '/templates', '/pricing', '/cover-letter', '/interview-prep', '/blog',
+                 '/about', '/contact-us', '/help-center', '/privacy-policy', '/terms-of-service', '/refund-policy']
+
 
 @app.route('/sitemap.xml')
 def sitemap_xml():
-    """Generates sitemap for atsresumepro.onrender.com"""
-    base_url = "https://atsresumepro.onrender.com"
-    
-    # Static Pages List
-    pages = [
-        '/', 
-        '/builder', 
-        '/templates', 
-        '/pricing', 
-        '/interview-prep', 
-        '/contact-us', 
-        '/about', 
-        '/login'
-    ]
-    
-    xml = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    
-    # 1. Static Pages
-    for page in pages:
-        xml.append('<url>')
-        xml.append(f'<loc>{base_url}{page}</loc>')
-        xml.append('<changefreq>weekly</changefreq>')
-        xml.append('<priority>0.8</priority>')
-        xml.append('</url>')
-
-    # 2. Dynamic Blog Posts (Database se)
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, created_at FROM blog_posts")
-        posts = cursor.fetchall()
-        conn.close()
-
-        for post in posts:
-            xml.append('<url>')
-            xml.append(f'<loc>{base_url}/blog/post-{post["id"]}</loc>')
-            # Date formatting check
-            date_str = post["created_at"].strftime("%Y-%m-%d") if post["created_at"] else datetime.now().strftime("%Y-%m-%d")
-            xml.append(f'<lastmod>{date_str}</lastmod>')
-            xml.append('<changefreq>monthly</changefreq>')
-            xml.append('<priority>0.6</priority>')
-            xml.append('</url>')
-    except Exception as e:
-        print(f"Sitemap Error: {e}")
-
-    xml.append('</urlset>')
-    return Response('\n'.join(xml), mimetype="application/xml")    
+    def build():
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        for page in SITEMAP_PAGES:
+            xml.append(f'<url><loc>{SITE_URL}{page}</loc></url>')
+        try:
+            conn = get_db_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, created_at FROM blog_posts ORDER BY id DESC")
+                posts = cursor.fetchall()
+            finally:
+                conn.close()
+            for post in posts:
+                created = post.get("created_at")
+                lastmod = f"<lastmod>{created.strftime('%Y-%m-%d')}</lastmod>" if created else ""
+                xml.append(f'<url><loc>{SITE_URL}/blog/post-{post["id"]}</loc>{lastmod}</url>')
+        except Exception as e:
+            print(f"Sitemap blog error: {type(e).__name__}")
+        xml.append('</urlset>')
+        return '\n'.join(xml)
+    return Response(page_cache.get('sitemap', build, ttl=3600), mimetype="application/xml")
 
 
 # ==========================================
@@ -4284,13 +4289,13 @@ def send_welcome_email(user_name, user_email):
 
             <!-- CTA Button -->
             <div style="text-align: center; margin: 32px 0;">
-                <a href="https://atsresumepro.onrender.com/builder" target="_blank" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: #ffffff; padding: 15px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; display: inline-block; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
+                <a href="{SITE_URL}/builder" target="_blank" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: #ffffff; padding: 15px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 16px; display: inline-block; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
                     Build Your Resume Now →
                 </a>
             </div>
 
             <p style="font-size: 14px; line-height: 1.6; color: #64748b; margin-bottom: 0;">
-                Need help or have questions? Simply reply to this email or visit our <a href="https://atsresumepro.onrender.com/help-center" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Help Center</a>. We're here to help you land your dream job!
+                Need help or have questions? Simply reply to this email or visit our <a href="{SITE_URL}/help-center" style="color: #4f46e5; text-decoration: none; font-weight: 600;">Help Center</a>. We're here to help you land your dream job!
             </p>
         </div>
 

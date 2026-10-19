@@ -14,10 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             preloader.style.display = 'none';
             document.body.classList.add('loaded');
-        }, 500);
+        }, 260);
     }
-    window.addEventListener('load', () => setTimeout(hidePreloader, 600));
-    setTimeout(hidePreloader, 2500);
+    // Was: wait for the whole window "load" + 600 ms + 500 ms fade (>1 s of staring at a splash screen).
+    // Now: the page is already usable at DOMContentLoaded, so fade the splash out right away.
+    setTimeout(hidePreloader, 150);
+    setTimeout(hidePreloader, 1200);   // safety net
 
     // ------------------------------------------
     // 2. MOBILE DRAWER MENU

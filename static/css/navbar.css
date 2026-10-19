@@ -1,3 +1,9 @@
+/* Font Awesome 6 ships its fonts with font-display:block, which keeps icons (and sometimes layout) invisible
+   while the font downloads. These later @font-face rules replace that with swap. Same files, same names. */
+@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:900;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2) format("woff2")}
+@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:400;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-regular-400.woff2) format("woff2")}
+@font-face{font-family:"Font Awesome 6 Brands";font-style:normal;font-weight:400;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-brands-400.woff2) format("woff2")}
+
 /* ============================================
    ATS PRO — PREMIUM NAVBAR + MOBILE DRAWER
    Full CSS (Dark/Light Mode + Animations)

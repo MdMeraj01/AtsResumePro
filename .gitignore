@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 ats_resume_db.sql
 venv/
+# Node.js
+node_modules/

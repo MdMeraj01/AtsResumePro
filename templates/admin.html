@@ -7,6 +7,7 @@
     {% if tw_built('class') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.class.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     {% if not tw_built('class') %}<script>
@@ -1136,7 +1137,7 @@
                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                         <i class="fas fa-image text-purple-500 mr-1.5"></i> Banner Image URL (Optional)
                     </label>
-                    <input type="url" id="nlBannerImage" placeholder="https://atsresumepro.onrender.com/static/images/template-previews/modern.png" 
+                    <input type="url" id="nlBannerImage" placeholder="{{ site_url }}/static/images/template-previews/modern.png" 
                            class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono">
                     <p class="text-[11px] text-gray-400 mt-1">Paste any direct image link to show a big banner at the top of the email.</p>
                 </div>
@@ -1161,7 +1162,7 @@
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                             <i class="fas fa-link text-green-500 mr-1.5"></i> Button Link URL
                         </label>
-                        <input type="url" id="nlBtnUrl" placeholder="https://atsresumepro.onrender.com/builder" 
+                        <input type="url" id="nlBtnUrl" placeholder="{{ site_url }}/builder" 
                                class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono">
                     </div>
                 </div>

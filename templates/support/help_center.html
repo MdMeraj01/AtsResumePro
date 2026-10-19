@@ -9,18 +9,19 @@
     <meta name="description" content="Access official documentation for ATS Resume Pro. Step-by-step guidance on structural layout optimizations, keyword matches, and subscription settings.">
     <meta name="keywords" content="help center support, resume optimization guide, tracking documentation, export issues help, account config guide">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://atsresumepro.onrender.com/help-center">
+    <link rel="canonical" href="{{ site_url }}/help-center">
 
     <!-- Open Graph Framework -->
     <meta property="og:title" content="Help Center & Support Docs | ATS Resume Builder Pro">
     <meta property="og:description" content="Resolve technical platform queries instantly. Complete documentation archive for compiling templates, managing billing layers, and editing text blocks.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://atsresumepro.onrender.com/help-center">
-    <meta property="og:image" content="https://atsresumepro.onrender.com/static/images/template-previews/modern.png">
+    <meta property="og:url" content="{{ site_url }}/help-center">
+    <meta property="og:image" content="{{ site_url }}/static/images/template-previews/modern.png">
 
     <!-- CDN & Script Asset Vectors -->
     {% if tw_built('class') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.class.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
@@ -209,36 +210,6 @@
                 </div>
             </div>
 
-            <!-- System Status -->
-            <div class="max-w-3xl mx-auto mb-20">
-                <div class="glass-panel rounded-2xl p-6 hover:shadow-xl transition-shadow duration-300">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="relative">
-                                <div class="w-3 h-3 bg-green-500 rounded-full animate-ping absolute opacity-75"></div>
-                                <div class="w-3 h-3 bg-green-500 rounded-full relative"></div>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-lg text-gray-900 dark:text-white">System Status: <span class="text-green-600 dark:text-green-400">All Systems Operational</span></h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Last updated: Just now • Updated every 5 minutes</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-6">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">99.9%</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Uptime (30 days)</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">< 50ms</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Response Time</div>
-                            </div>
-                            <a href="#" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors">
-                                <i class="fas fa-chart-line mr-2"></i>Status History
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -547,7 +518,7 @@
              <div class="col-span-2">
                 <div class="flex items-center space-x-3 mb-6">
                      <a href="/" class="ats-brand-logo">
-                        <img src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                        <img width="320" height="189" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
                     </a>
                     <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
                 </div>
