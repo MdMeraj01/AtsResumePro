@@ -1051,3 +1051,9 @@ body.light-mode .ats-dropdown-item:hover {
     background: #f1f5f9 !important; /* Smooth light hover */
     color: #2563eb !important;
 }
+/* ---- Phones: backdrop-filter (frosted glass) is one of the most expensive effects to paint and made the
+   pages feel slow on mid-range phones (Lighthouse: seconds of "Style & Layout / Rendering"). The panels keep
+   their translucent background, they just stop blurring what is behind them. Delete this block to get the blur back. ---- */
+@media (max-width: 767px) {
+    * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}

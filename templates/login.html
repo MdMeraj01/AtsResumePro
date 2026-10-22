@@ -33,7 +33,10 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
     <link href="{{ url_for('static', filename='css/login.css')}}" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
 
@@ -69,7 +72,7 @@
             <div class="branding-content">
                 <div class="logo-section">
                  <div class="logo-icon">
-                    <img width="320" height="189" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+                    <img width="170" height="100" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_170,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
                  </div>
                     <span class="logo-text">ATS<span class="logo-highlight">Pro</span></span>
                 </div>
@@ -87,7 +90,7 @@
                             <i class="fas fa-robot"></i>
                         </div>
                         <div class="feature-content">
-                            <h3 class="feature-title">AI-Powered Builder</h3>
+                            <h3 class="feature-title" aria-level="2">AI-Powered Builder</h3>
                             <p class="feature-desc">Intelligent suggestions and content optimization</p>
                         </div>
                     </div>
@@ -121,7 +124,7 @@
         <div class="form-panel">
              <div class="mobile-logo">
     <div class="logo-icon">
-        <img width="320" height="189" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
+        <img width="170" height="100" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_170,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
     </div>
     <span class="logo-text">ATS<span class="logo-highlight">Pro</span></span>
 </div>
@@ -164,7 +167,7 @@
                         <div class="input-icon">
                             <i class="fas fa-key"></i>
                         </div>
-                        <button type="button" class="password-toggle" onclick="togglePassword('login-password')">
+                        <button type="button" aria-label="Show or hide password" class="password-toggle" onclick="togglePassword('login-password')">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
@@ -222,7 +225,7 @@
                     <div class="input-container">
                         <input type="password" id="signup-password" class="form-input" placeholder="Create a strong password" required>
                         <div class="input-icon"><i class="fas fa-key"></i></div>
-                        <button type="button" class="password-toggle" onclick="togglePassword('signup-password')">
+                        <button type="button" aria-label="Show or hide password" class="password-toggle" onclick="togglePassword('signup-password')">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>

@@ -44,7 +44,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"></noscript>
     
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="{{ url_for('static', filename='css/builder.css') }}" rel="stylesheet">
@@ -120,7 +121,8 @@
     </div>
 
     <!-- ========== HEADER SECTION ========== -->
-     {% include 'navbar.html' %}
+     {% include 'partials/navbar.html' %}
+    <main id="main-content">
     <!-- ========== MAIN BUILDER CONTENT ========== -->
     <div class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header Section -->
@@ -132,7 +134,7 @@
                 </div>
                 
                <div class="flex flex-col sm:flex-row flex-wrap gap-4 w-full md:w-auto">
-                 <select id="templateSelector" class="w-full sm:w-auto px-5 py-3 rounded-xl glass-panel text-white border border-gray-700 focus:outline-none">
+                 <select aria-label="Choose resume template" id="templateSelector" class="w-full sm:w-auto px-5 py-3 rounded-xl glass-panel text-white border border-gray-700 focus:outline-none">
                         <option value="modern">🎨 Modern</option>
                         <option value="classic">👔 Classic</option>
                         <option value="minimal">⚡ Minimal</option>
@@ -254,7 +256,7 @@
                                 <i class="fas fa-lightbulb text-blue-400"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold text-white mb-1">Personal Information</h4>
+                                <h4 class="font-semibold text-white mb-1" aria-level="2">Personal Information</h4>
                                 <p class="text-gray-400 text-sm">Fill in your basic contact details and professional summary. This helps employers get to know you.</p>
                             </div>
                         </div>
@@ -351,7 +353,7 @@
                             <label class="block text-sm font-medium text-gray-300 mb-3">
                                 <i class="fas fa-image mr-2 text-blue-400"></i>Profile Photo (Optional)
                             </label>
-                            <input type="file" id="profilePhoto" accept="image/*" class="w-full p-3 glass-panel border border-gray-700 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all duration-300">
+                            <input aria-label="Upload profile photo" type="file" id="profilePhoto" accept="image/*" class="w-full p-3 glass-panel border border-gray-700 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all duration-300">
                         </div>
                     </div>
 
@@ -730,120 +732,11 @@
 
         </div>
     </section>
-    
-    <!-- ========== FOOTER SECTION ========== -->
-    <footer class="border-t border-gray-800 bg-slate-950 pt-16 pb-8 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-8 mb-12">
-             <div class="col-span-2">
-                <div class="flex items-center space-x-3 mb-6">
-                     <a href="/" class="ats-brand-logo">
-                        <img width="320" height="189" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img">
-                    </a>
-                    <span class="text-2xl font-bold text-white tracking-wide">ATS<span class="text-blue-400">Pro</span></span>
-                </div>
-                
-                <p class="text-gray-400 max-w-md mb-6">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
-                 <div class="flex space-x-4">
-                     <!-- Instagram -->
-                        <a href="https://www.instagram.com/atsresumepro0?stkn=YmVxcTJjcW54eGhk" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-pink-500 hover:border-pink-500 transition-all" title="Instagram">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-    
-                    <!-- Facebook -->
-                    <a href="https://www.facebook.com/share/19GMnFWH8Y/" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-500 transition-all" title="Facebook">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-    
-                    <!-- LinkedIn (Empty placeholder) -->
-                    <a href="#" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-500 transition-all" title="LinkedIn" onclick="event.preventDefault();">
-                        <i class="fab fa-linkedin-in"></i>
-                    </a>
-                </div>
-            </div>
-            <div>
-                <h4 class="text-white font-bold mb-6 text-lg">Product</h4>
-                <ul class="space-y-3 text-gray-400">
-                    <li><a href="{{ url_for('builder') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Resume Builder</a></li>
-                    <li><a href="{{ url_for('templates_section') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Templates</a></li>
-                    <li><a href="{{ url_for('interview_prep') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Interview Prep</a></li>
-                    <li><a href="{{ url_for('pricing') }}" class="hover:text-blue-400 transition-colors flex items-center"><i class="fas fa-chevron-right text-xs mr-2"></i> Pricing</a></li>
-                </ul>
-            </div>
-                  <div>
-    <h4 class="text-white font-bold mb-6 text-lg">Company</h4>
-    <ul class="space-y-3 text-gray-400">
-        <li>
-            <a href="{{ url_for('about') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> About Us
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('careers') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Careers
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('blog') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Blog
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('press') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Press
-            </a>
-        </li>
-    </ul>
-</div>
+    </div><!-- /builder content wrapper (this </div> was missing, so the footer used to sit inside it) -->
+    </main>
 
-<div>
-    <h4 class="text-white font-bold mb-6 text-lg">Support</h4>
-    <ul class="space-y-3 text-gray-400">
-        <li>
-            <a href="{{ url_for('help_center') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Help Center
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('contact_us') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Contact Us
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('privacy_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Privacy Policy
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('terms_of_service') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Terms of Service
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('refund_policy') }}" class="hover:text-blue-400 transition-colors flex items-center">
-                <i class="fas fa-chevron-right text-xs mr-2"></i> Refund Policy
-            </a>
-        </li>
-    </ul>
-</div>
-        </div>
-        <div class="text-center text-gray-600 border-t border-gray-800 pt-8">
-            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
-                <p>&copy; 2025 ATS Resume Builder Pro. All rights reserved.</p>
-                <div class="flex items-center mt-4 md:mt-0">
-                    <span class="text-sm mr-4 flex items-center">
-                        Made with <i class="fas fa-heart text-red-500 mx-1 animate-pulse"></i> by 
-                        <a href="https://meraj8329.pythonanywhere.com/" target="_blank" class="ml-1 text-blue-400 hover:text-blue-300 font-bold transition-colors hover:underline">
-                            Meraj.Dev
-                        </a>
-                    </span>
-                    <div class="flex items-center text-green-400">
-                        <i class="fas fa-globe mr-2"></i>
-                        <span>Global 🌎</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- ========== FOOTER SECTION ========== -->
+    {% set footer_theme = 'navbar' %}{% include 'partials/footer.html' %}
 
     <!-- ========== MODALS & LOADERS ========== -->
     <!-- Loader Overlay -->
@@ -878,7 +771,7 @@
         </div>
     </div>
 
-    <button onclick="openPDFPreview()" class="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-purple-600 text-white rounded-full shadow-2xl z-[90] flex items-center justify-center animate-bounce">
+    <button aria-label="Preview resume" onclick="openPDFPreview()" class="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-tr from-blue-600 to-purple-600 text-white rounded-full shadow-2xl z-[90] flex items-center justify-center animate-bounce">
     <i class="fas fa-eye text-xl"></i>
 </button>
 
@@ -896,7 +789,7 @@
             <span class="text-[10px] font-medium">Templates</span>
         </a>
 
-        <a href="{{ url_for('builder') }}" class="relative -top-5">
+        <a href="{{ url_for('builder') }}" aria-label="Build your resume" class="relative -top-5">
             <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/50 border-4 border-slate-900 transform scale-110 transition-transform">
                 <i class="fas fa-magic text-white text-xl animate-pulse"></i>
             </div>
@@ -987,7 +880,7 @@
 
         <!-- Brand Logo Header -->
         <div class="logo-wrapper w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center p-2 shadow-lg border transition-transform hover:scale-105">
-            <img width="320" height="189" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_320,f_auto,q_auto/v1789323861/logo.png" 
+            <img width="170" height="100" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_170,f_auto,q_auto/v1789323861/logo.png" 
                  alt="ATS Pro Logo" 
                  class="ats-brand-img w-full h-full object-contain">
         </div>
@@ -1124,7 +1017,7 @@
                                 <i class="fas fa-file-pdf text-red-500 text-xl"></i>
                             </div>
                             <div class="min-w-0">
-                                <h5 id="cardPdfName" class="import-card-name text-xs sm:text-sm font-bold truncate">candidate_resume.pdf</h5>
+                                <h5 id="cardPdfName" class="import-card-name text-xs sm:text-sm font-bold truncate" aria-level="4">candidate_resume.pdf</h5>
                                 <div class="flex items-center gap-2 mt-0.5">
                                     <span id="cardPdfSize" class="text-[11px] text-gray-400">1.4 MB</span>
                                     <span class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
@@ -1384,32 +1277,6 @@
 </div>
 
 <!-- 🟢 REVIEW POPUP MODAL -->
-<div id="reviewModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white relative">
-        <button type="button" onclick="closeReviewModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-            <i class="fas fa-times text-lg"></i>
-        </button>
-        
-        <h3 class="text-xl font-bold text-center mb-1">Rate Your Experience ⭐</h3>
-        <p class="text-gray-400 text-xs text-center mb-4">Aapka resume kaisa bana? Hame zaroor batayein!</p>
-        
-        <!-- Star Rating -->
-        <div class="flex justify-center gap-2 mb-4 text-2xl text-amber-400 cursor-pointer" id="starContainer">
-            <i class="fas fa-star" data-val="1"></i>
-            <i class="fas fa-star" data-val="2"></i>
-            <i class="fas fa-star" data-val="3"></i>
-            <i class="fas fa-star" data-val="4"></i>
-            <i class="fas fa-star" data-val="5"></i>
-        </div>
-        <input type="hidden" id="reviewRatingInput" value="5">
-
-        <textarea id="reviewCommentInput" rows="3" placeholder="Write a short feedback..." class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
-
-        <button type="button" onclick="submitReviewAction()" id="btnSubmitReview" class="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/30">
-            Submit Review
-        </button>
-    </div>
-</div>
 <!-- 🟢 NAYA CODE (Tag ke andar band karo) -->
 <script>
 function showUpgradeModal() {

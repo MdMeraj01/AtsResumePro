@@ -9,7 +9,10 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
      
 </head>
@@ -157,7 +160,7 @@
                 </div>
                 <div class="relative z-10">
                     <p class="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1">Current Plan</p>
-                    <h3 class="text-2xl font-bold text-white mb-1">{{ user.plan_type }}</h3>
+                    <h3 class="text-2xl font-bold text-white mb-1" aria-level="2">{{ user.plan_type }}</h3>
                     <a href="{{ url_for('pricing') }}" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                         Upgrade Plan <i class="fas fa-arrow-right"></i>
                     </a>
@@ -736,7 +739,7 @@ ${userReferralLink}`;
                 <span class="text-[10px] font-medium">Builder</span>
             </a>
 
-            <a href="{{ url_for('user_dashboard') }}" class="relative -top-5">
+            <a href="{{ url_for('user_dashboard') }}" aria-label="Build your resume" class="relative -top-5">
                 <div class="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/50 border-4 border-slate-900 transform scale-110 transition-transform">
                     <i class="fas fa-tachometer-alt text-white text-xl"></i>
                 </div>

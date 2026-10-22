@@ -128,6 +128,18 @@ class TTLCache:
             self._data[key] = (now + (self.ttl if ttl is None else ttl), value)
         return value
 
+    def peek(self, key):
+        """Cached value or None (never calls a loader)."""
+        with self._lock:
+            hit = self._data.get(key)
+            return hit[1] if hit and hit[0] > time.time() else None
+
+    def set(self, key, value, ttl=None, max_entries=200):
+        with self._lock:
+            if len(self._data) >= max_entries:
+                self._data.clear()          # tiny safety valve: never grow without limit
+            self._data[key] = (time.time() + (self.ttl if ttl is None else ttl), value)
+
     def clear(self):
         with self._lock:
             self._data.clear()

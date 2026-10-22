@@ -1,0 +1,144 @@
+/* ===========================================================================
+   Shared site footer (templates/partials/footer.html)
+   Night mode is the default. Light mode is switched on by:
+     data-ft="navbar" -> body.light-mode      (pages that load navbar.js)
+     data-ft="class"  -> html without .dark   (pages that toggle <html class="dark"> themselves)
+   All colours are CSS variables, so changing the look = changing a few lines here.
+   =========================================================================== */
+.site-footer {
+    --ft-bg: #020617;
+    --ft-border: #1e293b;
+    --ft-text: #94a3b8;         /* 7.7:1 on bg */
+    --ft-strong: #f1f5f9;
+    --ft-hover: #60a5fa;
+    --ft-card: rgba(30, 41, 59, .55);
+    --ft-card-border: #334155;
+    --ft-card-glow: linear-gradient(135deg, rgba(79, 70, 229, .18), rgba(59, 130, 246, .08));
+    --ft-icon-bg: #0f172a;
+    --ft-icon-border: #334155;
+    --ft-btn: #4f46e5;          /* white on this = 6.3:1 */
+    --ft-btn-hover: #4338ca;
+    --ft-btn-text: #ffffff;
+    --ft-ghost-border: #475569;
+    --ft-ring: #a5b4fc;
+    --ft-star: #fbbf24;
+    --ft-link-accent: #60a5fa;
+    --ft-heart: #f87171;
+    --ft-global: #4ade80;
+
+    position: relative;
+    z-index: 10;
+    background: var(--ft-bg);
+    color: var(--ft-text);
+    border-top: 1px solid var(--ft-border);
+    padding: 3.5rem 0 2rem;
+    line-height: 1.6;
+    font-size: .95rem;
+    text-align: left;
+}
+
+body.light-mode .site-footer[data-ft="navbar"],
+html:not(.dark) .site-footer[data-ft="class"] {
+    --ft-bg: #f8fafc;
+    --ft-border: #e2e8f0;
+    --ft-text: #475569;         /* 7.2:1 on bg */
+    --ft-strong: #0f172a;
+    --ft-hover: #1d4ed8;        /* 6.1:1 on bg */
+    --ft-card: #ffffff;
+    --ft-card-border: #e2e8f0;
+    --ft-card-glow: linear-gradient(135deg, rgba(79, 70, 229, .08), rgba(59, 130, 246, .05));
+    --ft-icon-bg: #ffffff;
+    --ft-icon-border: #cbd5e1;
+    --ft-ghost-border: #94a3b8;
+    --ft-ring: #4338ca;
+    --ft-star: #d97706;
+    --ft-link-accent: #1d4ed8;
+    --ft-heart: #dc2626;
+    --ft-global: #15803d;       /* 4.9:1 on bg */
+}
+
+.site-footer *, .site-footer *::before, .site-footer *::after { box-sizing: border-box; }
+.site-footer a { color: inherit; text-decoration: none; }
+:where(.site-footer) ul { list-style: none; margin: 0; padding: 0; }
+:where(.site-footer) p { margin: 0; }   /* :where() = zero specificity, so the .ft-* margins below still win */
+.site-footer :focus-visible { outline: 2px solid var(--ft-ring); outline-offset: 3px; border-radius: 6px; }
+
+.ft-wrap { max-width: 80rem; margin: 0 auto; padding: 0 1rem; }
+
+/* ---------- review call-to-action ---------- */
+.ft-review {
+    display: flex; flex-direction: column; gap: 1.25rem;
+    padding: 1.4rem 1.5rem; margin-bottom: 3rem;
+    border: 1px solid var(--ft-card-border); border-radius: 1.1rem;
+    background: var(--ft-card-glow), var(--ft-card);
+}
+.ft-stars { color: var(--ft-star); font-size: .85rem; letter-spacing: .15rem; margin-bottom: .35rem; }
+.ft-review-title { color: var(--ft-strong); font-weight: 700; font-size: 1.15rem; line-height: 1.3; }
+.ft-review-sub { margin-top: .25rem; }
+.ft-review-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+.ft-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 44px; padding: .6rem 1.25rem; border-radius: .75rem;
+    background: var(--ft-btn); color: var(--ft-btn-text) !important;
+    font-weight: 700; font-size: .9rem; border: 1px solid transparent; cursor: pointer;
+    transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.ft-btn:hover { background: var(--ft-btn-hover); transform: translateY(-1px); box-shadow: 0 8px 20px -8px rgba(79, 70, 229, .6); }
+.ft-btn-ghost { background: transparent; color: var(--ft-strong) !important; border-color: var(--ft-ghost-border); }
+.ft-btn-ghost:hover { background: transparent; border-color: var(--ft-hover); color: var(--ft-hover) !important; box-shadow: none; }
+
+/* ---------- link grid ---------- */
+.ft-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 1.5rem; margin-bottom: 2.5rem; }
+.ft-brand { grid-column: 1 / -1; }
+.ft-logo { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.ft-logo img { height: 2.75rem; width: auto; }
+.ft-name { color: var(--ft-strong); font-size: 1.6rem; font-weight: 800; letter-spacing: .03em; }
+.ft-name span { color: var(--ft-link-accent); }
+.ft-tagline { max-width: 28rem; margin-bottom: 1.25rem; }
+
+.ft-social { display: flex; gap: .75rem; }
+.ft-social-link {
+    width: 44px; height: 44px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--ft-icon-bg); border: 1px solid var(--ft-icon-border); color: var(--ft-text);
+    transition: color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.ft-social-link:hover { transform: translateY(-2px); }
+.ft-ig:hover { color: #db2777; border-color: #db2777; }
+.ft-fb:hover { color: #2563eb; border-color: #2563eb; }
+.ft-in:hover { color: #0a66c2; border-color: #0a66c2; }
+
+.ft-title { color: var(--ft-strong); font-weight: 700; font-size: 1.05rem; margin-bottom: 1rem; }
+.ft-col li { margin-bottom: .15rem; }
+.ft-col a { display: inline-flex; align-items: center; gap: .5rem; min-height: 32px; transition: color .2s ease, transform .2s ease; }
+.ft-col a::before { content: "\203A"; font-weight: 700; color: var(--ft-link-accent); opacity: .85; transition: transform .2s ease; }
+.ft-col a:hover { color: var(--ft-hover); }
+.ft-col a:hover::before { transform: translateX(3px); }
+
+/* ---------- bottom bar ---------- */
+.ft-bottom {
+    display: flex; flex-direction: column; align-items: center; gap: .9rem; text-align: center;
+    border-top: 1px solid var(--ft-border); padding-top: 1.75rem; font-size: .875rem;
+}
+.ft-made { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: .5rem 1.25rem; }
+.ft-made a { color: var(--ft-link-accent); font-weight: 700; }
+.ft-made a:hover { text-decoration: underline; }
+.ft-heart { color: var(--ft-heart); margin: 0 .15rem; }
+.ft-global { color: var(--ft-global); display: inline-flex; align-items: center; gap: .4rem; }
+.ft-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) { .ft-heart { animation: ft-pulse 1.6s ease-in-out infinite; } }
+@keyframes ft-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+/* ---------- larger screens ---------- */
+@media (min-width: 640px) {
+    .ft-review { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+@media (min-width: 768px) {
+    .ft-grid { grid-template-columns: 2fr 1fr 1fr 1fr; }
+    .ft-brand { grid-column: auto; }
+    .ft-bottom { flex-direction: row; justify-content: space-between; text-align: left; }
+    .ft-made { justify-content: flex-end; }
+}
+/* pages have a fixed bottom navigation bar on phones: keep the footer text clear of it */
+@media (max-width: 767px) { .site-footer { padding-bottom: 6rem; } }
+@media print { .site-footer { display: none; } }

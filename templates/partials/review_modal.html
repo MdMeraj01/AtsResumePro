@@ -1,0 +1,30 @@
+{# Review popup. Included by partials/footer.html for logged-in users (one copy per page).
+   Opened with openReviewModal() (footer button, or automatically after a resume download). #}
+<div id="reviewModal" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle"
+     class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl text-white relative">
+        <button type="button" onclick="closeReviewModal()" aria-label="Close review window" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+
+        <h2 id="reviewModalTitle" class="text-xl font-bold text-center mb-1">Rate Your Experience ⭐</h2>
+        <p class="text-gray-400 text-xs text-center mb-4">Aapka experience kaisa raha? Hame zaroor batayein!</p>
+
+        <!-- Star Rating -->
+        <div class="flex justify-center gap-2 mb-4 text-2xl text-amber-400" id="starContainer" role="group" aria-label="Your rating">
+            <button type="button" class="cursor-pointer" data-val="1" aria-label="1 star"><i class="fas fa-star"></i></button>
+            <button type="button" class="cursor-pointer" data-val="2" aria-label="2 stars"><i class="fas fa-star"></i></button>
+            <button type="button" class="cursor-pointer" data-val="3" aria-label="3 stars"><i class="fas fa-star"></i></button>
+            <button type="button" class="cursor-pointer" data-val="4" aria-label="4 stars"><i class="fas fa-star"></i></button>
+            <button type="button" class="cursor-pointer" data-val="5" aria-label="5 stars"><i class="fas fa-star"></i></button>
+        </div>
+        <input type="hidden" id="reviewRatingInput" value="5">
+
+        <textarea id="reviewCommentInput" rows="3" aria-label="Your feedback" placeholder="Write a short feedback..." class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
+
+        <button type="button" onclick="submitReviewAction()" id="btnSubmitReview" class="w-full mt-4 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-600/30">
+            Submit Review
+        </button>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/review_modal.js') }}" defer></script>

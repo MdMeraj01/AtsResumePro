@@ -1,0 +1,95 @@
+{#
+  Shared site footer.  Use it like this (set footer_theme BEFORE the include):
+
+      {% set footer_theme = 'navbar' %}{% include 'partials/footer.html' %}
+
+  footer_theme  tells the footer how this page switches between light and night mode:
+    'navbar' : the page loads navbar.js            (light mode = body.light-mode)
+    'class'  : the page toggles <html class="dark"> itself
+    (not set): page has no theme switch, footer stays in night mode
+  Colours live in static/css/footer.css (CSS variables), so no Tailwind rebuild is needed for the footer.
+  Social links: fill linkedin_url below to show the LinkedIn icon.
+#}
+{% set linkedin_url = '' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/footer.css') }}">
+<footer class="site-footer" data-ft="{{ footer_theme | default('none') }}" role="contentinfo">
+    <div class="ft-wrap">
+
+        <!-- Review call-to-action: anyone who skipped the popup after downloading can still review from here -->
+        <section class="ft-review" aria-labelledby="ft-review-title">
+            <div class="ft-review-text">
+                <div class="ft-stars" aria-hidden="true"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p id="ft-review-title" class="ft-review-title">Enjoyed ATS Pro? Leave a review</p>
+                <p class="ft-review-sub">It takes a minute and helps other job seekers find us.</p>
+            </div>
+            <div class="ft-review-actions">
+                {% if session.get('user_id') %}
+                <button type="button" class="ft-btn" onclick="openReviewModal()"><i class="fas fa-pen" aria-hidden="true"></i> Write a Review</button>
+                {% else %}
+                <a class="ft-btn" href="{{ url_for('login_page') }}"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Login to Review</a>
+                {% endif %}
+                <a class="ft-btn ft-btn-ghost" href="{{ url_for('all_reviews_page') }}">Read Reviews</a>
+            </div>
+        </section>
+
+        <div class="ft-grid">
+            <div class="ft-brand">
+                <div class="ft-logo">
+                    <a href="/" class="ats-brand-logo" aria-label="ATS Pro home">
+                        <img width="170" height="100" src="https://res.cloudinary.com/lvdqyicr/image/upload/e_make_transparent:20/w_170,f_auto,q_auto/v1789323861/logo.png" alt="ATS Pro Logo" class="ats-brand-img" loading="lazy" decoding="async">
+                    </a>
+                    <span class="ft-name">ATS<span>Pro</span></span>
+                </div>
+                <p class="ft-tagline">Building careers one resume at a time. Powered by advanced AI to help you land your dream job faster.</p>
+                <div class="ft-social">
+                    <a href="https://www.instagram.com/atsresumepro0?stkn=YmVxcTJjcW54eGhk" target="_blank" rel="noopener noreferrer" class="ft-social-link ft-ig" aria-label="ATS Pro on Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                    <a href="https://www.facebook.com/share/19GMnFWH8Y/" target="_blank" rel="noopener noreferrer" class="ft-social-link ft-fb" aria-label="ATS Pro on Facebook"><i class="fab fa-facebook-f" aria-hidden="true"></i></a>
+                    {% if linkedin_url %}<a href="{{ linkedin_url }}" target="_blank" rel="noopener noreferrer" class="ft-social-link ft-in" aria-label="ATS Pro on LinkedIn"><i class="fab fa-linkedin-in" aria-hidden="true"></i></a>{% endif %}
+                </div>
+            </div>
+
+            <nav class="ft-col" aria-label="Product">
+                <p class="ft-title">Product</p>
+                <ul>
+                    <li><a href="{{ url_for('builder') }}">Resume Builder</a></li>
+                    <li><a href="{{ url_for('templates_section') }}">Templates</a></li>
+                    <li><a href="{{ url_for('cover_letter_builder') }}">Cover Letter</a></li>
+                    <li><a href="{{ url_for('interview_prep') }}">Interview Prep</a></li>
+                    <li><a href="{{ url_for('pricing') }}">Pricing</a></li>
+                </ul>
+            </nav>
+
+            <nav class="ft-col" aria-label="Company">
+                <p class="ft-title">Company</p>
+                <ul>
+                    <li><a href="{{ url_for('about') }}">About Us</a></li>
+                    <li><a href="{{ url_for('blog') }}">Blog</a></li>
+                    <li><a href="{{ url_for('all_reviews_page') }}">Reviews</a></li>
+                    <li><a href="{{ url_for('careers') }}">Careers</a></li>
+                    <li><a href="{{ url_for('press') }}">Press</a></li>
+                </ul>
+            </nav>
+
+            <nav class="ft-col" aria-label="Support">
+                <p class="ft-title">Support</p>
+                <ul>
+                    <li><a href="{{ url_for('help_center') }}">Help Center</a></li>
+                    <li><a href="{{ url_for('contact_us') }}">Contact Us</a></li>
+                    <li><a href="{{ url_for('privacy_policy') }}">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('terms_of_service') }}">Terms of Service</a></li>
+                    <li><a href="{{ url_for('refund_policy') }}">Refund Policy</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <div class="ft-bottom">
+            <p>&copy; {{ current_year }} ATS Resume Builder Pro. All rights reserved.</p>
+            <p class="ft-made">
+                <span>Made with <i class="fas fa-heart ft-heart" aria-hidden="true"></i><span class="ft-sr"> love</span> by
+                <a href="https://meraj8329.pythonanywhere.com/" target="_blank" rel="noopener noreferrer">Meraj.Dev</a></span>
+                <span class="ft-global"><i class="fas fa-globe" aria-hidden="true"></i> Global 🌎</span>
+            </p>
+        </div>
+    </div>
+</footer>
+{% if session.get('user_id') %}{% include 'partials/review_modal.html' %}{% endif %}

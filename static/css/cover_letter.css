@@ -221,12 +221,13 @@ body.light-mode .form-input:focus {
     font-size: 0.75rem;
     background: var(--bg-main);
     padding: 0 0.5rem;
-    color: var(--primary);
+    color: #a5b4fc;   /* readable on the dark background (the brand indigo was 3:1) */
 }
 
 body.light-mode .form-input:focus + .form-label,
 body.light-mode .form-input:not(:placeholder-shown) + .form-label {
     background: #f8fafc;
+    color: var(--primary);
 }
 
 /* Gradient Text */

@@ -14,21 +14,24 @@
     <meta property="og:description" content="{{ post.summary or 'Read this industry article on ATS Resume Builder Pro.' }}">
     <meta property="og:type" content="article">
     <meta property="og:url" content="{{ request.base_url }}">
-    <meta property="og:image" content="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg'), _external=True) }}">
+    <meta property="og:image" content="{{ post.image_file|cld(1200) if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg'), _external=True) }}">
     <meta property="og:site_name" content="ATS Resume Builder Pro">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ post.title }}">
     <meta name="twitter:description" content="{{ post.summary or 'Read this industry article on ATS Resume Builder Pro.' }}">
-    <meta name="twitter:image" content="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg'), _external=True) }}">
+    <meta name="twitter:image" content="{{ post.image_file|cld(1200) if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg'), _external=True) }}">
 
     <!-- CDN & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}">
     
     <script>
@@ -143,7 +146,7 @@
                         <i class="fas fa-arrow-left mr-2"></i> All Articles
                     </a>
 
-                    <button id="themeToggle" class="p-2.5 rounded-xl glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-transform active:scale-95">
+                    <button aria-label="Toggle light and dark mode" id="themeToggle" class="p-2.5 rounded-xl glass-panel text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-transform active:scale-95">
                         <i class="fas fa-moon dark:hidden text-lg"></i>
                         <i class="fas fa-sun hidden dark:block text-lg text-yellow-400"></i>
                     </button>
@@ -151,6 +154,7 @@
             </div>
         </div>
     </nav>
+    <main id="main-content">
 
     <!-- Main Article Body -->
     <article class="pt-32 pb-20 px-4 sm:px-6">
@@ -182,7 +186,7 @@
 
             <!-- Cover Image Container -->
             <div class="rounded-3xl overflow-hidden shadow-2xl mb-12 border border-gray-200 dark:border-slate-800 bg-slate-900">
-                 <img src="{{ post.image_file if post.image_file and post.image_file.startswith('http') else url_for('static', filename='images/blog/' + (post.image_file or 'default.jpg')) }}" 
+                 <img src="{{ post.image_file|blog_img(1200) }}" fetchpriority="high" 
                       alt="{{ post.title }}"
                       class="w-full h-[260px] sm:h-[420px] object-cover"
                       referrerpolicy="no-referrer"
@@ -192,7 +196,7 @@
             <!-- Blog HTML Content -->
             <div class="glass-panel p-6 sm:p-10 md:p-12 rounded-3xl mb-12 shadow-xl">
                 <div class="blog-content">
-                    {{ post.content | safe }}
+                    {{ post.content | optimize_html | safe }}
                 </div>
             </div>
 
@@ -200,7 +204,7 @@
             <div class="glass-panel p-6 sm:p-8 rounded-3xl mb-12 shadow-xl border border-gray-200 dark:border-slate-800">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
-                        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">
+                        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1" aria-level="2">
                             Share this with other job seekers
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -254,9 +258,8 @@
     </article>
 
     <!-- Footer -->
-    <footer class="border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 pt-10 pb-8 text-center text-gray-500 text-xs">
-        <p>&copy; 2026 ATS Resume Builder Pro. All rights reserved.</p>
-    </footer>
+        </main>
+{% set footer_theme = 'class' %}{% include 'partials/footer.html' %}
 
     <!-- Interactive Script Layer -->
     <script>

@@ -190,6 +190,8 @@ def add_cache_headers(response):
         if path.startswith('/static/'):
             if 'v' in request.args:
                 response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+            elif path.startswith('/static/images/'):
+                response.headers['Cache-Control'] = 'public, max-age=604800'      # unversioned images: 7 days
             else:
                 response.headers['Cache-Control'] = 'public, max-age=3600'
         elif path.startswith('/resume_templates/'):
@@ -203,6 +205,7 @@ def add_cache_headers(response):
     # any admin write may change templates -> drop the cached template list
     if request.method in ('POST', 'PUT', 'PATCH', 'DELETE') and path.startswith('/api/admin/'):
         templates_cache.clear()
+        page_cache.clear()
     return response
 
 
@@ -232,9 +235,67 @@ def tw_built(mode):
 app.jinja_env.globals['tw_built'] = tw_built
 
 
+import datetime as _dt
+
 @app.context_processor
 def inject_site_urls():
-    return {'site_url': SITE_URL, 'canonical_url': SITE_URL + request.path}
+    return {'site_url': SITE_URL, 'canonical_url': SITE_URL + request.path, 'current_year': _dt.date.today().year}
+
+
+# ---- Cloudinary: never send a 2-8 MB original to a phone -------------------------------------------
+# https://res.cloudinary.com/<cloud>/image/upload/v123/x.png  ->  .../upload/w_640,c_limit,f_auto,q_auto/v123/x.png
+def cld_optimize(url, width=800):
+    url = str(url or '')
+    if 'res.cloudinary.com' not in url or '/image/upload/' not in url:
+        return url
+    head, _, tail = url.partition('/image/upload/')
+    if re.fullmatch(r'v\d+', tail.split('/', 1)[0]):          # only when there is no transformation yet
+        return f"{head}/image/upload/w_{int(width)},c_limit,f_auto,q_auto/{tail}"
+    return url
+
+
+def blog_img(image_file, width=800):
+    """Blog cover: Cloudinary URL (resized) or a file in static/images/blog."""
+    if image_file and str(image_file).startswith('http'):
+        return cld_optimize(image_file, width)
+    return url_for('static', filename='images/blog/' + (image_file or 'default.jpg'))
+
+
+_IMG_TAG = re.compile(r'<img\b[^>]*>', re.I)
+
+def optimize_blog_html(html):
+    """Blog bodies are written in the admin editor: shrink their Cloudinary images and lazy-load every image."""
+    def fix(m):
+        tag = m.group(0)
+        tag = re.sub(r'(src=")([^"]+)(")', lambda s: s.group(1) + cld_optimize(s.group(2), 1000) + s.group(3), tag, count=1)
+        if 'loading=' not in tag:
+            tag = tag[:-1].rstrip('/ ') + ' loading="lazy" decoding="async">'
+        return tag
+    return _IMG_TAG.sub(fix, str(html or ''))
+
+app.jinja_env.filters['cld'] = cld_optimize
+app.jinja_env.filters['blog_img'] = blog_img
+app.jinja_env.filters['optimize_html'] = optimize_blog_html
+
+
+def guest_cached(view):
+    """Logged-out visitors (and Google) get the same HTML, so render it once per 5 minutes.
+    Never used for logged-in users, never for URLs with a query string, never for POST."""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        if request.method != 'GET' or request.query_string or session.get('user_id') or session.get('admin_id'):
+            return view(*args, **kwargs)
+        key = f"page:{request.host}{request.path}"
+        html = page_cache.peek(key)
+        if html is None:
+            html = view(*args, **kwargs)
+            if not isinstance(html, str):
+                return html
+            page_cache.set(key, html)
+        resp = make_response(html)
+        resp.headers['X-Page-Cache'] = 'guest'
+        return resp
+    return wrapper
 
 
 @app.route('/healthz')
@@ -992,14 +1053,17 @@ def builder():
     )
 
 @app.route('/templates')
+@guest_cached
 def templates_section():
     return render_template('templates.html')
 
 @app.route('/interview-prep')
+@guest_cached
 def interview_prep():
     return render_template('interview.html')
 
 @app.route('/pricing')
+@guest_cached
 def pricing():
     return render_template('pricing.html')
 
@@ -1603,6 +1667,7 @@ def login():
 # 🏢 COMPANY PAGES ROUTES
 # ==========================================
 @app.route('/about')
+@guest_cached
 def about():
     # File location: templates/company/about.html
     return render_template('company/about.html')
@@ -1614,6 +1679,7 @@ def careers():
 
 # Refund Policy Route
 @app.route('/refund-policy')
+@guest_cached
 def refund_policy():
     return render_template('support/refund_policy.html')
 
@@ -1627,17 +1693,20 @@ def press():
 # 🤝 SUPPORT PAGES ROUTES
 # ==========================================
 @app.route('/help-center')
+@guest_cached
 def help_center():
     # File location: templates/support/help_center.html
     return render_template('support/help_center.html')
 
 
 @app.route('/privacy-policy')
+@guest_cached
 def privacy_policy():
     # File location: templates/support/privacy_policy.html
     return render_template('support/privacy_policy.html')
 
 @app.route('/terms-of-service')
+@guest_cached
 def terms_of_service():
     # File location: templates/support/terms_of_service.html
     return render_template('support/terms_of_service.html')
@@ -1680,6 +1749,7 @@ def get_template(template_name):
 
 # 1. Public Blog Page (Dynamic Fetch)
 @app.route('/blog')
+@guest_cached
 def blog():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -2144,6 +2214,7 @@ def ai_health_check():
 # COVER LETTER ROUTE
 # ==========================================
 @app.route('/cover-letter')
+@guest_cached
 def cover_letter_builder():
     return render_template('cover_letter.html')
 
@@ -3873,6 +3944,7 @@ def send_contact_emails(user_name, user_email, subject, message):
 # app.py - Updated Contact Us Route
 
 @app.route('/contact-us', methods=['GET', 'POST'])
+@guest_cached
 def contact_us():
     if request.method == 'POST':
         # 1. Get All Form Data
@@ -4652,6 +4724,7 @@ def get_all_reviews():
                         
 # 🟢 3. View All Reviews Page Route
 @app.route('/reviews')
+@guest_cached
 def all_reviews_page():
     return render_template('reviews.html')
 

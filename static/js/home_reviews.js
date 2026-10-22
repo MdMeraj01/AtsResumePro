@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
+                                    <h4 aria-level="3" class="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
                                         ${userName}
                                         <i class="fas fa-check-circle text-[11px] text-blue-400" title="Verified Candidate"></i>
                                     </h4>

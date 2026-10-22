@@ -480,7 +480,7 @@ function createQuestionCard(question, index) {
                 <button class="answer-btn px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white text-xs hover:scale-105 transition-transform duration-300" data-index="${index}">
                     <i class="fas fa-lightbulb mr-1"></i>Get Answer
                 </button>
-                <button class="favorite-btn px-3 py-1.5 rounded-lg glass-panel text-xs hover:bg-white/10 transition-all duration-300" data-id="${question.id}">
+                <button aria-label="Save question to favorites" class="favorite-btn px-3 py-1.5 rounded-lg glass-panel text-xs hover:bg-white/10 transition-all duration-300" data-id="${question.id}">
                     <i class="${isFavorited ? 'fas text-yellow-400' : 'far'} fa-star"></i>
                 </button>
             </div>

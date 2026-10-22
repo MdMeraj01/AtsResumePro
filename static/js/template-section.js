@@ -1,3 +1,9 @@
+// Cloudinary originals can be several MB: ask for a card-sized, auto-format copy instead
+function optimizeCloudinary(url, width) {
+    const m = String(url).match(/^(https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(v\d+\/.+)$/);
+    return m ? m[1] + 'w_' + width + ',c_limit,f_auto,q_auto/' + m[2] : url;
+}
+
 // Load a script only when it is needed (cached, resolves when ready)
 if (typeof window.loadScriptOnce !== 'function') {
     window._scriptPromises = window._scriptPromises || {};
@@ -96,10 +102,10 @@ function renderTemplatesGrid(templates) {
             if (t.user_has_access) {
                 badgeHTML = `<div class="absolute top-3 right-3 bg-green-500 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-check"></i> Owned</div>`;
             } else {
-                badgeHTML = `<div class="absolute top-3 right-3 bg-amber-500 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-crown"></i> ₹${t.price}</div>`;
+                badgeHTML = `<div class="absolute top-3 right-3 bg-amber-500 text-gray-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-crown"></i> ₹${t.price}</div>`;
             }
         } else {
-            badgeHTML = `<div class="absolute top-3 right-3 bg-blue-500 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10">Free</div>`;
+            badgeHTML = `<div class="absolute top-3 right-3 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10">Free</div>`;
         }
 
         if (t.user_has_access) {
@@ -117,7 +123,7 @@ function renderTemplatesGrid(templates) {
         }
 
         const imageSrc = (t.image_file && t.image_file.startsWith('http')) 
-            ? t.image_file 
+            ? optimizeCloudinary(t.image_file, 480) 
             : `/static/images/template-previews/${t.image_file || 'default.png'}`;
 
         return `
@@ -138,7 +144,7 @@ function renderTemplatesGrid(templates) {
                 </div>
             </div>
             <div class="p-4 border-t border-slate-800 bg-slate-900/90 z-30">
-                <h3 class="font-bold text-base text-white truncate">${t.display_name}</h3>
+                <h3 aria-level="2" class="font-bold text-base text-white truncate">${t.display_name}</h3>
                 <p class="text-xs text-gray-400 mt-1 line-clamp-2">${t.description || 'Professional ATS optimized resume template.'}</p>
             </div>
         </div>
