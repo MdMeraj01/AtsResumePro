@@ -41,7 +41,9 @@
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('fa-ready')">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <style>html:not(.fa-ready) i[class*="fa-"]{display:inline-block;width:1em;text-align:center}@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:900;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2) format("woff2")}@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:400;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-regular-400.woff2) format("woff2")}@font-face{font-family:"Font Awesome 6 Brands";font-style:normal;font-weight:400;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-brands-400.woff2) format("woff2")}</style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
@@ -361,7 +363,7 @@
                     <div id="educationStep" class="form-step hidden">
                         <div class="mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold text-white">Education Details</h3>
+                                <h3 aria-level="2" class="text-xl font-bold text-white">Education Details</h3>
                                 <button type="button" id="addEducationBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
                                     <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Education
                                 </button>
@@ -377,7 +379,7 @@
                     <div id="experienceStep" class="form-step hidden">
                         <div class="mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold text-white">Work Experience</h3>
+                                <h3 aria-level="2" class="text-xl font-bold text-white">Work Experience</h3>
                                 <button type="button" id="addExperienceBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
                                     <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Experience
                                 </button>
@@ -393,7 +395,7 @@
                     <div id="projectsStep" class="form-step hidden">
                         <div class="mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold text-white">Projects</h3>
+                                <h3 aria-level="2" class="text-xl font-bold text-white">Projects</h3>
                                 <button type="button" id="addProjectBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
                                     <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Project
                                 </button>
@@ -461,7 +463,7 @@
                     <div id="extrasStep" class="form-step hidden">
                         <div class="mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold text-white">Additional Information</h3>
+                                <h3 aria-level="2" class="text-xl font-bold text-white">Additional Information</h3>
                                 <button type="button" id="addExtraInfoBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
                                     <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Extra Info
                                 </button>
@@ -481,7 +483,7 @@
                     <div id="certificationsStep" class="form-step hidden">
                         <div class="mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-bold text-white">Certifications & Awards</h3>
+                                <h3 aria-level="2" class="text-xl font-bold text-white">Certifications & Awards</h3>
                                 <button type="button" id="addCertificationBtn" class="px-4 py-2.5 rounded-xl btn-primary-glow font-medium hover:scale-105 transition-transform duration-300 group">
                                     <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform"></i>Add Certification
                                 </button>
@@ -549,7 +551,7 @@
                 <div class="glass-panel rounded-2xl p-6 mb-6">
                     <div class="flex justify-between items-center mb-6">
                         <div>
-                            <h3 class="text-xl font-bold text-white">Live Preview</h3>
+                            <h3 aria-level="2" class="text-xl font-bold text-white">Live Preview</h3>
                             <p class="text-gray-400 text-sm">See your resume update in real-time</p>
                         </div>
                         <div class="flex space-x-3">
@@ -753,7 +755,7 @@
         <div class="bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl w-11/12 h-5/6 flex flex-col border border-gray-800 shadow-2xl">
             <div class="flex justify-between items-center p-6 border-b border-gray-800">
                 <div>
-                    <h3 class="text-xl font-bold text-white">PDF Preview</h3>
+                    <h3 aria-level="2" class="text-xl font-bold text-white">PDF Preview</h3>
                     <p class="text-gray-400 text-sm">Ready to download or print</p>
                 </div>
                 <div class="flex space-x-3">

@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Blog & Insights | ATS Resume Builder Pro</title>
+    <meta name="description" content="Resume writing tips, ATS guides, interview advice and career insights from ATS Resume Builder Pro.">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ATS Resume Builder Pro">
+    <meta property="og:title" content="Blog & Insights | ATS Resume Builder Pro">
+    <meta property="og:description" content="Resume writing tips, ATS guides, interview advice and career insights.">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta name="twitter:card" content="summary">
     {% if tw_built('class') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.class.min.css') }}">{% else %}<script src="https://cdn.tailwindcss.com"></script>{% endif %}
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet';document.documentElement.classList.add('fa-ready')">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <style>html:not(.fa-ready) i[class*="fa-"]{display:inline-block;width:1em;text-align:center}@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:900;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2) format("woff2")}@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:400;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-regular-400.woff2) format("woff2")}@font-face{font-family:"Font Awesome 6 Brands";font-style:normal;font-weight:400;font-display:swap;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-brands-400.woff2) format("woff2")}</style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
@@ -108,7 +118,7 @@
                     {% for post in posts %}
                     <article class="blog-card glass-panel rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 transition-all bg-white dark:bg-transparent flex flex-col h-full">
                         <div class="h-48 overflow-hidden relative group">
-                             <img src="{{ post.image_file|blog_img(640) }}" width="640" height="320" loading="{{ 'eager' if loop.index <= 2 else 'lazy' }}" decoding="async" 
+                             <img src="{{ post.image_file|blog_img(640) }}" width="640" height="320" loading="{{ 'eager' if loop.index <= 2 else 'lazy' }}"{% if loop.first %} fetchpriority="high"{% endif %} decoding="async" 
                                  alt="{{ post.title }}"
                                  class="w-full h-48 object-cover rounded-t-xl"
                                  referrerpolicy="no-referrer"

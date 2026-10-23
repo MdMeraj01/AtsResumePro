@@ -33,6 +33,7 @@ from html import escape as html_escape
 from functools import wraps
 import otp_guard
 import perf_utils
+import threading
 from security import get_client_ip, user_or_ip_key
 import base64
 import string
@@ -95,7 +96,7 @@ def _new_db_connection():
 # variable SITE_URL=https://yourdomain.com on Render and every canonical/OG/sitemap/email link follows.
 SITE_URL = os.getenv("SITE_URL", "https://atsresumepro.onrender.com").rstrip("/")
 
-page_cache = perf_utils.TTLCache(ttl=300)   # rendered HTML of public pages for logged-out visitors
+page_cache = perf_utils.TTLCache(ttl=1800)   # rendered HTML of public pages for logged-out visitors
 
 # Template list changes only when an admin edits it: cache it for a minute (cleared on admin writes).
 templates_cache = perf_utils.TTLCache(ttl=60)
@@ -168,15 +169,26 @@ def add_security_headers(response):
 # ==========================================
 # ⚡ STATIC FILES: versioning, caching, WebP  (Step 3)
 # ==========================================
+_BOOT_VERSION = int(time.time())
+
+def _static_version(filename):
+    """File modified time; if the file itself is missing but its .webp twin exists (we serve that), use the twin's time;
+    otherwise the server start time. So every static URL always gets a ?v= and can be cached for a year."""
+    base = os.path.join(app.static_folder, filename)
+    for candidate in (base, base.rsplit('.', 1)[0] + '.webp'):
+        try:
+            return int(os.stat(candidate).st_mtime)
+        except (OSError, ValueError):
+            continue
+    return _BOOT_VERSION
+
+
 @app.url_defaults
 def add_static_version(endpoint, values):
     """url_for('static', ...) automatically gets ?v=<file modified time>, so browsers can cache
     CSS/JS for a year and still pick up a new file the moment it changes."""
     if endpoint == 'static' and values.get('filename') and 'v' not in values:
-        try:
-            values['v'] = int(os.stat(os.path.join(app.static_folder, values['filename'])).st_mtime)
-        except (OSError, ValueError):
-            pass
+        values['v'] = _static_version(values['filename'])
 
 
 NOINDEX_PREFIXES = ('/login', '/logout', '/auth/', '/callback/', '/dashboard', '/checkout', '/api/',
@@ -228,6 +240,25 @@ app.view_functions['static'] = _static_with_webp
 _warm_pdf_engines()   # load WeasyPrint in the background so start-up stays fast
 
 
+def _warm_page_cache():
+    """After a (cold) start, render the public pages once so the first real visitor gets a cached copy."""
+    import urllib.parse
+    time.sleep(4)
+    hosts = {urllib.parse.urlparse(SITE_URL).netloc, os.getenv('RENDER_EXTERNAL_HOSTNAME', '')}
+    paths = ['/', '/pricing', '/templates', '/builder', '/cover-letter', '/interview-prep', '/blog', '/about', '/login']
+    for host in [h for h in hosts if h]:
+        client = app.test_client()
+        for path in paths:
+            try:
+                client.get(path, base_url=f"https://{host}")
+            except Exception as e:
+                print(f"cache warm-up {path}: {type(e).__name__}")
+    print("✅ page cache warmed")
+
+if os.getenv('RENDER') == 'true' or os.getenv('WARM_PAGE_CACHE') == '1':
+    threading.Thread(target=_warm_page_cache, name="page-cache-warmup", daemon=True).start()
+
+
 def tw_built(mode):
     """True once you have run the Tailwind build (static/css/tailwind.<mode>.min.css exists)."""
     return os.path.isfile(os.path.join(app.static_folder, 'css', f'tailwind.{mode}.min.css'))
@@ -276,6 +307,13 @@ def optimize_blog_html(html):
 app.jinja_env.filters['cld'] = cld_optimize
 app.jinja_env.filters['blog_img'] = blog_img
 app.jinja_env.filters['optimize_html'] = optimize_blog_html
+
+
+def template_image_src(image_file):
+    """Final URL for a template preview: resized Cloudinary copy, or a versioned local file."""
+    if image_file and str(image_file).startswith('http'):
+        return cld_optimize(image_file, 480)
+    return url_for('static', filename='images/template-previews/' + (image_file or 'default.png'))
 
 
 def guest_cached(view):
@@ -1011,6 +1049,7 @@ def index():
 # ⚡ OPTIMIZED FAST BUILDER ROUTE
 # ==========================================
 @app.route('/builder')
+@guest_cached
 def builder():
     user_id = session.get('user_id')
     user_unlocked = []
@@ -1308,6 +1347,7 @@ def callback_github():
 # ==========================================
 
 @app.route('/login')
+@guest_cached
 def login_page():
     if 'user_id' in session:
         return redirect(url_for('index'))
@@ -2856,6 +2896,7 @@ def get_templates():
 
     # 3. Data Enrich karo (Frontend ko batane ke liye ki access hai ya nahi)
     for t in templates:
+        t['image_src'] = template_image_src(t.get('image_file'))
         t['user_has_access'] = False
         
         # Logic: Kab access milega?

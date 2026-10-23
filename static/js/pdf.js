@@ -459,5 +459,3 @@ window.handlePdfClick = handlePdfClick;
 window.downloadPDF = downloadPDF;
 window.downloadWord = downloadWord;
 window.getCurrentTemplateId = getCurrentTemplateId;
-window.openReviewModal = openReviewModal;
-window.closeReviewModal = closeReviewModal;

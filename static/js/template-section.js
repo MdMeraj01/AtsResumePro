@@ -100,7 +100,7 @@ function renderTemplatesGrid(templates) {
 
         if (t.is_premium) {
             if (t.user_has_access) {
-                badgeHTML = `<div class="absolute top-3 right-3 bg-green-500 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-check"></i> Owned</div>`;
+                badgeHTML = `<div class="absolute top-3 right-3 bg-green-500 text-gray-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-check"></i> Owned</div>`;
             } else {
                 badgeHTML = `<div class="absolute top-3 right-3 bg-amber-500 text-gray-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-lg z-10"><i class="fas fa-crown"></i> ₹${t.price}</div>`;
             }
@@ -122,9 +122,10 @@ function renderTemplatesGrid(templates) {
                 </button>`;
         }
 
-        const imageSrc = (t.image_file && t.image_file.startsWith('http')) 
+        // image_src comes from the server (resized Cloudinary URL, or a local file with ?v=<version> so it can be cached for a year)
+        const imageSrc = t.image_src || ((t.image_file && t.image_file.startsWith('http')) 
             ? optimizeCloudinary(t.image_file, 480) 
-            : `/static/images/template-previews/${t.image_file || 'default.png'}`;
+            : `/static/images/template-previews/${t.image_file || 'default.png'}`);
 
         return `
         <div class="template-card relative rounded-2xl overflow-hidden group bg-slate-900/80 border border-slate-800 flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-blue-500/50 w-full" data-category="${t.category}" style="display: flex !important; opacity: 1 !important; visibility: visible !important;">
